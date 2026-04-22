@@ -261,17 +261,6 @@ h1.hero-title{
 .tl-dots i:nth-child(1){ background:#FF5F57;}
 .tl-dots i:nth-child(2){ background:#FEBC2E;}
 .tl-dots i:nth-child(3){ background:#28C840;}
-.win-title{
-  position: absolute; left: 50%; transform: translateX(-50%);
-  font-family:'JetBrains Mono', monospace; font-size: 11.5px;
-  color: var(--term-dim);
-  letter-spacing: 0.02em;
-  white-space: nowrap;
-  pointer-events: none;
-  max-width: 60%;
-  overflow: hidden;
-  text-overflow: ellipsis;
-}
 .win-bar-spacer{ flex: 1; }
 .win-sidebar-toggle{
   display: none;
@@ -324,7 +313,6 @@ h1.hero-title{
 .sidebar-header{
   display: flex; align-items: center; justify-content: space-between;
   padding: 4px 6px 8px;
-  border-bottom: 1px solid rgba(255,255,255,0.04);
   margin-bottom: 6px;
 }
 .sidebar-header .side-label{
@@ -338,7 +326,7 @@ h1.hero-title{
   border: 1px solid transparent; cursor: pointer;
   transition: background .12s, color .12s, border-color .12s;
 }
-.side-icon:hover{ color: #E7EAEE; background: rgba(255,255,255,0.06); border-color: rgba(255,255,255,0.08);}
+.side-icon:hover{ color: #E7EAEE; background: rgba(255,255,255,0.05);}
 .side-icon:disabled, .side-icon.disabled{
   cursor: not-allowed; opacity: 0.35;
 }
@@ -507,7 +495,6 @@ h1.hero-title{
 .sidebar-footer{
   display: flex; align-items: center; justify-content: space-between;
   padding: 6px 4px 2px;
-  border-top: 1px solid rgba(255,255,255,0.04);
   margin-top: 4px;
   gap: 6px;
 }
@@ -523,7 +510,6 @@ h1.hero-title{
   min-width: 0;
   margin: 0 8px 8px 0;
   border-radius: 10px;
-  border: 1px solid rgba(255,255,255,0.06);
 }
 /* Tab bar = strip 容器 (sidebar 底色) + 右侧独立 "+" 按钮 */
 .tab-bar{
@@ -581,23 +567,24 @@ h1.hero-title{
 .tab-bar .tbi .t-dot{ flex-shrink: 0; }
 .tab-bar .tab-add{
   display: inline-flex; align-items: center; justify-content: center;
-  width: 28px; height: 28px;
-  color: #6B727C; background: transparent; border: 0; cursor: pointer;
+  align-self: center;
+  width: 22px; height: 22px;
+  color: #8A919B; background: transparent;
+  border: 1px solid transparent; cursor: pointer;
   padding: 0;
   flex-shrink: 0;
   border-radius: 6px;
-  margin-left: 0;
+  margin-left: 3px;
+  transition: background .12s, color .12s, border-color .12s;
 }
 .tab-bar .tab-add:hover{ color: #E7EAEE; background: rgba(255,255,255,0.05);}
 
 /* Light theme tweaks — 真实主题下 strip / active pill 会跟随 ghostty 主题染色；
    我们这里没 ghostty 取色，按深色设计的同样结构映射到浅色背景。 */
-:root:not(.dark) .main-pane{
-  border-color: rgba(0,0,0,0.06);
-}
 :root:not(.dark) .tab-bar .tbi:hover{ background: rgba(0,0,0,0.04); color: #1E2228; }
 :root:not(.dark) .tab-bar .tbi.active{ background: var(--term-bg); color: #F1F4F8;}
 :root:not(.dark) .tab-bar .tab-add:hover{ background: rgba(0,0,0,0.05); color: #1E2228; }
+:root:not(.dark) .side-icon:hover{ background: rgba(0,0,0,0.05); color: #1E2228; }
 
 /* terminal pane */
 .term-pane{
@@ -1230,10 +1217,6 @@ kbd{
             <button class="win-sidebar-toggle" id="sidebar-mobile-toggle" aria-label="Toggle sidebar">
               <svg width="14" height="14"><use href="#icon-sidebar"/></svg>
             </button>
-            <div class="win-title">
-              <svg width="10" height="10" style="vertical-align: -1px; margin-right: 6px;"><use href="#chev"/></svg>
-              <span id="win-title-text">MUX0 — ~/code/mux0</span>
-            </div>
             <div class="win-bar-spacer"></div>
           </div>
           <div class="win-body">
@@ -1892,8 +1875,7 @@ function applyTheme(theme){
 
 document.addEventListener("DOMContentLoaded", () => {
   // theme
-  const savedTheme = localStorage.getItem("mux0.theme") ||
-    (matchMedia && matchMedia("(prefers-color-scheme: light)").matches ? "light" : "dark");
+  const savedTheme = localStorage.getItem("mux0.theme") || "dark";
   applyTheme(savedTheme);
 
   // lang
@@ -2021,7 +2003,6 @@ function initPreview(){
   const wsAddBtn = document.getElementById("ws-add");
   const tabBar = document.getElementById("tab-bar");
   const termPane = document.getElementById("term-pane");
-  const winTitle = document.getElementById("win-title-text");
   const toast = document.getElementById("toast");
   const sidebar = document.getElementById("sidebar");
   const sidebarScrim = document.getElementById("sidebar-scrim");
@@ -2244,7 +2225,7 @@ function initPreview(){
     const add = document.createElement("button");
     add.className = "tab-add";
     add.title = t("ctx.newTab");
-    add.innerHTML = `<svg width="14" height="14"><use href="#icon-plus"/></svg>`;
+    add.innerHTML = `<svg width="12" height="12"><use href="#icon-plus"/></svg>`;
     add.addEventListener("click", addTab);
     tabBar.appendChild(add);
   }
@@ -2460,7 +2441,6 @@ function initPreview(){
     state.selectedWorkspaceId = id;
     const ws = getSelWs();
     if (ws && !ws.tabs.find(tb => tb.id === ws.selectedTabId)) ws.selectedTabId = ws.tabs[0]?.id ?? null;
-    updateWinTitle();
     renderAll();
     closeMobileSidebar();
   }
@@ -2478,7 +2458,7 @@ function initPreview(){
     ws.selectedTabId = ws.tabs[0].id;
     state.workspaces.push(ws);
     state.selectedWorkspaceId = ws.id;
-    updateWinTitle(); renderAll();
+    renderAll();
   }
   function deleteWorkspace(id){
     if (state.workspaces.length <= 1){ showToast(t("toast.lastWorkspace")); return; }
@@ -2488,7 +2468,7 @@ function initPreview(){
     if (state.selectedWorkspaceId === id){
       state.selectedWorkspaceId = state.workspaces[Math.min(idx, state.workspaces.length - 1)].id;
     }
-    updateWinTitle(); renderAll();
+    renderAll();
   }
   function reorderWorkspace(movedId, targetId, above){
     const from = state.workspaces.findIndex(w => w.id === movedId);
@@ -2567,19 +2547,10 @@ function initPreview(){
     renderTabBar();
   }
 
-  // --- misc
-  function updateWinTitle(){
-    const ws = getSelWs(); const tab = getSelTab();
-    if (!ws){ winTitle.textContent = "MUX0"; return; }
-    const pwd = tab?.pwd || ("~/code/" + ws.name);
-    winTitle.textContent = `MUX0 — ${pwd}`;
-  }
-
   function renderAll(){
     renderSidebar();
     renderTabBar();
     renderTerminal();
-    updateWinTitle();
   }
 
   // mobile sidebar
