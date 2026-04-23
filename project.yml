@@ -118,7 +118,7 @@ targets:
         CODE_SIGN_STYLE: Automatic
         CODE_SIGN_ENTITLEMENTS: mux0/mux0.entitlements
         ENABLE_HARDENED_RUNTIME: YES
-        MARKETING_VERSION: "0.1.3"
+        MARKETING_VERSION: "0.1.4"
         CURRENT_PROJECT_VERSION: "3"
       configs:
         # Debug 构建用独立 bundle id + display name，让 TCC / LaunchServices /
