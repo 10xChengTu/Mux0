@@ -75,4 +75,30 @@ final class HookSocketListenerTests: XCTestCase {
         guard ok == 0 else { throw NSError(domain: "TestConnect", code: Int(errno)) }
         _ = payload.withCString { Darwin.send(fd, $0, strlen($0), 0) }
     }
+
+    // MARK: - defaultPath / socketPath(forBundlePath:)
+
+    func testSocketPathIsDeterministicForSameBundle() {
+        let a = HookSocketListener.socketPath(forBundlePath: "/Applications/mux0.app")
+        let b = HookSocketListener.socketPath(forBundlePath: "/Applications/mux0.app")
+        XCTAssertEqual(a, b)
+    }
+
+    func testSocketPathDiffersAcrossBundles() {
+        // Prod (/Applications) vs Debug (DerivedData) must not collide —
+        // that's the whole point of bundle-path hashing.
+        let prod = HookSocketListener.socketPath(forBundlePath: "/Applications/mux0.app")
+        let debug = HookSocketListener.socketPath(
+            forBundlePath: "/Users/me/Library/Developer/Xcode/DerivedData/mux0-abc/Build/Products/Debug/mux0.app")
+        XCTAssertNotEqual(prod, debug)
+    }
+
+    func testSocketPathShape() {
+        let p = HookSocketListener.socketPath(forBundlePath: "/Applications/mux0.app")
+        XCTAssertTrue(p.hasSuffix(".sock"), "expected .sock suffix, got \(p)")
+        let name = (p as NSString).lastPathComponent
+        XCTAssertTrue(name.hasPrefix("hooks-"), "expected hooks- prefix, got \(name)")
+        // hooks-<hash8>.sock → "hooks-" + 8 hex + ".sock" = 19 chars
+        XCTAssertEqual(name.count, "hooks-".count + 8 + ".sock".count)
+    }
 }

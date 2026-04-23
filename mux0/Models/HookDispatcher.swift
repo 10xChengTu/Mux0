@@ -23,6 +23,20 @@ enum HookDispatcher {
                              at: msg.timestamp,
                              detail: msg.toolDetail)
         case .idle:
+            // codex-wrapper always writes `notify = [..., "idle", "codex"]` to
+            // the overlay config.toml, which fires an `idle` on every turn
+            // completion. When the user also has `features.codex_hooks = true`,
+            // the Stop hook fires `finished` (with exitCode) at the same point,
+            // and the two socket writes race: the notify-driven `idle` often
+            // arrives after the Stop-driven `finished` and would overwrite the
+            // success/failed state with a neutral idle. Claude's SessionEnd
+            // shares the same shape (Stop emits `finished`, SessionEnd emits
+            // `idle`). Keep the informative terminal state; the next
+            // UserPromptSubmit will move things back to `.running`.
+            switch store.status(for: msg.terminalId) {
+            case .success, .failed: return
+            default: break
+            }
             store.setIdle(terminalId: msg.terminalId, at: msg.timestamp)
         case .needsInput:
             // Claude Code's Notification hook fires for two reasons: a real

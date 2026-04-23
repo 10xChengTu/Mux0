@@ -158,6 +158,70 @@ final class HookDispatcherTests: XCTestCase {
         XCTAssertEqual(store.status(for: tid), .neverRan)
     }
 
+    func testDispatchIdleDroppedFromSuccess() {
+        settings.set(HookMessage.Agent.codex.settingsKey, "true")
+        settings.save()
+        HookDispatcher.dispatch(makeMsg(event: .running, agent: .codex, at: 100),
+                                settings: settings, store: store)
+        HookDispatcher.dispatch(makeMsg(event: .finished, agent: .codex,
+                                        at: 110, exitCode: 0),
+                                settings: settings, store: store)
+        // codex-wrapper's notify-driven `idle` races with the Stop hook and can
+        // arrive after `finished` — must not demote success back to idle.
+        HookDispatcher.dispatch(makeMsg(event: .idle, agent: .codex, at: 111),
+                                settings: settings, store: store)
+        if case .success = store.status(for: tid) { /* pass */ } else {
+            XCTFail("success should survive late idle, got \(store.status(for: tid))")
+        }
+    }
+
+    func testDispatchIdleDroppedFromFailed() {
+        settings.set(HookMessage.Agent.codex.settingsKey, "true")
+        settings.save()
+        HookDispatcher.dispatch(makeMsg(event: .running, agent: .codex, at: 100),
+                                settings: settings, store: store)
+        HookDispatcher.dispatch(makeMsg(event: .finished, agent: .codex,
+                                        at: 110, exitCode: 1),
+                                settings: settings, store: store)
+        HookDispatcher.dispatch(makeMsg(event: .idle, agent: .codex, at: 111),
+                                settings: settings, store: store)
+        if case .failed = store.status(for: tid) { /* pass */ } else {
+            XCTFail("failed should survive late idle, got \(store.status(for: tid))")
+        }
+    }
+
+    func testDispatchIdleStillTransitionsFromRunning() {
+        settings.set(HookMessage.Agent.codex.settingsKey, "true")
+        settings.save()
+        HookDispatcher.dispatch(makeMsg(event: .running, agent: .codex, at: 100),
+                                settings: settings, store: store)
+        HookDispatcher.dispatch(makeMsg(event: .idle, agent: .codex, at: 110),
+                                settings: settings, store: store)
+        if case .idle = store.status(for: tid) { /* pass */ } else {
+            XCTFail("running → idle must still work when no finished arrived, got \(store.status(for: tid))")
+        }
+    }
+
+    func testDispatchRunningAfterSuccessStartsNewTurn() {
+        // After the idle-guard, a success state must still be replaceable by
+        // the next UserPromptSubmit's `running` — otherwise the UI freezes on
+        // success until app restart.
+        settings.set(HookMessage.Agent.codex.settingsKey, "true")
+        settings.save()
+        HookDispatcher.dispatch(makeMsg(event: .running, agent: .codex, at: 100),
+                                settings: settings, store: store)
+        HookDispatcher.dispatch(makeMsg(event: .finished, agent: .codex,
+                                        at: 110, exitCode: 0),
+                                settings: settings, store: store)
+        HookDispatcher.dispatch(makeMsg(event: .idle, agent: .codex, at: 111),
+                                settings: settings, store: store)
+        HookDispatcher.dispatch(makeMsg(event: .running, agent: .codex, at: 200),
+                                settings: settings, store: store)
+        if case .running = store.status(for: tid) { /* pass */ } else {
+            XCTFail("success → running (new turn) must work, got \(store.status(for: tid))")
+        }
+    }
+
     func testDispatchMixedAgentsRespectsEachToggle() {
         settings.set(HookMessage.Agent.claude.settingsKey, "true")
         // codex toggle absent (OFF)

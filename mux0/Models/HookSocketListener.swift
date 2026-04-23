@@ -1,5 +1,6 @@
 import Foundation
 import Darwin
+import CryptoKit
 
 /// Unix domain socket server that receives newline-delimited JSON hook messages
 /// from shell/agent wrappers and dispatches them to `onMessage`.
@@ -126,9 +127,23 @@ final class HookSocketListener {
 }
 
 extension HookSocketListener {
-    /// Default socket path: `~/Library/Caches/mux0/hooks.sock`.
+    /// Default socket path, namespaced per install bundle:
+    /// `~/Library/Caches/mux0/hooks-<bundle-hash>.sock` where `<bundle-hash>`
+    /// is the first 8 hex chars of SHA256(Bundle.main.bundlePath).
+    ///
+    /// Keeps Release (/Applications/mux0.app) and Debug (Xcode DerivedData)
+    /// builds on separate sockets so they don't hijack each other's hook
+    /// stream when run simultaneously. macOS blocks double-launching the same
+    /// bundle, so same-path collisions aren't a concern in practice.
     static var defaultPath: String {
+        socketPath(forBundlePath: Bundle.main.bundlePath)
+    }
+
+    /// Deterministic hash-based path derivation. Exposed for tests.
+    static func socketPath(forBundlePath bundlePath: String) -> String {
         let cache = (NSHomeDirectory() as NSString).appendingPathComponent("Library/Caches/mux0")
-        return (cache as NSString).appendingPathComponent("hooks.sock")
+        let digest = SHA256.hash(data: Data(bundlePath.utf8))
+        let hash8 = digest.prefix(4).map { String(format: "%02x", $0) }.joined()
+        return (cache as NSString).appendingPathComponent("hooks-\(hash8).sock")
     }
 }
