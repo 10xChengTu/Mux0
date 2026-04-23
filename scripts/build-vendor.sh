@@ -1,7 +1,15 @@
 #!/bin/bash
 # Build libghostty static library from ghostty source.
 # Must be run once before opening the Xcode project.
-# Requires: zig (brew install zig)
+#
+# Requires: zig 0.15.2（严格要求）。
+#   - ghostty build.zig 的 requireZig 固定 v0.15.2
+#   - zig 0.16 的 Dir.readFileAlloc 参数签名变化会直接让上游 build.zig 编译失败
+#   - Homebrew 的 `brew install zig` 目前拉的是 0.16.0，不能用
+# 建议装法：mise / asdf / https://ziglang.org/download/ 下 0.15.2。
+#
+# TODO(zig-unpin): 上游 ghostty 适配 zig 0.16+ 后，同步放宽这里与
+# .github/workflows/release.yml、docs/build.md 里的版本锁。
 set -e
 SCRIPT_DIR="$(cd "$(dirname "$0")" && pwd)"
 PROJECT_DIR="$(dirname "$SCRIPT_DIR")"

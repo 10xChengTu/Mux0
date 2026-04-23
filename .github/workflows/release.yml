@@ -67,8 +67,18 @@ jobs:
 
       - name: Install toolchain
         run: |
-          brew install xcodegen create-dmg git-cliff zig
+          brew install xcodegen create-dmg git-cliff
           brew install --cask gh || true
+
+      # TODO(zig-unpin): 等上游 ghostty 适配 zig 0.16+ 后，移除这里的版本锁，
+      # 改回 `brew install zig`。当前 pin 到 0.15.2 是因为：
+      #   1. ghostty build.zig 的 requireZig 要求 v0.15.2
+      #   2. zig 0.16 的 Dir.readFileAlloc 从 3 参改成 4 参，导致 build.zig:27 编译失败
+      # 解锁时同步更新 scripts/build-vendor.sh 与 docs/build.md 里对 zig 版本的说明。
+      - name: Install Zig 0.15.2
+        uses: mlugg/setup-zig@v2
+        with:
+          version: 0.15.2
 
       - name: Guard against unfilled Sparkle public key placeholder
         run: |
