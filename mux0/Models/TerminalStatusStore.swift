@@ -86,6 +86,26 @@ final class TerminalStatusStore {
         storage.removeValue(forKey: terminalId)
     }
 
+    /// Mark entries as "read" by stamping `readAt` on any `.success` / `.failed`
+    /// with `readAt == nil`. Idempotent: entries already read keep their original
+    /// readAt. Ids not matching `.success` / `.failed` (or not in storage) are
+    /// no-ops. Called from `ContentView` when the user switches workspaces/tabs
+    /// so on-screen terminal-state dots fade from solid to hollow.
+    func markRead(terminalIds: [UUID], at now: Date = Date()) {
+        for id in terminalIds {
+            switch storage[id] {
+            case .success(let ec, let dur, let fa, let agent, let summary, nil):
+                storage[id] = .success(exitCode: ec, duration: dur, finishedAt: fa,
+                                        agent: agent, summary: summary, readAt: now)
+            case .failed(let ec, let dur, let fa, let agent, let summary, nil):
+                storage[id] = .failed(exitCode: ec, duration: dur, finishedAt: fa,
+                                       agent: agent, summary: summary, readAt: now)
+            default:
+                continue
+            }
+        }
+    }
+
     /// Aggregate over a bag of ids using priority running > failed > success > neverRan.
     func aggregateStatus(terminalIds: [UUID]) -> TerminalStatus {
         TerminalStatus.aggregate(terminalIds.map { status(for: $0) })

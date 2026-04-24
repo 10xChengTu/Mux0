@@ -202,4 +202,95 @@ final class TerminalStatusStoreTests: XCTestCase {
         )
     }
 
+    // MARK: - markRead
+
+    func testMarkReadStampsUnreadSuccess() {
+        let store = TerminalStatusStore()
+        let id = UUID()
+        let finishedAt = Date(timeIntervalSince1970: 1000)
+        store.setFinished(terminalId: id, exitCode: 0, at: finishedAt, agent: .claude)
+        let readAt = Date(timeIntervalSince1970: 1010)
+        store.markRead(terminalIds: [id], at: readAt)
+        guard case .success(_, _, _, _, _, let actual) = store.status(for: id) else {
+            XCTFail("Expected .success"); return
+        }
+        XCTAssertEqual(actual, readAt)
+    }
+
+    func testMarkReadStampsUnreadFailed() {
+        let store = TerminalStatusStore()
+        let id = UUID()
+        let finishedAt = Date(timeIntervalSince1970: 2000)
+        store.setFinished(terminalId: id, exitCode: 1, at: finishedAt, agent: .claude)
+        let readAt = Date(timeIntervalSince1970: 2010)
+        store.markRead(terminalIds: [id], at: readAt)
+        guard case .failed(_, _, _, _, _, let actual) = store.status(for: id) else {
+            XCTFail("Expected .failed"); return
+        }
+        XCTAssertEqual(actual, readAt)
+    }
+
+    func testMarkReadPreservesFirstReadAtWhenCalledTwice() {
+        let store = TerminalStatusStore()
+        let id = UUID()
+        store.setFinished(terminalId: id, exitCode: 0, at: Date(timeIntervalSince1970: 1000),
+                          agent: .claude)
+        let firstRead  = Date(timeIntervalSince1970: 1010)
+        let secondRead = Date(timeIntervalSince1970: 1020)
+        store.markRead(terminalIds: [id], at: firstRead)
+        store.markRead(terminalIds: [id], at: secondRead)
+        guard case .success(_, _, _, _, _, let actual) = store.status(for: id) else {
+            XCTFail("Expected .success"); return
+        }
+        XCTAssertEqual(actual, firstRead, "Already-read entries should not be re-stamped")
+    }
+
+    func testMarkReadIgnoresNonTerminalStates() {
+        let store = TerminalStatusStore()
+        let id = UUID()
+        let started = Date(timeIntervalSince1970: 1000)
+        store.setRunning(terminalId: id, at: started)
+        store.markRead(terminalIds: [id], at: Date(timeIntervalSince1970: 2000))
+        // Still running — markRead is a no-op for non-success/failed states.
+        XCTAssertEqual(store.status(for: id), .running(startedAt: started))
+    }
+
+    func testMarkReadIgnoresUnknownIds() {
+        let store = TerminalStatusStore()
+        let unknown = UUID()
+        store.markRead(terminalIds: [unknown], at: Date())
+        XCTAssertEqual(store.status(for: unknown), .neverRan)
+    }
+
+    func testMarkReadAcceptsMultipleIds() {
+        let store = TerminalStatusStore()
+        let a = UUID(); let b = UUID()
+        let t = Date(timeIntervalSince1970: 1000)
+        store.setFinished(terminalId: a, exitCode: 0, at: t, agent: .claude)
+        store.setFinished(terminalId: b, exitCode: 1, at: t, agent: .claude)
+        let readAt = Date(timeIntervalSince1970: 1010)
+        store.markRead(terminalIds: [a, b], at: readAt)
+        guard case .success(_, _, _, _, _, let ra) = store.status(for: a),
+              case .failed(_, _, _, _, _, let rb) = store.status(for: b) else {
+            XCTFail("Expected .success + .failed"); return
+        }
+        XCTAssertEqual(ra, readAt)
+        XCTAssertEqual(rb, readAt)
+    }
+
+    func testSetFinishedClearsPriorReadAt() {
+        let store = TerminalStatusStore()
+        let id = UUID()
+        store.setFinished(terminalId: id, exitCode: 0, at: Date(timeIntervalSince1970: 1000),
+                          agent: .claude)
+        store.markRead(terminalIds: [id], at: Date(timeIntervalSince1970: 1010))
+        // New finished event — readAt must reset to nil (new unread result).
+        store.setFinished(terminalId: id, exitCode: 0, at: Date(timeIntervalSince1970: 2000),
+                          agent: .claude)
+        guard case .success(_, _, _, _, _, let readAt) = store.status(for: id) else {
+            XCTFail("Expected .success"); return
+        }
+        XCTAssertNil(readAt)
+    }
+
 }
