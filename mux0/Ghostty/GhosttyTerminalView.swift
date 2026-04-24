@@ -205,6 +205,8 @@ final class GhosttyTerminalView: NSView, NSTextInputClient {
         // ghostty renders into the view's backing layer.
         // The NSView pointer is passed to libghostty via GhosttyBridge.newSurface.
         updateTrackingAreas()
+        // 接收从 Finder / 其他 app 拖进来的文件（注入 shell-escape 的路径）和文本。
+        registerForDraggedTypes([.fileURL, .string])
     }
 
     override func updateTrackingAreas() {
@@ -577,6 +579,73 @@ final class GhosttyTerminalView: NSView, NSTextInputClient {
         mods |= momentum << 1
 
         ghostty_surface_mouse_scroll(s, x, y, ghostty_input_scroll_mods_t(mods))
+    }
+
+    // MARK: - Drag and drop
+
+    /// 接收外部拖进来的文件 URL / 文本。文件路径会经过 shell 转义后以空格拼接注入 PTY，
+    /// 表现对齐 ghostty 官方 macOS 客户端：拖 Finder 文件进终端即在光标处插入可直接使用的参数串。
+    override func draggingEntered(_ sender: NSDraggingInfo) -> NSDragOperation {
+        acceptedDragOperation(for: sender)
+    }
+
+    override func draggingUpdated(_ sender: NSDraggingInfo) -> NSDragOperation {
+        acceptedDragOperation(for: sender)
+    }
+
+    override func performDragOperation(_ sender: NSDraggingInfo) -> Bool {
+        guard let s = surface else { return false }
+        let pb = sender.draggingPasteboard
+
+        // 拖放本身已经明确指向这个 pane，把 focus 切过来，注入的文本才会去用户期望的终端。
+        onFocus?()
+        Self.makeFrontmost(self)
+        window?.makeFirstResponder(self)
+
+        // 优先文件 URL（Finder / 其他 app）。多文件按空格拼接，结尾补一个空格方便用户继续敲命令。
+        let fileOptions: [NSPasteboard.ReadingOptionKey: Any] = [.urlReadingFileURLsOnly: true]
+        if let urls = pb.readObjects(forClasses: [NSURL.self], options: fileOptions) as? [URL],
+           !urls.isEmpty {
+            let joined = urls.map { Self.shellEscape($0.path) }.joined(separator: " ") + " "
+            ghostty_surface_text(s, joined, UInt(joined.utf8.count))
+            return true
+        }
+
+        // 回退：纯文本拖拽（浏览器选中文本等）直接按原样注入。
+        if let text = pb.string(forType: .string), !text.isEmpty {
+            ghostty_surface_text(s, text, UInt(text.utf8.count))
+            return true
+        }
+
+        return false
+    }
+
+    private func acceptedDragOperation(for sender: NSDraggingInfo) -> NSDragOperation {
+        let types = sender.draggingPasteboard.types ?? []
+        if types.contains(.fileURL) || types.contains(.string) {
+            return .copy
+        }
+        return []
+    }
+
+    /// 为 shell 命令行安全注入一条路径做最小转义。全 "安全" 字符（字母数字与常见文件名标点）
+    /// 直接透传，保持可读；一旦出现空格 / 引号 / shell 元字符就整体包单引号，把内嵌单引号
+    /// 通过 `'\''` 序列闭合—重开的方式保留。
+    private static let shellSafeChars: CharacterSet = {
+        var set = CharacterSet()
+        set.insert(charactersIn: "abcdefghijklmnopqrstuvwxyz")
+        set.insert(charactersIn: "ABCDEFGHIJKLMNOPQRSTUVWXYZ")
+        set.insert(charactersIn: "0123456789")
+        set.insert(charactersIn: "/._-+=@:,")
+        return set
+    }()
+
+    private static func shellEscape(_ path: String) -> String {
+        if path.unicodeScalars.allSatisfy({ shellSafeChars.contains($0) }) {
+            return path
+        }
+        let escaped = path.replacingOccurrences(of: "'", with: "'\\''")
+        return "'\(escaped)'"
     }
 
     // MARK: - Helpers
