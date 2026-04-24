@@ -33,6 +33,15 @@ struct ContentView: View {
         StatusIndicatorGate.anyAgentEnabled(settingsStore)
     }
 
+    /// UUIDs of all terminals currently rendered on-screen: every descendant
+    /// of the selected tab's split tree in the selected workspace. Empty when
+    /// nothing is selected (app start before a workspace exists).
+    private var visibleTerminalIds: [UUID] {
+        guard let ws = store.selectedWorkspace,
+              let tab = ws.selectedTab else { return [] }
+        return tab.layout.allTerminalIds()
+    }
+
     var body: some View {
         let bgOpacity = themeManager.backgroundOpacity
         // 中间内容区（卡片 canvas、paneContainer、tab strip、Settings 各层等）都走
@@ -181,6 +190,10 @@ struct ContentView: View {
         }
         .onChange(of: store.selectedId) { _, _ in
             if showSettings { showSettings = false }
+            statusStore.markRead(terminalIds: visibleTerminalIds)
+        }
+        .onChange(of: store.selectedWorkspace?.selectedTabId) { _, _ in
+            statusStore.markRead(terminalIds: visibleTerminalIds)
         }
         .onReceive(NotificationCenter.default.publisher(for: .mux0OpenSettings)) { note in
             if let raw = note.userInfo?["section"] as? String,
