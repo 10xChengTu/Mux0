@@ -378,7 +378,6 @@ final class TabContentView: NSView {
         else { return }
         pwdStore?.inherit(from: sourceId, to: newId)
         reloadFromStore()
-        // reloadFromStore 会根据 store 里的 focusedTerminalId 恢复焦点到原 pane。
     }
 
     private func cycleTab(forward: Bool) {

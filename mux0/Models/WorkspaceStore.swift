@@ -146,7 +146,7 @@ final class WorkspaceStore {
                                         .terminal(terminalId), .terminal(newTermId))
         workspaces[wsIdx].tabs[tIdx].layout =
             workspaces[wsIdx].tabs[tIdx].layout.replacing(terminalId: terminalId, with: splitNode)
-        // 焦点保持在被 split 的原 pane（用户上次聚焦的那个），不自动切到新 pane。
+        workspaces[wsIdx].tabs[tIdx].focusedTerminalId = newTermId
         save()
         return newTermId
     }
