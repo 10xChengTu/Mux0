@@ -81,4 +81,10 @@ if [[ $status -eq 0 ]]; then
   echo "CLAUDE.md Directory Structure matches mux0/ Swift files (depth ≤ 2)."
 fi
 
+# Landing-page 版本号必须与 project.yml 的 MARKETING_VERSION 一致。
+# 同步脚本见 scripts/sync-landing-version.sh。
+if ! "$here/sync-landing-version.sh" --check; then
+  status=1
+fi
+
 exit $status

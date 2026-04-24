@@ -45,6 +45,9 @@ jobs:
             echo "should_release=true" >> "$GITHUB_OUTPUT"
           fi
 
+      - name: Check landing-page version sync
+        run: ./scripts/sync-landing-version.sh --check
+
   build:
     name: Build, notarize, release
     needs: check
