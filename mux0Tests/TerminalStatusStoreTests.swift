@@ -278,6 +278,20 @@ final class TerminalStatusStoreTests: XCTestCase {
         XCTAssertEqual(rb, readAt)
     }
 
+    func testMarkReadEmptyIdsIsNoOp() {
+        let store = TerminalStatusStore()
+        let id = UUID()
+        let finishedAt = Date(timeIntervalSince1970: 1000)
+        store.setFinished(terminalId: id, exitCode: 0, at: finishedAt, agent: .claude)
+        store.markRead(terminalIds: [], at: Date(timeIntervalSince1970: 1010))
+        // Existing entry untouched when ids list is empty — Task 5's ContentView
+        // hits this path at launch before any workspace is selected.
+        guard case .success(_, _, _, _, _, let readAt) = store.status(for: id) else {
+            XCTFail("Expected .success"); return
+        }
+        XCTAssertNil(readAt)
+    }
+
     func testSetFinishedClearsPriorReadAt() {
         let store = TerminalStatusStore()
         let id = UUID()
