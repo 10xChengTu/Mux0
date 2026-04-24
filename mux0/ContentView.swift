@@ -192,6 +192,9 @@ struct ContentView: View {
             if showSettings { showSettings = false }
             statusStore.markRead(terminalIds: visibleTerminalIds)
         }
+        // Workspace is a struct — selectedTabId changes propagate through the
+        // @Observable `workspaces` array mutation in WorkspaceStore.selectTab.
+        // If Workspace ever becomes a class, re-verify this observation path.
         .onChange(of: store.selectedWorkspace?.selectedTabId) { _, _ in
             statusStore.markRead(terminalIds: visibleTerminalIds)
         }
