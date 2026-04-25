@@ -228,7 +228,11 @@ jobs:
           rm -f "$KEY_PATH" "$ZIP"
 
       - name: Generate changelog
-        run: git-cliff --latest --strip header --config cliff.toml --output CHANGELOG.md
+        # `--latest` reads the most recent existing tag, but the new release
+        # tag is created later in this job, so it would emit the previous
+        # release's commits. `--unreleased` walks from the latest existing
+        # tag up to HEAD, which is exactly the new release's range.
+        run: git-cliff --unreleased --strip header --config cliff.toml --output CHANGELOG.md
 
       - name: Create DMG
         id: dmg
