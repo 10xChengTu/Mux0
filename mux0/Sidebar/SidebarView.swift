@@ -32,6 +32,12 @@ struct SidebarView: View {
     // Delete confirmation (alert lives in SwiftUI shell; AppKit row bubbles request up)
     @State private var workspaceToDelete: UUID?
 
+    // Edit-default-command alert (same pattern as deleteAlert: AppKit row only
+    // bubbles a request up; SwiftUI shell owns the input field state and writes
+    // back through WorkspaceStore on Save).
+    @State private var workspaceForCommandEdit: UUID?
+    @State private var commandDraft: String = ""
+
     var body: some View {
         VStack(alignment: .leading, spacing: 0) {
             header
@@ -44,7 +50,11 @@ struct SidebarView: View {
                 languageTick: languageStore.tick,
                 backgroundOpacity: backgroundOpacity,
                 showStatusIndicators: showStatusIndicators,
-                onRequestDelete: { workspaceToDelete = $0 }
+                onRequestDelete: { workspaceToDelete = $0 },
+                onRequestEditCommand: { id, current in
+                    commandDraft = current
+                    workspaceForCommandEdit = id
+                }
             )
             footer
         }
@@ -72,6 +82,24 @@ struct SidebarView: View {
             if let id = workspaceToDelete,
                let ws = store.workspaces.first(where: { $0.id == id }) {
                 Text(L10n.Sidebar.deleteAlertMessage(ws.name))
+            }
+        }
+        .alert(String(localized: L10n.Sidebar.commandAlertTitle.withLocale(locale)),
+               isPresented: Binding(
+                   get: { workspaceForCommandEdit != nil },
+                   set: { if !$0 { workspaceForCommandEdit = nil } })) {
+            TextField(
+                String(localized: L10n.Sidebar.commandAlertPlaceholder.withLocale(locale)),
+                text: $commandDraft
+            )
+            Button(String(localized: L10n.Sidebar.commandAlertCancel.withLocale(locale)), role: .cancel) {
+                workspaceForCommandEdit = nil
+            }
+            Button(String(localized: L10n.Sidebar.commandAlertSave.withLocale(locale))) {
+                if let id = workspaceForCommandEdit {
+                    store.updateDefaultCommand(workspaceId: id, command: commandDraft)
+                }
+                workspaceForCommandEdit = nil
             }
         }
     }

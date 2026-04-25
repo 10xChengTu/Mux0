@@ -18,6 +18,9 @@ struct SidebarListBridge: NSViewRepresentable {
     /// collapse its layout slot so the title uses the full row width.
     var showStatusIndicators: Bool = false
     var onRequestDelete: (UUID) -> Void
+    /// SwiftUI shell receives (workspaceId, currentCommand) and presents the
+    /// edit alert. On Save the shell writes back via `store.updateDefaultCommand`.
+    var onRequestEditCommand: (UUID, String) -> Void
 
     func makeNSView(context: Context) -> WorkspaceListView {
         let view = WorkspaceListView()
@@ -51,6 +54,6 @@ struct SidebarListBridge: NSViewRepresentable {
         view.onRename        = { id, name in store.renameWorkspace(id: id, to: name) }
         view.onReorder       = { from, to in store.moveWorkspace(from: IndexSet([from]), to: to) }
         view.onRequestDelete = { id in onRequestDelete(id) }
-        view.onSetDefaultCommand = { id, command in store.updateDefaultCommand(workspaceId: id, command: command) }
+        view.onRequestEditCommand = { id, current in onRequestEditCommand(id, current) }
     }
 }

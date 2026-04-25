@@ -58,6 +58,12 @@ enum L10n {
             // `String(localized:)` / `Text(_:)` call sites automatically.
             LocalizedStringResource("sidebar.deleteAlert.message \(name)")
         }
+        // Default-command edit alert (mirrors deleteAlert: SwiftUI .alert in shell,
+        // AppKit row only bubbles the request up).
+        static let commandAlertTitle       = LocalizedStringResource("sidebar.row.commandPanel.editTitle")
+        static let commandAlertCancel      = LocalizedStringResource("sidebar.row.commandPanel.cancel")
+        static let commandAlertSave        = LocalizedStringResource("sidebar.row.commandPanel.save")
+        static let commandAlertPlaceholder = LocalizedStringResource("sidebar.row.commandPanel.placeholder")
         static let showSidebar          = LocalizedStringResource("sidebar.show")
         static let hideSidebar          = LocalizedStringResource("sidebar.hide")
         // Footer auto-update affordances (version pill + pulsing red dot).

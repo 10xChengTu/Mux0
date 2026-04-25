@@ -18,7 +18,9 @@ final class WorkspaceListView: NSView {
     var onRename: ((UUID, String) -> Void)?
     var onReorder: ((Int, Int) -> Void)?       // (fromIndex, toIndex) insertion 0…count
     var onRequestDelete: ((UUID) -> Void)?
-    var onSetDefaultCommand: ((UUID, String?) -> Void)?
+    /// AppKit row bubbles the edit request up (workspaceId + currentCommand);
+    /// SwiftUI shell presents the alert and writes back via WorkspaceStore on save.
+    var onRequestEditCommand: ((UUID, String) -> Void)?
 
     private let scrollView = NSScrollView()
     private let rowsContainer = FlippedRowsContainer()
@@ -179,7 +181,7 @@ final class WorkspaceListView: NSView {
         item.onSelect        = { [weak self] in self?.onSelect?(id) }
         item.onRename        = { [weak self] newName in self?.onRename?(id, newName) }
         item.onRequestDelete = { [weak self] in self?.onRequestDelete?(id) }
-        item.onSetDefaultCommand = { [weak self] command in self?.onSetDefaultCommand?(id, command) }
+        item.onRequestEditCommand = { [weak self] current in self?.onRequestEditCommand?(id, current) }
         item.onDragEnded     = { [weak self] in self?.cleanupAfterDrag() }
     }
 
@@ -328,7 +330,9 @@ private final class WorkspaceRowItemView: NSView, NSTextFieldDelegate, NSDraggin
     var onSelect: (() -> Void)?
     var onRename: ((String) -> Void)?
     var onRequestDelete: (() -> Void)?
-    var onSetDefaultCommand: ((String?) -> Void)?
+    /// Bubbles the workspace's current default command up so the SwiftUI shell
+    /// can seed its alert TextField. Save/cancel happen entirely in the shell.
+    var onRequestEditCommand: ((String) -> Void)?
     var onDragEnded: (() -> Void)?
 
     var isDragGhost: Bool = false {
@@ -358,8 +362,6 @@ private final class WorkspaceRowItemView: NSView, NSTextFieldDelegate, NSDraggin
     private var metadata: WorkspaceMetadata
     private var status: TerminalStatus
     fileprivate var originalTitle: String = ""
-    private var commandPanel: NSPanel?
-    private weak var commandField: NSTextField?
 
     init(workspace: Workspace, isSelected: Bool,
          metadata: WorkspaceMetadata,
@@ -607,7 +609,7 @@ private final class WorkspaceRowItemView: NSView, NSTextFieldDelegate, NSDraggin
 
         let commandItem = NSMenuItem(
             title: L10n.string("sidebar.row.commandPanel.editTitle"),
-            action: #selector(showCommandPanel),
+            action: #selector(requestEditCommandAction),
             keyEquivalent: "")
         commandItem.target = self
         menu.addItem(commandItem)
@@ -628,71 +630,8 @@ private final class WorkspaceRowItemView: NSView, NSTextFieldDelegate, NSDraggin
         onRequestDelete?()
     }
 
-    @objc private func showCommandPanel() {
-        if let panel = commandPanel {
-            panel.makeFirstResponder(commandField)
-            panel.makeKeyAndOrderFront(nil)
-            return
-        }
-
-        let panel = NSPanel(
-            contentRect: NSRect(x: 0, y: 0, width: 420, height: 118),
-            styleMask: [.titled, .closable],
-            backing: .buffered,
-            defer: false)
-        panel.title = L10n.string("sidebar.row.commandPanel.editTitle")
-        panel.isReleasedWhenClosed = false
-
-        let field = NSTextField(frame: NSRect(x: 20, y: 62, width: 380, height: 24))
-        field.placeholderString = L10n.string("sidebar.row.commandPanel.placeholder")
-        field.stringValue = workspace.defaultCommand ?? ""
-        field.font = DT.Font.mono
-        field.lineBreakMode = .byTruncatingTail
-        field.delegate = self
-        field.target = self
-        field.action = #selector(saveCommandPanelAction)
-
-        let cancelButton = NSButton(
-            title: L10n.string("sidebar.row.commandPanel.cancel"),
-            target: self,
-            action: #selector(cancelCommandPanelAction))
-        cancelButton.bezelStyle = .rounded
-        cancelButton.frame = NSRect(x: 222, y: 20, width: 84, height: 28)
-
-        let saveButton = NSButton(
-            title: L10n.string("sidebar.row.commandPanel.save"),
-            target: self,
-            action: #selector(saveCommandPanelAction))
-        saveButton.bezelStyle = .rounded
-        saveButton.keyEquivalent = "\r"
-        saveButton.frame = NSRect(x: 316, y: 20, width: 84, height: 28)
-
-        panel.contentView?.addSubview(field)
-        panel.contentView?.addSubview(cancelButton)
-        panel.contentView?.addSubview(saveButton)
-        panel.center()
-        commandPanel = panel
-        commandField = field
-        window?.beginSheet(panel) { [weak self] _ in
-            self?.commandPanel = nil
-            self?.commandField = nil
-        }
-        panel.makeFirstResponder(field)
-        field.currentEditor()?.selectAll(nil)
-    }
-
-    @objc private func cancelCommandPanelAction() {
-        guard let panel = commandPanel else { return }
-        window?.endSheet(panel, returnCode: .cancel)
-        panel.close()
-    }
-
-    @objc private func saveCommandPanelAction() {
-        let text = commandField?.stringValue ?? ""
-        onSetDefaultCommand?(text)
-        guard let panel = commandPanel else { return }
-        window?.endSheet(panel, returnCode: .OK)
-        panel.close()
+    @objc private func requestEditCommandAction() {
+        onRequestEditCommand?(workspace.defaultCommand ?? "")
     }
 
     @objc fileprivate func beginRenameAction() {
@@ -731,10 +670,6 @@ private final class WorkspaceRowItemView: NSView, NSTextFieldDelegate, NSDraggin
     func control(_ control: NSControl, textView: NSTextView,
                  doCommandBy commandSelector: Selector) -> Bool {
         if commandSelector == #selector(NSResponder.cancelOperation(_:)) {
-            if control === commandField {
-                cancelCommandPanelAction()
-                return true
-            }
             cancelRename()
             return true
         }
