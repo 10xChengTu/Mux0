@@ -131,7 +131,7 @@ jobs:
       - name: Generate Xcode project
         run: xcodegen generate
 
-      - name: Build Release (arm64) with Developer ID + Hardened Runtime
+      - name: Build Release (universal) with Developer ID + Hardened Runtime
         env:
           SIGN_IDENTITY: ${{ secrets.APPLE_SIGNING_IDENTITY }}
           TEAM_ID: ${{ secrets.APPLE_TEAM_ID }}
@@ -140,7 +140,8 @@ jobs:
             -project mux0.xcodeproj \
             -scheme mux0 \
             -configuration Release \
-            -arch arm64 \
+            ARCHS="arm64 x86_64" \
+            ONLY_ACTIVE_ARCH=NO \
             -derivedDataPath build \
             CODE_SIGN_STYLE=Manual \
             CODE_SIGN_IDENTITY="$SIGN_IDENTITY" \
@@ -237,7 +238,7 @@ jobs:
       - name: Create DMG
         id: dmg
         run: |
-          DMG="mux0-${VERSION}-arm64.dmg"
+          DMG="mux0-${VERSION}-universal.dmg"
           create-dmg \
             --volname "mux0 ${VERSION}" \
             --window-size 520 320 \
