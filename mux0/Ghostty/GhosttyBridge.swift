@@ -16,6 +16,11 @@ final class GhosttyBridge {
     /// and can only reach Swift state through the shared instance.
     var onPwdChanged: ((UUID, String) -> Void)?
 
+    /// When true, `writeClipboardCallback` skips writing to `NSPasteboard.general`.
+    /// Set by `GhosttyTerminalView.makeFrontmost` during workspace/tab switches to
+    /// prevent ghostty from syncing its internal selection into the system clipboard.
+    static var suppressClipboardWrites = false
+
     private init() {}
 
     /// Returns true on success. Call once from mux0App.init().
@@ -429,6 +434,7 @@ final class GhosttyBridge {
 
     // ghostty_runtime_write_clipboard_cb: (void*, ghostty_clipboard_e, const ghostty_clipboard_content_s*, size_t, bool) -> void
     private static let writeClipboardCallback: ghostty_runtime_write_clipboard_cb = { _, _, content, count, _ in
+        guard !GhosttyBridge.suppressClipboardWrites else { return }
         guard let content = content, count > 0 else { return }
 
         // Ghostty hands us the selection as multiple MIME-tagged entries (typically

@@ -154,6 +154,14 @@ final class GhosttyTerminalView: NSView, NSTextInputClient {
         guard currentFrontmost !== front else { return }
         currentFrontmost = front
         let zeroMods = ghostty_input_mods_e(rawValue: 0)
+        // Suppress clipboard writes: switching tabs/workspaces calls
+        // ghostty_surface_set_focus etc. which may trigger ghostty to sync
+        // the current selection into the system clipboard. Setting this flag
+        // prevents writeClipboardCallback from touching NSPasteboard.general
+        // during the transition. The ghostty C API calls below are synchronous,
+        // so any clipboard callbacks fire before we clear the flag.
+        GhosttyBridge.suppressClipboardWrites = true
+        defer { GhosttyBridge.suppressClipboardWrites = false }
         for v in registry.allObjects {
             guard let s = v.surface else { continue }
             let isFront = (v === front)
