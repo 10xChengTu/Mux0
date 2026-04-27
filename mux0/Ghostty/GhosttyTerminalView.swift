@@ -421,6 +421,7 @@ final class GhosttyTerminalView: NSView, NSTextInputClient {
 
         if !committedText.isEmpty {
             committedText.withCString { send($0) }
+            postAccessibilityValueChanged()
         } else {
             send(nil)
         }
@@ -729,6 +730,7 @@ final class GhosttyTerminalView: NSView, NSTextInputClient {
             // IME 面板在非 keyDown 上下文里直接提交（例如鼠标点击候选词）。
             guard let s = surface else { return }
             ghostty_surface_text(s, text, UInt(text.utf8.count))
+            postAccessibilityValueChanged()
         }
     }
 
@@ -812,5 +814,34 @@ final class GhosttyTerminalView: NSView, NSTextInputClient {
 
     func characterIndex(for point: NSPoint) -> Int {
         NSNotFound
+    }
+
+    // MARK: - NSAccessibility
+    //
+    // 让 typeless / TextExpander / VoiceOver 之类基于辅助功能 API 的工具把
+    // 我们识别成"文本输入区"。否则 NSView 默认 role 是 .group，第三方工具
+    // 探测到非文本控件就会拒绝输入或在写完之后等不到 valueChanged 通知，
+    // 表现为"文字进了但工具自己报错说粘贴失败"。
+    //
+    // 注意：accessibilityValue 故意返回空串而不是 scrollback 内容——
+    //   1. scrollback 可能数百万字符，AX 缓存会爆
+    //   2. 第三方输入工具只关心"set 前后 value 字段是否变化 + 是否收到通知"，
+    //      不关心实际内容
+    //   3. 真正给 VoiceOver 朗读终端内容是另一个量级的工程，需要接 ghostty
+    //      的 selection / cursor API，超出本次修复范围
+
+    override func isAccessibilityElement() -> Bool { true }
+
+    override func accessibilityRole() -> NSAccessibility.Role? { .textArea }
+
+    override func accessibilityLabel() -> String? { "Terminal" }
+
+    override func accessibilityValue() -> Any? { "" }
+
+    /// Post a `valueChanged` accessibility notification. Called after any user-driven
+    /// text actually reaches ghostty (insertText / keyDown's committed-text branch),
+    /// so AX-aware input tools know the write succeeded.
+    private func postAccessibilityValueChanged() {
+        NSAccessibility.post(element: self, notification: .valueChanged)
     }
 }
