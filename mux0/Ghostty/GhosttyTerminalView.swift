@@ -5,6 +5,7 @@ import QuartzCore
 final class GhosttyTerminalView: NSView, NSTextInputClient {
     private var surface: ghostty_surface_t?
     private var displayLink: CVDisplayLink?
+    private var backingObserver: NSObjectProtocol?
 
     // MARK: NSTextInputClient state
     /// 本轮 keyDown 中由 `insertText` 收集到的已提交文本。随 keyDown 开始清空、结束读取。
@@ -241,6 +242,7 @@ final class GhosttyTerminalView: NSView, NSTextInputClient {
         // is kept alive (we only free it in deinit) so shell state is preserved.
         guard window != nil else {
             stopDisplayLink()
+            removeBackingObserver()
             return
         }
         if surface == nil {
@@ -256,22 +258,58 @@ final class GhosttyTerminalView: NSView, NSTextInputClient {
             )
             if let s = surface {
                 GhosttyTerminalView.viewBySurface[OpaquePointer(s)] = Weak(self)   // NEW
-                let w = UInt32(bounds.width * scale)
-                let h = UInt32(bounds.height * scale)
-                ghostty_surface_set_size(s, w, h)
-                ghostty_surface_set_content_scale(s, scale, scale)
             }
         }
+        syncSurfaceGeometry(to: bounds.size)
         // Only start a display link if none is running. Without this guard every
         // re-parent would leak a CVDisplayLink (old one keeps firing), racing with
         // the new one and interleaving draws on the same surface.
         if displayLink == nil {
             startDisplayLink()
         }
+        // Re-sync scale when backing properties change (e.g. display sleep/wake or
+        // moving the window between Retina and non-Retina screens). Without this,
+        // a temporary backingScaleFactor drop during display transition permanently
+        // corrupts the ghostty surface scale.
+        installBackingObserver()
+    }
+
+    // MARK: - Backing scale sync
+
+    private func installBackingObserver() {
+        removeBackingObserver()
+        guard let window else { return }
+        backingObserver = NotificationCenter.default.addObserver(
+            forName: NSWindow.didChangeBackingPropertiesNotification,
+            object: window,
+            queue: .main
+        ) { [weak self] _ in
+            guard let self else { return }
+            self.syncSurfaceGeometry(to: self.bounds.size)
+        }
+    }
+
+    private func removeBackingObserver() {
+        if let obs = backingObserver {
+            NotificationCenter.default.removeObserver(obs)
+            backingObserver = nil
+        }
+    }
+
+    private func syncSurfaceGeometry(to pointSize: NSSize) {
+        guard let s = surface else { return }
+        guard pointSize.width > 0, pointSize.height > 0 else { return }
+        let scale = window?.backingScaleFactor ?? 2.0
+        let w = UInt32(pointSize.width * scale)
+        let h = UInt32(pointSize.height * scale)
+        guard w > 0, h > 0 else { return }
+        ghostty_surface_set_size(s, w, h)
+        ghostty_surface_set_content_scale(s, scale, scale)
     }
 
     deinit {
         stopDisplayLink()
+        removeBackingObserver()
         if let s = surface {
             GhosttyTerminalView.viewBySurface.removeValue(forKey: OpaquePointer(s))
             ghostty_surface_free(s)
@@ -312,18 +350,17 @@ final class GhosttyTerminalView: NSView, NSTextInputClient {
 
     override func setFrameSize(_ newSize: NSSize) {
         super.setFrameSize(newSize)
-        guard let s = surface else { return }
         // Ignore transient zero-sized frames. These happen when the enclosing
         // SplitPaneView is being swapped out and briefly leaves subviews at .zero
         // before layout propagates the real size. Forwarding a (0, 0) size to
         // ghostty tears down its Metal renderer and the surface comes back blank
         // (black screen) even after the real size arrives on the next pass.
-        guard newSize.width > 0, newSize.height > 0 else { return }
-        let scale = window?.backingScaleFactor ?? 2.0
-        let w = UInt32(newSize.width * scale)
-        let h = UInt32(newSize.height * scale)
-        ghostty_surface_set_size(s, w, h)
-        ghostty_surface_set_content_scale(s, scale, scale)
+        syncSurfaceGeometry(to: newSize)
+    }
+
+    override func viewDidChangeBackingProperties() {
+        super.viewDidChangeBackingProperties()
+        syncSurfaceGeometry(to: bounds.size)
     }
 
     // MARK: - Focus
