@@ -170,10 +170,12 @@ struct ContentView: View {
                     let listener = try HookSocketListener(path: path)
                     let store = self.statusStore
                     let settingsStoreRef = self.settingsStore
+                    let workspaceStoreRef = self.store
                     listener.onMessage = { msg in
                         HookDispatcher.dispatch(msg,
                                                 settings: settingsStoreRef,
-                                                store: store)
+                                                store: store,
+                                                workspaceStore: workspaceStoreRef)
                     }
                     try listener.start()
                     hookListener = listener

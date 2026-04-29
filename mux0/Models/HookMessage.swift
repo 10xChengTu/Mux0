@@ -35,6 +35,11 @@ struct HookMessage: Decodable, Equatable {
     /// Optional finished-state summary (e.g. last assistant message, ≤200 chars).
     /// Present when Claude/Codex Stop reads transcript; nil otherwise.
     let summary: String?
+    /// Optional resume command (e.g. `claude --resume <session_id>`,
+    /// `codex resume <session_id>`). Emitted on the `running` events
+    /// triggered by `UserPromptSubmit`; mux0 records the most-recent value
+    /// per terminal and replays it as the next-launch shell input.
+    let resumeCommand: String?
 
     var timestamp: Date { Date(timeIntervalSince1970: at) }
 }

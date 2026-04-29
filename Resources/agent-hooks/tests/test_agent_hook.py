@@ -176,7 +176,11 @@ def test_dispatch_prompt_then_stop_clean_turn(tmp_path, monkeypatch):
 
     prompt_payload = {"session_id": "s1", "transcript_path": str(transcript)}
     emit1 = agent_hook.dispatch("prompt", "claude", prompt_payload, "term1", sf, now)
-    assert emit1 == {"event": "running", "at": now}
+    assert emit1 == {
+        "event": "running",
+        "at": now,
+        "resumeCommand": "claude --resume s1",
+    }
 
     stop_payload = {"session_id": "s1"}
     emit2 = agent_hook.dispatch("stop", "claude", stop_payload, "term1", sf, now + 10)
@@ -275,3 +279,65 @@ def test_dispatch_posttool_running_emit_preserves_sticky_error(tmp_path):
     stop_emit = agent_hook.dispatch("stop", "claude",
                                      {"session_id": "s7"}, "term7", sf, now + 2)
     assert stop_emit["exitCode"] == 1
+
+
+# ---------- resume_command_for ----------
+
+def test_resume_command_for_claude():
+    assert agent_hook.resume_command_for("claude", "abc") == "claude --resume abc"
+
+
+def test_resume_command_for_codex():
+    assert agent_hook.resume_command_for("codex", "xyz") == "codex resume xyz"
+
+
+def test_resume_command_for_unknown_agent():
+    # OpenCode (and any future agent) returns empty until we know its CLI shape.
+    assert agent_hook.resume_command_for("opencode", "xyz") == ""
+
+
+def test_resume_command_for_empty_session():
+    assert agent_hook.resume_command_for("claude", "") == ""
+
+
+def test_resume_command_for_rejects_shell_metacharacters():
+    # Session id is persisted into `initial_input` for next-launch auto-exec.
+    # Any character outside [A-Za-z0-9_-] must abort the build so the shell
+    # can't be tricked into executing extra commands. Real claude/codex
+    # session ids are UUID-shaped, so this never rejects a legitimate id.
+    bad = ["abc; touch /tmp/pwn", "abc def", "abc`whoami`", "abc$(id)",
+           "abc&", "abc|cat", "abc\nrm", "../etc/passwd", "a/b"]
+    for value in bad:
+        assert agent_hook.resume_command_for("claude", value) == "", value
+        assert agent_hook.resume_command_for("codex", value) == "", value
+
+
+def test_resume_command_for_accepts_uuid_shapes():
+    # Real-world session ids: hex UUIDs (with or without dashes), short
+    # alphanumeric tags, underscore-separated. All must round-trip.
+    good = ["550e8400-e29b-41d4-a716-446655440000",
+            "550e8400e29b41d4a716446655440000",
+            "abc_DEF-123",
+            "xyz"]
+    for value in good:
+        assert agent_hook.resume_command_for("claude", value) == \
+               f"claude --resume {value}"
+
+
+def test_dispatch_codex_prompt_emits_resume_command(tmp_path):
+    sf = tmp_path / "sessions.json"
+    emit = agent_hook.dispatch("prompt", "codex",
+                                {"session_id": "cdx-1"}, "term-c", sf, 5_000_000.0)
+    assert emit["resumeCommand"] == "codex resume cdx-1"
+
+
+def test_dispatch_pretool_does_not_emit_resume_command(tmp_path):
+    # Only `prompt` should attach resumeCommand, to avoid spamming the socket
+    # with the same value on every tool invocation.
+    sf = tmp_path / "sessions.json"
+    agent_hook.dispatch("prompt", "claude", {"session_id": "s9"}, "t9", sf, 6_000_000.0)
+    emit = agent_hook.dispatch("pretool", "claude",
+                                {"session_id": "s9", "tool_name": "Bash",
+                                 "tool_input": {"command": "ls"}},
+                                "t9", sf, 6_000_001.0)
+    assert "resumeCommand" not in emit

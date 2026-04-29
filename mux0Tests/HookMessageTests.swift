@@ -69,6 +69,18 @@ final class HookMessageTests: XCTestCase {
         XCTAssertFalse(raws.contains("shell"))
     }
 
+    func testDecodeRunningWithResumeCommand() throws {
+        let json = #"{"terminalId":"550E8400-E29B-41D4-A716-446655440000","event":"running","agent":"claude","at":1713500000.0,"resumeCommand":"claude --resume abc-123"}"#.data(using: .utf8)!
+        let msg = try JSONDecoder().decode(HookMessage.self, from: json)
+        XCTAssertEqual(msg.resumeCommand, "claude --resume abc-123")
+    }
+
+    func testDecodeRunningWithoutResumeCommand() throws {
+        let json = #"{"terminalId":"550E8400-E29B-41D4-A716-446655440000","event":"running","agent":"claude","at":1}"#.data(using: .utf8)!
+        let msg = try JSONDecoder().decode(HookMessage.self, from: json)
+        XCTAssertNil(msg.resumeCommand)
+    }
+
     func testAgentSettingsKeyFormat() {
         XCTAssertEqual(HookMessage.Agent.claude.settingsKey,   "mux0-agent-status-claude")
         XCTAssertEqual(HookMessage.Agent.codex.settingsKey,    "mux0-agent-status-codex")

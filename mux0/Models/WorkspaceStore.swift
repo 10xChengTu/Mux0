@@ -113,6 +113,11 @@ final class WorkspaceStore {
         guard let wsIdx = wsIndex(workspaceId) else { return }
         // Find the index before removal so we can select the adjacent tab
         let closedIdx = workspaces[wsIdx].tabs.firstIndex(where: { $0.id == id })
+        if let tIdx = closedIdx {
+            for tid in workspaces[wsIdx].tabs[tIdx].layout.allTerminalIds() {
+                workspaces[wsIdx].pendingPrefills.removeValue(forKey: tid.uuidString)
+            }
+        }
         workspaces[wsIdx].tabs.removeAll { $0.id == id }
         if workspaces[wsIdx].tabs.isEmpty {
             let replacement = makeNewTab(index: 1)
@@ -166,6 +171,7 @@ final class WorkspaceStore {
         let tab = workspaces[wsIdx].tabs[tIdx]
         if let newLayout = tab.layout.removing(terminalId: terminalId) {
             workspaces[wsIdx].tabs[tIdx].layout = newLayout
+            workspaces[wsIdx].pendingPrefills.removeValue(forKey: terminalId.uuidString)
             if tab.focusedTerminalId == terminalId {
                 // Safe: newLayout is non-nil so it contains at least one terminal
                 workspaces[wsIdx].tabs[tIdx].focusedTerminalId =
@@ -205,6 +211,35 @@ final class WorkspaceStore {
               let tIdx = tabIndex(tabId, in: wsIdx) else { return }
         workspaces[wsIdx].tabs[tIdx].layout = layout
         save()
+    }
+
+    // MARK: - Agent resume / prefill
+
+    private func wsIndexContaining(terminalId: UUID) -> Int? {
+        workspaces.firstIndex { ws in
+            ws.tabs.contains { $0.layout.allTerminalIds().contains(terminalId) }
+        }
+    }
+
+    /// Persist the latest agent resume command for `terminalId`. Synchronous
+    /// save — the value must survive force-quit / crash with no termination
+    /// hook. No-op when unchanged.
+    func recordResumeCommand(terminalId: UUID, command: String) {
+        let trimmed = command.trimmingCharacters(in: .whitespacesAndNewlines)
+        guard !trimmed.isEmpty,
+              let wsIdx = wsIndexContaining(terminalId: terminalId) else { return }
+        let key = terminalId.uuidString
+        guard workspaces[wsIdx].pendingPrefills[key] != trimmed else { return }
+        workspaces[wsIdx].pendingPrefills[key] = trimmed
+        save()
+    }
+
+    /// Non-destructive read: a relaunch that lands back inside the agent and
+    /// quits without typing a new prompt should still resume the same session
+    /// next time. Only the next `recordResumeCommand` overwrites.
+    func consumePendingPrefill(terminalId: UUID) -> String? {
+        guard let wsIdx = wsIndexContaining(terminalId: terminalId) else { return nil }
+        return workspaces[wsIdx].pendingPrefills[terminalId.uuidString]
     }
 
     // MARK: - Helpers

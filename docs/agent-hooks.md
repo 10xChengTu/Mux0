@@ -7,7 +7,7 @@ mux0 通过注入到各 AI CLI 的生命周期钩子，把 `running` / `idle` / 
 ## IPC
 
 - 传输：Unix domain socket，路径为 `~/Library/Caches/mux0/hooks-<bundle-hash>.sock`（`<bundle-hash>` = SHA256(`Bundle.main.bundlePath`) 前 8 位十六进制）。按 bundle 路径分命名空间是为了让 `/Applications/mux0.app` 和 Xcode DerivedData 里的 Debug 构建互不抢占 socket——后起的实例 `bind()` 前会 `unlink` 掉同路径的旧 sockfile，会把前一实例踢下线。路径由 `GhosttyBridge.initialize()` 写进 `MUX0_HOOK_SOCK`，终端进程通过 env 继承
-- 消息格式：每行一个 JSON，`{"terminalId": "...", "event": "running|idle|needsInput|finished", "agent": "claude|opencode|codex", "at": <epoch>, "exitCode": <int>?, "toolDetail": <string>?, "summary": <string>?}`。`exitCode` 仅在 `event=finished` 时携带（shell = 真实 `$?`；agent = 0/1 哨兵）；`toolDetail` 仅在 agent 的 `event=running` 时携带（如 "Edit Models/Foo.swift"）；`summary` 仅在 agent 的 `event=finished` 时携带（transcript 最后一条 assistant 消息，≤200 chars）。
+- 消息格式：每行一个 JSON，`{"terminalId": "...", "event": "running|idle|needsInput|finished", "agent": "claude|opencode|codex", "at": <epoch>, "exitCode": <int>?, "toolDetail": <string>?, "summary": <string>?, "resumeCommand": <string>?}`。`exitCode` 仅在 `event=finished` 时携带（shell = 真实 `$?`；agent = 0/1 哨兵）；`toolDetail` 仅在 agent 的 `event=running` 时携带（如 "Edit Models/Foo.swift"）；`summary` 仅在 agent 的 `event=finished` 时携带（transcript 最后一条 assistant 消息，≤200 chars）；`resumeCommand` 仅在 Claude/Codex 的 prompt 触发的 `event=running` 时携带（恢复当前 session 的 CLI，如 `claude --resume <session_id>` / `codex resume <session_id>`，OpenCode 暂未支持）。
 - 监听端：`HookSocketListener`（DispatchSourceRead，accept 循环）
 
 ## Agent Turn 成败检测
@@ -21,6 +21,22 @@ Agent turn 没有真实的 exit code，但 Claude Code / Codex 的 `PostToolUse`
 **Turn summary**（Claude 独有）：`Stop` 从 `transcript_path` 读取 JSONL 最后一条 `role: "assistant"` 的 text 字段，剥掉 `<thinking>...</thinking>` 块，截到 200 chars，放进 `summary`。Codex 同理（schema 一致）。OpenCode 的 summary 在 v1 里留空（它没有等价的 transcript path 参数；后续 spec 可补）。
 
 **Tool detail**（全部 agent）：`PreToolUse` / `tool.execute.before` 时，派发脚本/插件会根据 `tool_name` + `tool_input` 生成一个紧凑的人类可读标签（"Edit Models/Foo.swift"、"Bash: ls"），作为 `running` 事件的 `toolDetail`。Swift 端把它拼到 tooltip 的第二行。
+
+## Resume command 持久化
+
+每次 `UserPromptSubmit` 触发时，`agent-hook.py` 把当前 session 对应的恢复 CLI（Claude → `claude --resume <session_id>`；Codex → `codex resume <session_id>`）放进 `running` 事件的 `resumeCommand` 字段。`HookDispatcher` 接到后调用 `WorkspaceStore.recordResumeCommand(terminalId:command:)` **直接**写到对应 workspace 的 `pendingPrefills[terminalId]` 并同步持久化到 UserDefaults——保留**最新**那一条（用户 `/clear` 或 `/resume` 切到新 session 时旧 id 立即被覆盖）。
+
+不依赖 `NSApplication.willTerminateNotification` 做"退出时提升"——⌘Q / 关窗 / 强退 / 崩溃路径下 willTerminate 触发与否不可靠，每次 hook 收到时立刻 save 才是稳定的持久化点。
+
+下次启动 surface 时，`TabContentView.terminalViewFor` 通过 `consumePendingPrefill(terminalId:)` 读取该值，作为 `GhosttyTerminalView.command` 传入——优先级高于 workspace `defaultCommand`。
+
+读取**不**清空：pendingPrefills 持久保留"最近一次的恢复命令"，只在下一次新 prompt 触发 `recordResumeCommand` 时被覆盖。这保证"重启 → 自动恢复 → 没发任何 prompt → 再重启"仍然能恢复同一会话；代价是用户手动退出 agent 之后该字段会变 stale，下次重启仍会自动 `claude --resume <id>`，不过 claude/codex 都接受任意旧 session id（只是恢复一段久远对话），不会报错。
+
+**注入路径**：与 `defaultCommand` 完全相同——`WorkspaceDefaultCommand.startupInput(for:)` 在尾部加 `\n`，由 `GhosttyBridge.newSurface` 通过 ghostty 的 `surfCfg.initial_input` 喂入 PTY，shell 启动后 readline 读到立即执行。
+
+`initial_input` 在 shell 启动之前会先把字节绘制到 surface 一次（PTY echo 路径之外的渲染层副作用），但 Claude / Codex 的 TUI 启动后立即切换到 alternate screen buffer，整屏接管后顶部那行幽灵 echo 被自动覆盖，用户实际感知不到。早期尝试过用 `ghostty_surface_text` 在 OSC 7 之后延时注入避开这一行，也尝试过用 env var + zsh shim eval 完全绕过 PTY，最终还是回到这个方案——简单、不依赖 shell 类型、与现有 `defaultCommand` 路径同构。
+
+**v1 限制**：OpenCode 因为没有稳定的 `--resume <id>` CLI 形态，`resume_command_for("opencode", ...)` 返回空串，插件不发该字段。后续如果 opencode 加上 stable resume 语法，只需扩展 `resume_command_for` 即可。
 
 ## 各 Agent 的信号来源
 

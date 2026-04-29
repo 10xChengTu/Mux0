@@ -234,7 +234,8 @@ final class TabContentView: NSView {
         let tv = GhosttyTerminalView(frame: .zero)
         tv.terminalId = id
         tv.pwdStoreRef = pwdStore
-        tv.command = store?.selectedWorkspace?.defaultCommand
+        tv.command = store?.consumePendingPrefill(terminalId: id)
+            ?? store?.selectedWorkspace?.defaultCommand
         terminalViews[id] = tv
         return tv
     }

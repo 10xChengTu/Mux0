@@ -25,6 +25,10 @@ import pathlib
 
 SESSION_TTL_SEC = 3600
 SUMMARY_MAXLEN = 200
+# Session ids from claude/codex are UUID-shaped. Restrict the resume command
+# to this charset so a malformed payload can't inject shell metacharacters
+# into the persisted `initial_input`.
+SESSION_ID_RE = re.compile(r"\A[A-Za-z0-9_-]+\Z")
 
 
 def parse_payload() -> dict:
@@ -164,6 +168,19 @@ def _default_entry(agent: str, terminal_id: str) -> dict:
     }
 
 
+def resume_command_for(agent: str, session_id: str) -> str:
+    """Build the user-facing CLI command that resumes the given session.
+    Empty string if the session id is missing/malformed, or if we don't
+    have a stable resume invocation for the agent (e.g. opencode in v1)."""
+    if not session_id or not SESSION_ID_RE.match(session_id):
+        return ""
+    if agent == "claude":
+        return f"claude --resume {session_id}"
+    if agent == "codex":
+        return f"codex resume {session_id}"
+    return ""
+
+
 def dispatch(subcmd: str, agent: str, payload: dict,
              terminal_id: str, session_file: pathlib.Path, now: float) -> dict:
     """Apply subcommand to session file; return dict describing socket emit.
@@ -192,6 +209,12 @@ def dispatch(subcmd: str, agent: str, payload: dict,
         if tp:
             entry["transcriptPath"] = tp
         emit = {"event": "running", "at": now}
+        # Attach the resume command on every prompt so mux0 always tracks the
+        # most-recent session_id (a /clear or /resume mid-conversation rotates
+        # to a new id, and we want the latest one preserved for next launch).
+        resume = resume_command_for(agent, str(session_id))
+        if resume:
+            emit["resumeCommand"] = resume
 
     elif subcmd == "pretool":
         tool = payload.get("tool_name", "") or ""

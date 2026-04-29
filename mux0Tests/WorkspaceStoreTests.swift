@@ -454,4 +454,151 @@ final class WorkspaceStoreTests: XCTestCase {
             XCTFail("new workspace's first tab must be a single terminal leaf")
         }
     }
+
+    // MARK: - Agent resume / prefill
+
+    /// Helper: return the (single) terminalId of the (single) tab in the
+    /// (single) workspace of a freshly-built store.
+    private func firstTerminalId(_ store: WorkspaceStore) -> UUID {
+        store.workspaces[0].tabs[0].layout.allTerminalIds()[0]
+    }
+
+    func testRecordResumeCommandWritesIntoPendingPrefills() {
+        let store = WorkspaceStore(persistenceKey: "test-\(UUID())")
+        store.createWorkspace(name: "p")
+        let term = firstTerminalId(store)
+
+        store.recordResumeCommand(terminalId: term, command: "claude --resume abc")
+
+        XCTAssertEqual(store.workspaces[0].pendingPrefills[term.uuidString],
+                       "claude --resume abc")
+    }
+
+    func testRecordResumeCommandTrimsWhitespace() {
+        let store = WorkspaceStore(persistenceKey: "test-\(UUID())")
+        store.createWorkspace(name: "p")
+        let term = firstTerminalId(store)
+
+        store.recordResumeCommand(terminalId: term, command: "  codex resume xyz  \n")
+
+        XCTAssertEqual(store.workspaces[0].pendingPrefills[term.uuidString],
+                       "codex resume xyz")
+    }
+
+    func testRecordResumeCommandUnknownTerminalNoOp() {
+        let store = WorkspaceStore(persistenceKey: "test-\(UUID())")
+        store.createWorkspace(name: "p")
+
+        store.recordResumeCommand(terminalId: UUID(), command: "claude --resume nope")
+
+        XCTAssertTrue(store.workspaces[0].pendingPrefills.isEmpty)
+    }
+
+    func testRecordResumeCommandEmptyValueIgnored() {
+        let store = WorkspaceStore(persistenceKey: "test-\(UUID())")
+        store.createWorkspace(name: "p")
+        let term = firstTerminalId(store)
+
+        store.recordResumeCommand(terminalId: term, command: "   ")
+
+        XCTAssertTrue(store.workspaces[0].pendingPrefills.isEmpty)
+    }
+
+    func testRecordResumeCommandLatestValueWins() {
+        // A second prompt within the same session (e.g. after /clear or
+        // /resume) emits a new resumeCommand — pendingPrefills must reflect
+        // the newest value, since that's the session id the user is
+        // actively working in and would want to resume on next launch.
+        let store = WorkspaceStore(persistenceKey: "test-\(UUID())")
+        store.createWorkspace(name: "p")
+        let term = firstTerminalId(store)
+
+        store.recordResumeCommand(terminalId: term, command: "claude --resume old")
+        store.recordResumeCommand(terminalId: term, command: "claude --resume new")
+
+        XCTAssertEqual(store.workspaces[0].pendingPrefills[term.uuidString],
+                       "claude --resume new")
+    }
+
+    func testConsumePendingPrefillReadsButDoesNotClear() {
+        // pendingPrefills must survive a "relaunch + no new prompt"
+        // scenario, so consume reads non-destructively. Only the next
+        // recordResumeCommand call overwrites it.
+        let store = WorkspaceStore(persistenceKey: "test-\(UUID())")
+        store.createWorkspace(name: "p")
+        let term = firstTerminalId(store)
+        store.recordResumeCommand(terminalId: term, command: "claude --resume abc")
+
+        let first = store.consumePendingPrefill(terminalId: term)
+        let second = store.consumePendingPrefill(terminalId: term)
+
+        XCTAssertEqual(first, "claude --resume abc")
+        XCTAssertEqual(second, "claude --resume abc")
+        XCTAssertEqual(store.workspaces[0].pendingPrefills[term.uuidString],
+                       "claude --resume abc")
+    }
+
+    func testConsumePendingPrefillUnknownTerminalReturnsNil() {
+        let store = WorkspaceStore(persistenceKey: "test-\(UUID())")
+        store.createWorkspace(name: "p")
+        XCTAssertNil(store.consumePendingPrefill(terminalId: UUID()))
+    }
+
+    func testWorkspaceCodableRoundTripPreservesPendingPrefill() throws {
+        let store = WorkspaceStore(persistenceKey: "test-\(UUID())")
+        store.createWorkspace(name: "p")
+        let term = firstTerminalId(store)
+        store.recordResumeCommand(terminalId: term, command: "claude --resume rt")
+
+        let data = try JSONEncoder().encode(store.workspaces)
+        let decoded = try JSONDecoder().decode([Workspace].self, from: data)
+
+        XCTAssertEqual(decoded[0].pendingPrefills[term.uuidString], "claude --resume rt")
+    }
+
+    func testCloseTerminalDropsItsPendingPrefill() {
+        // Splitting yields a 2-leaf tab; after recording resume on each leaf
+        // and closing one, only the survivor's entry must remain — otherwise
+        // pendingPrefills accumulates orphan terminalId keys forever.
+        let store = WorkspaceStore(persistenceKey: "test-\(UUID())")
+        store.createWorkspace(name: "p")
+        let wsId = store.workspaces[0].id
+        let tabId = store.workspaces[0].tabs[0].id
+        let term1 = firstTerminalId(store)
+        guard let term2 = store.splitTerminal(id: term1, in: wsId, tabId: tabId,
+                                              direction: .vertical) else {
+            return XCTFail("split failed")
+        }
+        store.recordResumeCommand(terminalId: term1, command: "claude --resume one")
+        store.recordResumeCommand(terminalId: term2, command: "claude --resume two")
+
+        store.closeTerminal(id: term1, in: wsId, tabId: tabId)
+
+        XCTAssertNil(store.workspaces[0].pendingPrefills[term1.uuidString])
+        XCTAssertEqual(store.workspaces[0].pendingPrefills[term2.uuidString],
+                       "claude --resume two")
+    }
+
+    func testRemoveTabDropsAllItsTerminalsPendingPrefills() {
+        let store = WorkspaceStore(persistenceKey: "test-\(UUID())")
+        store.createWorkspace(name: "p")
+        let wsId = store.workspaces[0].id
+        let tab1Id = store.workspaces[0].tabs[0].id
+        let term1 = firstTerminalId(store)
+        guard let term2 = store.splitTerminal(id: term1, in: wsId, tabId: tab1Id,
+                                              direction: .vertical) else {
+            return XCTFail("split failed")
+        }
+        guard let extra = store.addTab(to: wsId) else { return XCTFail("addTab failed") }
+        store.recordResumeCommand(terminalId: term1, command: "claude --resume one")
+        store.recordResumeCommand(terminalId: term2, command: "claude --resume two")
+        store.recordResumeCommand(terminalId: extra.terminalId, command: "claude --resume three")
+
+        store.removeTab(id: tab1Id, from: wsId)
+
+        XCTAssertNil(store.workspaces[0].pendingPrefills[term1.uuidString])
+        XCTAssertNil(store.workspaces[0].pendingPrefills[term2.uuidString])
+        XCTAssertEqual(store.workspaces[0].pendingPrefills[extra.terminalId.uuidString],
+                       "claude --resume three")
+    }
 }

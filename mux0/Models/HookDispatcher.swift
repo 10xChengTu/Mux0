@@ -15,8 +15,12 @@ import Foundation
 enum HookDispatcher {
     static func dispatch(_ msg: HookMessage,
                          settings: SettingsConfigStore,
-                         store: TerminalStatusStore) {
+                         store: TerminalStatusStore,
+                         workspaceStore: WorkspaceStore? = nil) {
         guard settings.get(msg.agent.settingsKey) == "true" else { return }
+        if let cmd = msg.resumeCommand, let ws = workspaceStore {
+            ws.recordResumeCommand(terminalId: msg.terminalId, command: cmd)
+        }
         switch msg.event {
         case .running:
             store.setRunning(terminalId: msg.terminalId,

@@ -147,6 +147,12 @@ struct Workspace: Codable, Identifiable, Equatable {
     var tabs: [TerminalTab]
     var selectedTabId: UUID?
     var defaultCommand: String?
+    /// Per-terminal one-shot command (key = terminalId.uuidString) to inject
+    /// as the next surface's `initial_input`. Persisted synchronously on
+    /// each agent `resumeCommand` so the latest session id survives
+    /// ⌘Q / force-quit / crash without relying on `willTerminate`.
+    /// Non-destructive read; overwritten only by the next prompt.
+    var pendingPrefills: [String: String] = [:]
 
     init(id: UUID = UUID(), name: String, defaultCommand: String? = nil) {
         self.id = id
@@ -159,9 +165,35 @@ struct Workspace: Codable, Identifiable, Equatable {
     var selectedTab: TerminalTab? {
         tabs.first { $0.id == selectedTabId }
     }
+
+    private enum CodingKeys: String, CodingKey {
+        case id, name, tabs, selectedTabId, defaultCommand, pendingPrefills
+    }
+
+    init(from decoder: Decoder) throws {
+        let c = try decoder.container(keyedBy: CodingKeys.self)
+        self.id = try c.decode(UUID.self, forKey: .id)
+        self.name = try c.decode(String.self, forKey: .name)
+        self.tabs = try c.decode([TerminalTab].self, forKey: .tabs)
+        self.selectedTabId = try c.decodeIfPresent(UUID.self, forKey: .selectedTabId)
+        self.defaultCommand = try c.decodeIfPresent(String.self, forKey: .defaultCommand)
+        self.pendingPrefills = (try? c.decode([String: String].self, forKey: .pendingPrefills)) ?? [:]
+    }
+
+    func encode(to encoder: Encoder) throws {
+        var c = encoder.container(keyedBy: CodingKeys.self)
+        try c.encode(id, forKey: .id)
+        try c.encode(name, forKey: .name)
+        try c.encode(tabs, forKey: .tabs)
+        try c.encodeIfPresent(selectedTabId, forKey: .selectedTabId)
+        try c.encodeIfPresent(defaultCommand, forKey: .defaultCommand)
+        try c.encode(pendingPrefills, forKey: .pendingPrefills)
+    }
 }
 
 enum WorkspaceDefaultCommand {
+    /// Build the auto-executing `initial_input` payload for a new ghostty
+    /// surface. Trailing `\n` makes the shell run it immediately.
     static func startupInput(for command: String?) -> String? {
         let trimmed = command?.trimmingCharacters(in: .whitespacesAndNewlines)
         guard let trimmed, !trimmed.isEmpty else { return nil }
