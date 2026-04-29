@@ -7,6 +7,11 @@ import SwiftUI
 struct SettingsResetRow: View {
     let settings: SettingsConfigStore
     let keys: [String]
+    /// Sections that own state outside `SettingsConfigStore` (e.g. Agents'
+    /// per-terminal `pendingPrefills` in `WorkspaceStore`) pass a closure
+    /// here so the destructive reset clears that state too — otherwise the
+    /// row would only delete the config keys and leave related state stale.
+    var additionalAction: () -> Void = { }
 
     @State private var confirmingReset = false
     @Environment(\.locale) private var locale
@@ -28,6 +33,7 @@ struct SettingsResetRow: View {
                 for key in keys {
                     settings.set(key, nil)
                 }
+                additionalAction()
             }
             Button(String(localized: (L10n.Settings.resetCancel).withLocale(locale)), role: .cancel) { }
         } message: {

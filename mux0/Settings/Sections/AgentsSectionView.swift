@@ -55,7 +55,20 @@ struct AgentsSectionView: View {
                     .foregroundColor(Color(theme.textTertiary))
             }
 
-            SettingsResetRow(settings: settings, keys: Self.managedKeys)
+            SettingsResetRow(
+                settings: settings,
+                keys: Self.managedKeys,
+                additionalAction: {
+                    // pendingPrefills are read non-destructively, so wiping
+                    // the resume toggle keys alone would leave them in
+                    // place and replay on the next launch when the user
+                    // re-enables Resume. Mirror the per-row OFF transition
+                    // here for every resume-capable agent.
+                    for agent in HookMessage.Agent.allCases where agent.supportsResume {
+                        workspaceStore.clearResumePrefills(forAgent: agent)
+                    }
+                }
+            )
         }
         .formStyle(.grouped)
         .scrollContentBackground(.hidden)
