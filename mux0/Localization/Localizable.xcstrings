@@ -155,6 +155,13 @@
         "zh-Hans" : { "stringUnit" : { "state" : "translated", "value" : "内容不透明度" } }
       }
     },
+    "settings.appearance.contentShadow" : {
+      "extractionState" : "manual",
+      "localizations" : {
+        "en" : { "stringUnit" : { "state" : "translated", "value" : "Content Shadow" } },
+        "zh-Hans" : { "stringUnit" : { "state" : "translated", "value" : "内容阴影" } }
+      }
+    },
     "settings.appearance.cursorBlink" : {
       "extractionState" : "manual",
       "localizations" : {
