@@ -682,18 +682,23 @@ private final class WorkspaceRowItemView: NSView, NSTextFieldDelegate, NSDraggin
         let pbItem = NSPasteboardItem()
         pbItem.setString(workspaceId.uuidString, forType: .mux0Workspace)
 
+        let (ghost, frame) = snapshotForDragging()
         let draggingItem = NSDraggingItem(pasteboardWriter: pbItem)
-        draggingItem.setDraggingFrame(bounds, contents: snapshotForDragging())
+        draggingItem.setDraggingFrame(frame, contents: ghost)
 
         beginDraggingSession(with: [draggingItem], event: event, source: self)
     }
 
-    private func snapshotForDragging() -> NSImage {
-        guard let rep = bitmapImageRepForCachingDisplay(in: bounds) else { return NSImage() }
+    private func snapshotForDragging() -> (image: NSImage, frame: NSRect) {
+        guard let rep = bitmapImageRepForCachingDisplay(in: bounds) else {
+            return (NSImage(), bounds)
+        }
         cacheDisplay(in: bounds, to: rep)
-        let image = NSImage(size: bounds.size)
-        image.addRepresentation(rep)
-        return image
+        let raw = NSImage(size: bounds.size)
+        raw.addRepresentation(rep)
+        return DraggedSnapshotShadow.compose(content: raw,
+                                             contentSize: bounds.size,
+                                             cornerRadius: DT.Radius.row)
     }
 
     // NSDraggingSource

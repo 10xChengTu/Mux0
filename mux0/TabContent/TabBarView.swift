@@ -565,19 +565,23 @@ private final class TabItemView: NSView, NSTextFieldDelegate, NSDraggingSource {
         let pbItem = NSPasteboardItem()
         pbItem.setString(tabId.uuidString, forType: .mux0Tab)
 
+        let (ghost, frame) = snapshotForDragging()
         let draggingItem = NSDraggingItem(pasteboardWriter: pbItem)
-        let snapshot = snapshotForDragging()
-        draggingItem.setDraggingFrame(bounds, contents: snapshot)
+        draggingItem.setDraggingFrame(frame, contents: ghost)
 
         beginDraggingSession(with: [draggingItem], event: event, source: self)
     }
 
-    private func snapshotForDragging() -> NSImage {
-        guard let rep = bitmapImageRepForCachingDisplay(in: bounds) else { return NSImage() }
+    private func snapshotForDragging() -> (image: NSImage, frame: NSRect) {
+        guard let rep = bitmapImageRepForCachingDisplay(in: bounds) else {
+            return (NSImage(), bounds)
+        }
         cacheDisplay(in: bounds, to: rep)
-        let image = NSImage(size: bounds.size)
-        image.addRepresentation(rep)
-        return image
+        let raw = NSImage(size: bounds.size)
+        raw.addRepresentation(rep)
+        return DraggedSnapshotShadow.compose(content: raw,
+                                             contentSize: bounds.size,
+                                             cornerRadius: TabBarView.pillRadius)
     }
 
     // NSDraggingSource

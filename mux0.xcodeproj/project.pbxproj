@@ -43,6 +43,7 @@
 		6AA362AD3255878AD318860E /* TerminalStatusIconViewTests.swift in Sources */ = {isa = PBXBuildFile; fileRef = CC8D978AA26C3DD97EF58200 /* TerminalStatusIconViewTests.swift */; };
 		6EF0E2148355BAE5EEE90A2A /* SettingsConfigStore.swift in Sources */ = {isa = PBXBuildFile; fileRef = 1B3D7EB9C3386BAF73077239 /* SettingsConfigStore.swift */; };
 		710F3420134F2A1296D1CA1F /* BoundControls.swift in Sources */ = {isa = PBXBuildFile; fileRef = 6B95FF6C4289EE3D48831A08 /* BoundControls.swift */; };
+		724E2546197F4E6FD8F95B65 /* DraggedSnapshotShadow.swift in Sources */ = {isa = PBXBuildFile; fileRef = 531109F006EA4DC2299C7FC2 /* DraggedSnapshotShadow.swift */; };
 		749811FA06D8580CF545268A /* TextLinkButton.swift in Sources */ = {isa = PBXBuildFile; fileRef = 2794897A7761B77AEFEC405F /* TextLinkButton.swift */; };
 		764C52B851F870CEAD204A76 /* SettingsResetRow.swift in Sources */ = {isa = PBXBuildFile; fileRef = 6828870E05C9747F55C30BEE /* SettingsResetRow.swift */; };
 		7BB3ED2855848925E919A2EE /* AgentsSectionView.swift in Sources */ = {isa = PBXBuildFile; fileRef = 98AEAE23A5BABC68B717A3C5 /* AgentsSectionView.swift */; };
@@ -122,6 +123,7 @@
 		4AB9513EB0F425DDEDAFA246 /* L10nSmokeTests.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = L10nSmokeTests.swift; sourceTree = "<group>"; };
 		4BE3C12A39B918898C929585 /* SettingsView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = SettingsView.swift; sourceTree = "<group>"; };
 		500DC5FBA84EA82E83A79C79 /* PlaceholderTests.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = PlaceholderTests.swift; sourceTree = "<group>"; };
+		531109F006EA4DC2299C7FC2 /* DraggedSnapshotShadow.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = DraggedSnapshotShadow.swift; sourceTree = "<group>"; };
 		5DEC02C6A3912B9FFA44F2E2 /* SurfaceScrollView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = SurfaceScrollView.swift; sourceTree = "<group>"; };
 		6172CA48D21FC80F732CB23A /* HookSocketListenerTests.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = HookSocketListenerTests.swift; sourceTree = "<group>"; };
 		65EACD3F08D21F717F82A9A0 /* ThemedTextField.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = ThemedTextField.swift; sourceTree = "<group>"; };
@@ -233,6 +235,7 @@
 			children = (
 				EFFA7A6778F19840BCAE2246 /* AppTheme.swift */,
 				EE58F1D0F1F79A6A03712FD9 /* DesignTokens.swift */,
+				531109F006EA4DC2299C7FC2 /* DraggedSnapshotShadow.swift */,
 				F58750DF02302B3749F21937 /* GhosttyConfigReader.swift */,
 				0052317F2679AB0572F50932 /* IconButton.swift */,
 				0B75BC1D38F67C220D3F82A8 /* TerminalStatusIconView.swift */,
@@ -610,6 +613,7 @@
 				710F3420134F2A1296D1CA1F /* BoundControls.swift in Sources */,
 				BE855766F2E7E0E965AE4335 /* ContentView.swift in Sources */,
 				D1FCB41AE29A916D0B66F0B7 /* DesignTokens.swift in Sources */,
+				724E2546197F4E6FD8F95B65 /* DraggedSnapshotShadow.swift in Sources */,
 				9688B5112BE4CAA8A86ACC76 /* FontPickerView.swift in Sources */,
 				50E89BB982BD02982F6B9B47 /* FontSectionView.swift in Sources */,
 				2BB1606A5799193109DE274C /* GhosttyBridge.swift in Sources */,

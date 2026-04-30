@@ -237,6 +237,15 @@ final class GhosttyBridge {
         defer { Self.envLock.unlock() }
 
         setenv("MUX0_TERMINAL_ID", terminalId.uuidString, 1)
+        // When the caller hasn't provided a working directory (e.g. a freshly
+        // created terminal whose pwdStore has no record yet), fall back to
+        // $HOME instead of letting ghostty inherit the spawning process's
+        // cwd. macOS Launch Services starts an .app with cwd = `/`, which
+        // breaks tools that refuse to run from a non-readable directory
+        // (Homebrew prints "current working directory must be readable to
+        // <user> to run brew", which then aborts a typical .zshrc midway and
+        // leaves $NVM_DIR / $PATH unset).
+        let resolvedWorkingDirectory = workingDirectory ?? NSHomeDirectory()
         let initialInput = WorkspaceDefaultCommand.startupInput(for: command)
 
         var surfCfg = ghostty_surface_config_new()
@@ -256,26 +265,16 @@ final class GhosttyBridge {
         // commands as initial shell input instead of Ghostty's `command` field:
         // if an SSH command exits quickly, the user lands back in their shell
         // rather than Ghostty treating the surface's main process as failed.
-        if let wd = workingDirectory, let input = initialInput {
-            return wd.withCString { wdPtr in
-                input.withCString { inputPtr in
-                    surfCfg.working_directory = wdPtr
-                    surfCfg.initial_input = inputPtr
-                    return ghostty_surface_new(appHandle, &surfCfg)
-                }
-            }
-        } else if let wd = workingDirectory {
-            return wd.withCString { ptr in
-                surfCfg.working_directory = ptr
+        return resolvedWorkingDirectory.withCString { wdPtr in
+            surfCfg.working_directory = wdPtr
+            guard let input = initialInput else {
                 return ghostty_surface_new(appHandle, &surfCfg)
             }
-        } else if let input = initialInput {
-            return input.withCString { ptr in
-                surfCfg.initial_input = ptr
+            return input.withCString { inputPtr in
+                surfCfg.initial_input = inputPtr
                 return ghostty_surface_new(appHandle, &surfCfg)
             }
         }
-        return ghostty_surface_new(appHandle, &surfCfg)
     }
 
     // MARK: - Window effects

@@ -4,6 +4,7 @@ struct SettingsView: View {
     let theme: AppTheme
     let settings: SettingsConfigStore
     let updateStore: UpdateStore
+    let workspaceStore: WorkspaceStore
     let onClose: () -> Void
 
     @Environment(ThemeManager.self) private var themeManager
@@ -14,12 +15,14 @@ struct SettingsView: View {
         theme: AppTheme,
         settings: SettingsConfigStore,
         updateStore: UpdateStore,
+        workspaceStore: WorkspaceStore,
         initialSection: SettingsSection? = nil,
         onClose: @escaping () -> Void
     ) {
         self.theme = theme
         self.settings = settings
         self.updateStore = updateStore
+        self.workspaceStore = workspaceStore
         self.onClose = onClose
         _section = State(initialValue: initialSection ?? .appearance)
     }
@@ -69,7 +72,7 @@ struct SettingsView: View {
         case .font:       FontSectionView(theme: theme, settings: settings)
         case .terminal:   TerminalSectionView(theme: theme, settings: settings)
         case .shell:      ShellSectionView(theme: theme, settings: settings)
-        case .agents:     AgentsSectionView(theme: theme, settings: settings)
+        case .agents:     AgentsSectionView(theme: theme, settings: settings, workspaceStore: workspaceStore)
         case .update:     UpdateSectionView(theme: theme, updateStore: updateStore)
         }
     }

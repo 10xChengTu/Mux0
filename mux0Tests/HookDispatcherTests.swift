@@ -235,4 +235,73 @@ final class HookDispatcherTests: XCTestCase {
             XCTFail("claude ON should forward")
         }
     }
+
+    // MARK: - Resume command gating
+
+    private func makeMsgWithResume(agent: HookMessage.Agent,
+                                   resume: String) -> HookMessage {
+        let json = """
+        {"terminalId":"\(tid.uuidString)","event":"running","agent":"\(agent.rawValue)","at":1,"resumeCommand":"\(resume)"}
+        """
+        return try! JSONDecoder().decode(HookMessage.self, from: json.data(using: .utf8)!)
+    }
+
+    func testDispatchSkipsResumeCommandWhenResumeToggleOff() {
+        // Status toggle ON, resume toggle absent (= OFF). Status fires, but
+        // the resume command must NOT be persisted.
+        settings.set(HookMessage.Agent.claude.settingsKey, "true")
+        settings.save()
+        let wsStore = WorkspaceStore(persistenceKey: "test-\(UUID())")
+        wsStore.createWorkspace(name: "p")
+        let term = wsStore.workspaces[0].tabs[0].layout.allTerminalIds()[0]
+        let msg = HookMessage(terminalId: term, event: .running, agent: .claude,
+                              at: 1, exitCode: nil, toolDetail: nil,
+                              summary: nil, resumeCommand: "claude --resume abc")
+
+        HookDispatcher.dispatch(msg, settings: settings, store: store,
+                                workspaceStore: wsStore)
+
+        XCTAssertTrue(wsStore.workspaces[0].pendingPrefills.isEmpty,
+                      "resume toggle off → no resume command persisted")
+    }
+
+    func testDispatchRecordsResumeCommandEvenWhenStatusToggleOff() {
+        // Resume gating is independent of the notifications gate — a user
+        // who only enabled "Resume on Launch" but kept "Notifications" off
+        // must still get the session id persisted.
+        settings.set(HookMessage.Agent.claude.resumeSettingsKey, "true")
+        settings.save()
+        let wsStore = WorkspaceStore(persistenceKey: "test-\(UUID())")
+        wsStore.createWorkspace(name: "p")
+        let term = wsStore.workspaces[0].tabs[0].layout.allTerminalIds()[0]
+        let msg = HookMessage(terminalId: term, event: .running, agent: .claude,
+                              at: 1, exitCode: nil, toolDetail: nil,
+                              summary: nil, resumeCommand: "claude --resume abc")
+
+        HookDispatcher.dispatch(msg, settings: settings, store: store,
+                                workspaceStore: wsStore)
+
+        XCTAssertEqual(wsStore.workspaces[0].pendingPrefills[term.uuidString],
+                       "claude --resume abc")
+        // Notifications gate still applied to the status update itself.
+        XCTAssertEqual(store.status(for: term), .neverRan)
+    }
+
+    func testDispatchRecordsResumeCommandWhenResumeToggleOn() {
+        settings.set(HookMessage.Agent.claude.settingsKey, "true")
+        settings.set(HookMessage.Agent.claude.resumeSettingsKey, "true")
+        settings.save()
+        let wsStore = WorkspaceStore(persistenceKey: "test-\(UUID())")
+        wsStore.createWorkspace(name: "p")
+        let term = wsStore.workspaces[0].tabs[0].layout.allTerminalIds()[0]
+        let msg = HookMessage(terminalId: term, event: .running, agent: .claude,
+                              at: 1, exitCode: nil, toolDetail: nil,
+                              summary: nil, resumeCommand: "claude --resume abc")
+
+        HookDispatcher.dispatch(msg, settings: settings, store: store,
+                                workspaceStore: wsStore)
+
+        XCTAssertEqual(wsStore.workspaces[0].pendingPrefills[term.uuidString],
+                       "claude --resume abc")
+    }
 }

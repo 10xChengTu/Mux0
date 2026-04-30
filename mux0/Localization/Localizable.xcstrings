@@ -155,6 +155,13 @@
         "zh-Hans" : { "stringUnit" : { "state" : "translated", "value" : "内容不透明度" } }
       }
     },
+    "settings.appearance.contentShadow" : {
+      "extractionState" : "manual",
+      "localizations" : {
+        "en" : { "stringUnit" : { "state" : "translated", "value" : "Content Shadow" } },
+        "zh-Hans" : { "stringUnit" : { "state" : "translated", "value" : "内容阴影" } }
+      }
+    },
     "settings.appearance.cursorBlink" : {
       "extractionState" : "manual",
       "localizations" : {
@@ -363,6 +370,34 @@
       "localizations" : {
         "en" : { "stringUnit" : { "state" : "translated", "value" : "OpenCode" } },
         "zh-Hans" : { "stringUnit" : { "state" : "translated", "value" : "OpenCode" } }
+      }
+    },
+    "settings.agents.notificationsTitle" : {
+      "extractionState" : "manual",
+      "localizations" : {
+        "en" : { "stringUnit" : { "state" : "translated", "value" : "Notifications" } },
+        "zh-Hans" : { "stringUnit" : { "state" : "translated", "value" : "通知" } }
+      }
+    },
+    "settings.agents.notificationsFooter" : {
+      "extractionState" : "manual",
+      "localizations" : {
+        "en" : { "stringUnit" : { "state" : "translated", "value" : "Show running / idle / finished status icons next to tabs that run the selected agents." } },
+        "zh-Hans" : { "stringUnit" : { "state" : "translated", "value" : "在跑这些 agent 的 tab 旁显示运行 / 闲置 / 完成的状态图标。" } }
+      }
+    },
+    "settings.agents.resumeTitle" : {
+      "extractionState" : "manual",
+      "localizations" : {
+        "en" : { "stringUnit" : { "state" : "translated", "value" : "Resume on Launch" } },
+        "zh-Hans" : { "stringUnit" : { "state" : "translated", "value" : "启动时恢复会话" } }
+      }
+    },
+    "settings.agents.resumeFooter" : {
+      "extractionState" : "manual",
+      "localizations" : {
+        "en" : { "stringUnit" : { "state" : "translated", "value" : "On next launch, auto-run `claude --resume <id>` / `codex resume <id>` to land back in the most recent session. Off by default. Turning a row off also drops any saved session id." } },
+        "zh-Hans" : { "stringUnit" : { "state" : "translated", "value" : "下次启动时自动执行 `claude --resume <id>` / `codex resume <id>`，回到最近一次的会话。默认关闭。关闭某一行同时会清除已保存的会话 id。" } }
       }
     },
     "settings.section.agents" : {

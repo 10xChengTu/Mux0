@@ -71,6 +71,7 @@ struct ContentView: View {
                         store: store,
                         statusStore: statusStore,
                         pwdStore: pwdStore,
+                        settings: settingsStore,
                         theme: themeManager.theme,
                         backgroundOpacity: contentBg,
                         showStatusIndicators: showStatusIndicators,
@@ -84,6 +85,7 @@ struct ContentView: View {
                             theme: themeManager.theme,
                             settings: settingsStore,
                             updateStore: updateStore,
+                            workspaceStore: store,
                             initialSection: pendingSettingsSection,
                             onClose: { showSettings = false }
                         )
@@ -91,6 +93,24 @@ struct ContentView: View {
                 }
                 .background(Color(themeManager.theme.canvas).opacity(contentBg))
                 .clipShape(RoundedRectangle(cornerRadius: cardRadius, style: .continuous))
+                .overlay {
+                    // 浅边框：颜色取 theme.border，alpha 随 contentShadowIntensity 线性缩放。
+                    // 强度 = 0 时彻底不画（避免在透明背景上叠出 0 alpha 描边的 hairline 噪点）。
+                    let intensity = themeManager.contentShadowIntensity
+                    if intensity > 0 {
+                        RoundedRectangle(cornerRadius: cardRadius, style: .continuous)
+                            .strokeBorder(
+                                Color(themeManager.theme.border).opacity(Double(intensity) * 0.6),
+                                lineWidth: DT.Stroke.hairline
+                            )
+                    }
+                }
+                .shadow(
+                    color: .black.opacity(Double(themeManager.contentShadowIntensity) * 0.18),
+                    radius: 6 + themeManager.contentShadowIntensity * 6,
+                    x: 0,
+                    y: 2
+                )
                 .padding(.top, trafficLightInset)
                 .padding(.leading, sidebarCollapsed ? cardInset : 0)
                 .padding(.trailing, cardInset)
@@ -152,10 +172,12 @@ struct ContentView: View {
                     let listener = try HookSocketListener(path: path)
                     let store = self.statusStore
                     let settingsStoreRef = self.settingsStore
+                    let workspaceStoreRef = self.store
                     listener.onMessage = { msg in
                         HookDispatcher.dispatch(msg,
                                                 settings: settingsStoreRef,
-                                                store: store)
+                                                store: store,
+                                                workspaceStore: workspaceStoreRef)
                     }
                     try listener.start()
                     hookListener = listener
@@ -235,7 +257,9 @@ struct ContentView: View {
         let blur = CGFloat(blurRaw.flatMap { Double($0) } ?? 0)
         let contentRaw = settingsStore.get("mux0-content-opacity")
         let content = CGFloat(contentRaw.flatMap { Double($0) } ?? 1.0)
-        themeManager.applyWindowEffects(opacity: opacity, blurRadius: blur, contentOpacity: content)
+        let shadowRaw = settingsStore.get("mux0-content-shadow")
+        let shadow = CGFloat(shadowRaw.flatMap { Double($0) } ?? 0)
+        themeManager.applyWindowEffects(opacity: opacity, blurRadius: blur, contentOpacity: content, contentShadow: shadow)
     }
 
     private var sidebarToggleButton: some View {
@@ -278,4 +302,12 @@ extension Notification.Name {
     // Settings
     static let mux0OpenSettings         = Notification.Name("mux0.openSettings")
     static let mux0EditConfigFile       = Notification.Name("mux0.editConfigFile")
+
+    /// Posted by the Agents → Notifications → Codex toggle when the user
+    /// flips it ON, so the section view can present its experimental-flag
+    /// alert. Routed via NotificationCenter (instead of an `onTurnOn`
+    /// parameter) so every row in the ForEach has an identical view
+    /// signature — Form(.grouped) splits a row out into its own card if
+    /// any neighbour differs.
+    static let mux0CodexHookAlert       = Notification.Name("mux0.codexHookAlert")
 }

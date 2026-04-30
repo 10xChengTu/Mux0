@@ -62,7 +62,11 @@ mux0 的设置面板分成六个 tab：**Appearance（外观）**、**Font（字
 
 ## 5. Agents
 
-控制哪些 code agent 会在 sidebar / tab 上显示状态图标。三个 agent 独立开关，默认全部关闭。至少打开一个时，图标列才会出现在 UI 上。
+设置面板分成两个分组：**Notifications** 控制状态图标；**Resume on Launch** 控制下次启动时是否自动恢复上次的 agent 会话。两个分组下的开关互相独立，默认全部关闭。底部 **Reset** 一次性清掉本 tab 的全部 key。
+
+### 5.1 Notifications
+
+控制哪些 code agent 会在 sidebar / tab 上显示状态图标。至少打开一个时，图标列才会出现在 UI 上。
 
 | 设置项 | config key | 默认值 | 说明 |
 |---|---|---|---|
@@ -70,11 +74,23 @@ mux0 的设置面板分成六个 tab：**Appearance（外观）**、**Font（字
 | Codex | `mux0-agent-status-codex` | `false` | 同上，对应 Codex wrapper。Codex 需要用户在 `~/.codex/config.toml` 中显式打开 `[features] codex_hooks = true`，否则只有 turn 完成事件，见 `docs/agent-hooks.md#codex-的特殊规则`。 |
 | OpenCode | `mux0-agent-status-opencode` | `false` | 同上，对应 OpenCode 插件。 |
 
-**扩展性**：将来新增 code agent 时，`HookMessage.Agent` 枚举加一个 case，Settings → Agents 分组里会自动多出一行 Toggle（managed keys + 行列表均由 `.allCases` 派生）。
+### 5.2 Resume on Launch
+
+启用后，每次 `UserPromptSubmit` 都会把 `claude --resume <id>` / `codex resume <id>` 持久化到对应 terminal 的 `pendingPrefills`；下次启动该 terminal 时自动把这条命令塞进 shell 执行（优先级高于侧边栏 `defaultCommand`）。详见 `docs/agent-hooks.md#resume-command-持久化`。
+
+| 设置项 | config key | 默认值 | 说明 |
+|---|---|---|---|
+| Claude Code | `mux0-agent-resume-claude` | `false` | 开启后，每次 `UserPromptSubmit` 都把 `claude --resume <session_id>` 落盘；关闭时 `HookDispatcher` 直接丢弃 `resumeCommand` 字段，且立刻调 `WorkspaceStore.clearResumePrefills(forAgent: .claude)` 把已存的 claude 命令全清空。 |
+| OpenCode | `mux0-agent-resume-opencode` | `false` | 同上，对应 OpenCode（命令形态 `opencode --session <id>`）。session id 由 `mux0-status.js` plugin 在 `tool.execute.before` 的 `input.sessionID` 拿到，每次 tool 调用都附；mux0 端 equality guard 自动 dedup。 |
+| Codex | `mux0-agent-resume-codex` | `false` | 同上，对应 Codex。需要先开 5.1 里的 Codex 通知开关（hook 才会跑）。 |
+
+**扩展性**：将来新增 code agent 时，`HookMessage.Agent` 枚举加一个 case；Notifications 分组自动多出一行 Toggle（managed keys + 行列表均由 `.allCases` 派生）。Resume 分组里所有 `supportsResume` 返回 true 的 agent 都会渲染，所以新 agent 默认 supportsResume = false，等到把 wrapper 端的 `resume_command_for` / plugin 接好且 `Agent.supportsResume` 改成 true = 自动出现在 UI。
 
 **行为细节**：
-- 开关全部关闭 → sidebar / tab 的状态图标列整列折叠（等同于该功能被禁用）。
-- 某 agent 开关 ON → OFF：已落盘到 `TerminalStatusStore` 的状态会残留（不再收到后续事件也无法自动清理）；新事件被丢弃。这是已知边缘场景。
+- Notifications 全关 → sidebar / tab 的状态图标列整列折叠（等同于该功能被禁用）。
+- Notifications 某 agent 开关 ON → OFF：已落盘到 `TerminalStatusStore` 的状态会残留（不再收到后续事件也无法自动清理）；新事件被丢弃。这是已知边缘场景。
+- Resume ON → OFF 立刻按 prefix（`claude ` / `codex `）扫所有 workspace 的 pendingPrefills，把对应 agent 的旧值清空——保证关 toggle 的下一次启动不会再 auto-resume。
+- 关闭一个跑过 agent 的 tab / pane 时，`closeTerminal` / `removeTab` 会同步把对应 terminalId 的 pendingPrefill 一起删掉，避免 UserDefaults 里堆积已死 UUID 的命令。
 - 老 key `mux0-status-indicators`：2026-04 之前存在的主开关。从代码中移除；如果仍保留在你的 mux0 config 文件里，mux0 不再读取，手动删除即可。
 
 ---

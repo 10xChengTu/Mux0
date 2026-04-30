@@ -22,6 +22,9 @@ import AppKit
 final class TabContentView: NSView {
     var store: WorkspaceStore?
     var pwdStore: TerminalPwdStore?
+    /// Used only by `terminalViewFor` to gate consumption of pending agent
+    /// resume commands against the user's Settings → Agents → Resume toggle.
+    var settingsStore: SettingsConfigStore?
 
     private var theme: AppTheme = .systemFallback(isDark: true)
     /// Mirror of ghostty `background-opacity`. Applied to paneContainer's layer so
@@ -234,9 +237,25 @@ final class TabContentView: NSView {
         let tv = GhosttyTerminalView(frame: .zero)
         tv.terminalId = id
         tv.pwdStoreRef = pwdStore
-        tv.command = store?.selectedWorkspace?.defaultCommand
+        tv.command = resolvedStartupCommand(forTerminal: id)
         terminalViews[id] = tv
         return tv
+    }
+
+    /// Pick the shell command to auto-execute on a fresh surface. Source order:
+    ///   1. Pending agent resume command (`claude --resume <id>` /
+    ///      `codex resume <id>`) — only when the matching agent's Resume
+    ///      toggle in Settings is ON. Default OFF means stale UserDefaults
+    ///      entries from earlier runs (or before the toggle existed) are
+    ///      ignored, not replayed.
+    ///   2. Workspace-level `defaultCommand`.
+    private func resolvedStartupCommand(forTerminal id: UUID) -> String? {
+        if let pending = store?.consumePendingPrefill(terminalId: id),
+           let agent = HookMessage.Agent.fromResumeCommand(pending),
+           settingsStore?.get(agent.resumeSettingsKey) == "true" {
+            return pending
+        }
+        return store?.selectedWorkspace?.defaultCommand
     }
 
     private func focusTerminal(_ id: UUID) {

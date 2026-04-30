@@ -41,6 +41,16 @@ function shortPath(p) {
     return parts.length > 3 ? parts.slice(-3).join("/") : parts.join("/");
 }
 
+// OpenCode session ids are alphanumeric with underscores/dashes (`ses_xxx`
+// in current versions). Restrict the resume command to this charset so a
+// malformed payload can't inject shell metacharacters into the persisted
+// `initial_input`.
+const SESSION_ID_RE = /^[A-Za-z0-9_-]+$/;
+function resumeCommandFor(sessionID) {
+    if (!sessionID || !SESSION_ID_RE.test(sessionID)) return null;
+    return `opencode --session ${sessionID}`;
+}
+
 function describeOpencodeTool(tool, input) {
     if (!input || typeof input !== "object") return tool || "";
     const t = tool || "";
@@ -86,18 +96,39 @@ export const Mux0StatusPlugin = async (_input) => ({
         }
     },
 
-    "tool.execute.before": async (args) => {
-        turn.tool = args?.tool;
+    // chat.message fires when the user sends a message — opencode's
+    // equivalent of UserPromptSubmit. We attach resumeCommand here so the
+    // session id is captured even on prompts that don't trigger any tool
+    // calls (e.g. a quick chat answer with no Edit/Bash/Read).
+    "chat.message": async (input, _output) => {
         if (!turn.startedAt) turn.startedAt = Date.now() / 1000;
-        const detail = describeOpencodeTool(args?.tool, args?.input);
-        emit({ event: "running", toolDetail: detail || undefined });
+        const resumeCommand = resumeCommandFor(input?.sessionID);
+        const payload = { event: "running" };
+        if (resumeCommand) payload.resumeCommand = resumeCommand;
+        emit(payload);
     },
 
-    "tool.execute.after": async (args) => {
-        // args.error present if tool threw; args.result.status === "error"
-        // for tools that report failure in-band.
-        const hadErr = !!(args?.error)
-            || (args?.result?.status === "error");
+    // Plugin runtime calls these hooks with two args:
+    //   (input, output) where input has { tool, sessionID, callID, ... }.
+    // Tool args live on output.args (before) and output.{title,output,metadata}
+    // (after). See packages/plugin/src/index.ts in sst/opencode.
+    "tool.execute.before": async (input, output) => {
+        turn.tool = input?.tool;
+        if (!turn.startedAt) turn.startedAt = Date.now() / 1000;
+        const detail = describeOpencodeTool(input?.tool, output?.args);
+        const resumeCommand = resumeCommandFor(input?.sessionID);
+        const payload = { event: "running" };
+        if (detail) payload.toolDetail = detail;
+        if (resumeCommand) payload.resumeCommand = resumeCommand;
+        emit(payload);
+    },
+
+    "tool.execute.after": async (_input, output) => {
+        // Tools may report failure in `output.metadata.error` /
+        // `output.metadata.status`, or by throwing (which surfaces as
+        // session.error rather than reaching this hook).
+        const hadErr = !!(output?.metadata?.error)
+            || (output?.metadata?.status === "error");
         if (hadErr) turn.hadError = true;
         // No socket emit — icon only flips at session.idle / session.status{type=idle}.
     },

@@ -19,6 +19,25 @@ struct HookMessage: Decodable, Equatable {
 
         /// Config key used by Settings → Agents and by the listener filter.
         var settingsKey: String { "mux0-agent-status-\(rawValue)" }
+
+        /// Config key controlling whether mux0 records and replays this
+        /// agent's `--resume <id>` shell command on next launch.
+        var resumeSettingsKey: String { "mux0-agent-resume-\(rawValue)" }
+
+        /// True when the hook surface for this agent emits a stable
+        /// `resumeCommand` (claude/codex via `agent-hook.py`, opencode via
+        /// the `mux0-status.js` plugin). Used to render the Resume toggle
+        /// row only for supported agents.
+        var supportsResume: Bool { true }
+
+        /// Identify which agent owns a stored resume command by its leading
+        /// CLI token. Returns nil for malformed strings.
+        static func fromResumeCommand(_ command: String) -> Agent? {
+            if command.hasPrefix("claude ")   { return .claude }
+            if command.hasPrefix("codex ")    { return .codex }
+            if command.hasPrefix("opencode ") { return .opencode }
+            return nil
+        }
     }
 
     let terminalId: UUID
@@ -35,6 +54,11 @@ struct HookMessage: Decodable, Equatable {
     /// Optional finished-state summary (e.g. last assistant message, ≤200 chars).
     /// Present when Claude/Codex Stop reads transcript; nil otherwise.
     let summary: String?
+    /// Optional resume command (e.g. `claude --resume <session_id>`,
+    /// `codex resume <session_id>`). Emitted on the `running` events
+    /// triggered by `UserPromptSubmit`; mux0 records the most-recent value
+    /// per terminal and replays it as the next-launch shell input.
+    let resumeCommand: String?
 
     var timestamp: Date { Date(timeIntervalSince1970: at) }
 }

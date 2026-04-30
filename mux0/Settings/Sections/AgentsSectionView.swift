@@ -3,10 +3,16 @@ import SwiftUI
 struct AgentsSectionView: View {
     let theme: AppTheme
     let settings: SettingsConfigStore
+    let workspaceStore: WorkspaceStore
 
-    /// All config keys this section manages. Data-driven from `HookMessage.Agent.allCases`
-    /// so adding a new agent (enum case) auto-registers it with the reset button.
-    private static let managedKeys: [String] = HookMessage.Agent.allCases.map(\.settingsKey)
+    /// Every config key this section manages — both notification toggles
+    /// (all agents) and resume toggles (claude/codex only). Used by the
+    /// "Restore Defaults" reset row to clear them in one shot.
+    private static let managedKeys: [String] = {
+        let status = HookMessage.Agent.allCases.map(\.settingsKey)
+        let resume = HookMessage.Agent.allCases.filter(\.supportsResume).map(\.resumeSettingsKey)
+        return status + resume
+    }()
 
     /// Codex hooks are gated behind an experimental flag (`[features].codex_hooks = true`
     /// in `~/.codex/config.toml`). The wrapper can't flip it for the user — the flag
@@ -16,15 +22,53 @@ struct AgentsSectionView: View {
 
     var body: some View {
         Form {
-            ForEach(HookMessage.Agent.allCases) { agent in
-                AgentToggleRow(
-                    theme: theme,
-                    settings: settings,
-                    agent: agent,
-                    onTurnOn: agent == .codex ? { showingCodexAlert = true } : nil
-                )
+            // ForEach + Section under Form(.grouped) on macOS 26.4 has a
+            // layout quirk: the 3rd ForEach row gets ejected from the
+            // section card (the first two render with shared rounded
+            // background, the third loses it). Listing rows explicitly
+            // sidesteps it. Same expansion rule applies to future agents
+            // — the array literal stays the single source of truth.
+            Section {
+                AgentToggleRow(theme: theme, settings: settings, agent: .claude)
+                AgentToggleRow(theme: theme, settings: settings, agent: .opencode)
+                AgentToggleRow(theme: theme, settings: settings, agent: .codex)
+            } header: {
+                Text(L10n.Settings.Agents.notificationsTitle)
+            } footer: {
+                Text(L10n.Settings.Agents.notificationsFooter)
+                    .font(Font(DT.Font.small))
+                    .foregroundColor(Color(theme.textTertiary))
             }
-            SettingsResetRow(settings: settings, keys: Self.managedKeys)
+
+            Section {
+                AgentResumeToggleRow(theme: theme, settings: settings,
+                                     workspaceStore: workspaceStore, agent: .claude)
+                AgentResumeToggleRow(theme: theme, settings: settings,
+                                     workspaceStore: workspaceStore, agent: .opencode)
+                AgentResumeToggleRow(theme: theme, settings: settings,
+                                     workspaceStore: workspaceStore, agent: .codex)
+            } header: {
+                Text(L10n.Settings.Agents.resumeTitle)
+            } footer: {
+                Text(L10n.Settings.Agents.resumeFooter)
+                    .font(Font(DT.Font.small))
+                    .foregroundColor(Color(theme.textTertiary))
+            }
+
+            SettingsResetRow(
+                settings: settings,
+                keys: Self.managedKeys,
+                additionalAction: {
+                    // pendingPrefills are read non-destructively, so wiping
+                    // the resume toggle keys alone would leave them in
+                    // place and replay on the next launch when the user
+                    // re-enables Resume. Mirror the per-row OFF transition
+                    // here for every resume-capable agent.
+                    for agent in HookMessage.Agent.allCases where agent.supportsResume {
+                        workspaceStore.clearResumePrefills(forAgent: agent)
+                    }
+                }
+            )
         }
         .formStyle(.grouped)
         .scrollContentBackground(.hidden)
@@ -36,17 +80,21 @@ struct AgentsSectionView: View {
         } message: {
             Text(L10n.Settings.Agents.codexAlertMessage)
         }
+        .onReceive(NotificationCenter.default.publisher(for: .mux0CodexHookAlert)) { _ in
+            showingCodexAlert = true
+        }
     }
 }
 
-/// One row per agent: label + BETA badge + trailing toggle.
-/// When `onTurnOn` is provided, it fires once on each false→true transition
-/// (used by Codex to surface the experimental-flag alert).
+/// Notifications row: per-agent label + BETA badge + status toggle.
+/// All rows share an identical view signature — Codex's experimental-flag
+/// alert is fired via NotificationCenter from inside the binding setter so
+/// the row struct doesn't need a per-agent callback parameter (which would
+/// cause Form(.grouped) to split that row out into its own card).
 private struct AgentToggleRow: View {
     let theme: AppTheme
     let settings: SettingsConfigStore
     let agent: HookMessage.Agent
-    let onTurnOn: (() -> Void)?
 
     var body: some View {
         LabeledContent {
@@ -70,7 +118,45 @@ private struct AgentToggleRow: View {
             set: { newValue in
                 let wasOn = settings.get(agent.settingsKey)?.lowercased() == "true"
                 settings.set(agent.settingsKey, newValue ? "true" : nil)
-                if newValue && !wasOn { onTurnOn?() }
+                if newValue && !wasOn && agent == .codex {
+                    NotificationCenter.default.post(name: .mux0CodexHookAlert, object: nil)
+                }
+            }
+        )
+    }
+}
+
+/// Resume row: same shape as the notifications row, but the off-transition
+/// also drops every saved resume command for this agent so the change takes
+/// effect at the very next launch.
+private struct AgentResumeToggleRow: View {
+    let theme: AppTheme
+    let settings: SettingsConfigStore
+    let workspaceStore: WorkspaceStore
+    let agent: HookMessage.Agent
+
+    var body: some View {
+        LabeledContent {
+            Toggle("", isOn: binding)
+                .labelsHidden()
+                .toggleStyle(.switch)
+        } label: {
+            HStack(spacing: DT.Space.sm) {
+                Text(agent.label)
+                BetaBadge(theme: theme)
+            }
+        }
+    }
+
+    private var binding: Binding<Bool> {
+        Binding(
+            get: {
+                guard let raw = settings.get(agent.resumeSettingsKey) else { return false }
+                return raw.lowercased() == "true"
+            },
+            set: { newValue in
+                settings.set(agent.resumeSettingsKey, newValue ? "true" : nil)
+                if !newValue { workspaceStore.clearResumePrefills(forAgent: agent) }
             }
         )
     }

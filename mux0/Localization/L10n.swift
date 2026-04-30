@@ -102,6 +102,7 @@ enum L10n {
         static let backgroundOpacity    = LocalizedStringResource("settings.appearance.backgroundOpacity")
         static let backgroundBlur       = LocalizedStringResource("settings.appearance.backgroundBlur")
         static let contentOpacity       = LocalizedStringResource("settings.appearance.contentOpacity")
+        static let contentShadow        = LocalizedStringResource("settings.appearance.contentShadow")
         static let windowPaddingX       = LocalizedStringResource("settings.appearance.windowPaddingX")
         static let windowPaddingY       = LocalizedStringResource("settings.appearance.windowPaddingY")
         static let cursorStyle          = LocalizedStringResource("settings.appearance.cursorStyle")
@@ -150,13 +151,17 @@ enum L10n {
             static let defaultPlaceholder  = LocalizedStringResource("settings.shell.defaultPlaceholder")
         }
         enum Agents {
-            static let claude            = LocalizedStringResource("settings.agents.claude")
-            static let codex             = LocalizedStringResource("settings.agents.codex")
-            static let opencode          = LocalizedStringResource("settings.agents.opencode")
-            static let betaBadge         = LocalizedStringResource("settings.agents.betaBadge")
-            static let codexAlertTitle   = LocalizedStringResource("settings.agents.codexAlertTitle")
-            static let codexAlertMessage = LocalizedStringResource("settings.agents.codexAlertMessage")
-            static let codexAlertOK      = LocalizedStringResource("settings.agents.codexAlertOK")
+            static let claude              = LocalizedStringResource("settings.agents.claude")
+            static let codex               = LocalizedStringResource("settings.agents.codex")
+            static let opencode            = LocalizedStringResource("settings.agents.opencode")
+            static let betaBadge           = LocalizedStringResource("settings.agents.betaBadge")
+            static let codexAlertTitle     = LocalizedStringResource("settings.agents.codexAlertTitle")
+            static let codexAlertMessage   = LocalizedStringResource("settings.agents.codexAlertMessage")
+            static let codexAlertOK        = LocalizedStringResource("settings.agents.codexAlertOK")
+            static let notificationsTitle  = LocalizedStringResource("settings.agents.notificationsTitle")
+            static let notificationsFooter = LocalizedStringResource("settings.agents.notificationsFooter")
+            static let resumeTitle         = LocalizedStringResource("settings.agents.resumeTitle")
+            static let resumeFooter        = LocalizedStringResource("settings.agents.resumeFooter")
         }
         enum Update {
             // Labels on the left column of the Form rows.
