@@ -139,7 +139,6 @@ final class L10nSmokeTests: XCTestCase {
         "tab.close.alert.confirm",
         "tab.close.alert.message %@",
         "tab.close.alert.title",
-        "tab.git.defaultTitle",
         "tab.newTab",
         "tab.row.close",
         "tab.row.rename",

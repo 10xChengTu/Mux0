@@ -694,13 +694,6 @@
         "zh-Hans" : { "stringUnit" : { "state" : "translated", "value" : "关闭 tab？" } }
       }
     },
-    "tab.git.defaultTitle" : {
-      "extractionState" : "manual",
-      "localizations" : {
-        "en" : { "stringUnit" : { "state" : "translated", "value" : "Git" } },
-        "zh-Hans" : { "stringUnit" : { "state" : "translated", "value" : "Git" } }
-      }
-    },
     "tab.newTab" : {
       "extractionState" : "manual",
       "localizations" : {
