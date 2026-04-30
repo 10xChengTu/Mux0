@@ -58,6 +58,15 @@ mux0 的设置面板分成六个 tab：**Appearance（外观）**、**Font（字
 | Integration Features | `shell-integration-features` | 全开 | 选择启用哪些集成特性（可多选）：<br>• `cursor` 智能光标形状（命令模式 / 输入模式切换）<br>• `sudo` 让 `sudo` 透传一些终端变量<br>• `title` 自动设置终端标题为当前命令 / 目录<br>• `ssh-env` 在 ssh 时把 terminfo 等环境带到远端 |
 | Custom Command | `command` | （空，用默认 shell） | 指定终端启动时跑的命令。为空则用系统默认 shell（`$SHELL`）。填 `nvim` 就是一打开终端直接进 nvim；填 `tmux` 就是直接进 tmux。 |
 
+### `mux0-git-viewer`
+
+点击右上角 Git 图标后，新创建的 Git tab 会把这条命令作为 `initial_input` 注入到首终端，由 ghostty surface 启动后自动执行。
+
+- **类型**：字符串
+- **默认值**：`lazygit`（设置为空即视为默认）
+- **范围**：mux0 私有字段，不传给 ghostty
+- **典型值**：`lazygit`、`gitui`、`tig`、`git log --oneline --graph --all`
+
 ---
 
 ## 5. Agents

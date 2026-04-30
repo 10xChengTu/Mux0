@@ -8,6 +8,7 @@ struct ShellSectionView: View {
         "shell-integration",
         "shell-integration-features",
         "command",
+        "mux0-git-viewer",
     ]
 
     var body: some View {
@@ -33,6 +34,23 @@ struct ShellSectionView: View {
                 placeholder: L10n.Settings.Shell.defaultPlaceholder,
                 label: L10n.Settings.Shell.customCommand
             )
+
+            Section {
+                BoundTextField(
+                    settings: settings,
+                    theme: theme,
+                    key: "mux0-git-viewer",
+                    placeholder: LocalizedStringResource("lazygit"),
+                    label: L10n.Settings.Shell.gitViewerLabel
+                )
+            } footer: {
+                VStack(alignment: .leading, spacing: 2) {
+                    Text(L10n.Settings.Shell.gitViewerHelp)
+                    Text(L10n.Settings.Shell.gitViewerInstallHint)
+                        .foregroundStyle(.secondary)
+                }
+                .font(.footnote)
+            }
 
             SettingsResetRow(settings: settings, keys: Self.managedKeys)
         }
