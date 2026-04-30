@@ -35,6 +35,16 @@ final class TabBarView: NSView {
     private var selectedTabId: UUID?
     private var statuses: [UUID: TerminalStatus] = [:]
     private var showStatusIndicators: Bool = false
+    /// Source for tab pill icon rendering (Quick Action ids → SF Symbol /
+    /// asset / letter). TabContentView wires this in via setter; TabItemView
+    /// reads it through a weak ref so the view never outlives its container.
+    weak var quickActionsStore: QuickActionsStore? {
+        didSet {
+            tabsContainer.subviews
+                .compactMap { $0 as? TabItemView }
+                .forEach { $0.quickActionsStore = quickActionsStore }
+        }
+    }
     /// Current locale forwarded from LanguageStore via TabContentView → TabBridge.
     /// Used to resolve LocalizedStringResource in makeAddButton() so the "+" tooltip
     /// tracks the user's in-app language choice rather than Locale.current.
@@ -142,7 +152,7 @@ final class TabBarView: NSView {
             let tabStatus = TerminalStatus.aggregate(
                 tab.layout.allTerminalIds().map { statuses[$0] ?? .neverRan }
             )
-            let item = TabItemView(tab: tab, isSelected: tab.id == selectedTabId, theme: theme, status: tabStatus, backgroundOpacity: backgroundOpacity, showStatusIndicators: showStatusIndicators)
+            let item = TabItemView(tab: tab, isSelected: tab.id == selectedTabId, theme: theme, status: tabStatus, backgroundOpacity: backgroundOpacity, showStatusIndicators: showStatusIndicators, quickActionsStore: quickActionsStore)
             item.canClose = canCloseNow
             item.onSelect = { [weak self] in self?.onSelectTab?(tab.id) }
             item.onClose  = { [weak self] in self?.onCloseTab?(tab.id) }
@@ -349,8 +359,8 @@ private final class TabItemView: NSView, NSTextFieldDelegate, NSDraggingSource {
     private let renameField = NSTextField()
     private let statusIcon = TerminalStatusIconView(frame: .zero)
 
-    /// 当前显示的 kind —— 用来在 refresh() 时判断是否需要换 image。
-    private var displayedKind: TabKind?
+    /// 当前显示的 quick action id —— 用来在 refresh() 时判断是否需要换 image。
+    private var displayedQuickActionId: String?
     private var originalTitle: String = ""
     private var isRenaming: Bool = false
     private var isSelected: Bool
@@ -361,19 +371,26 @@ private final class TabItemView: NSView, NSTextFieldDelegate, NSDraggingSource {
     private var backgroundOpacity: CGFloat
     private var status: TerminalStatus
     fileprivate var showStatusIndicators: Bool = false
+    /// Look up icon source for the current tab's `quickActionId`. Setter
+    /// re-renders the icon image so changes to enabled/custom actions in
+    /// Settings propagate without rebuilding the whole TabItemView.
+    weak var quickActionsStore: QuickActionsStore? {
+        didSet { applyQuickActionImage(displayedQuickActionId) }
+    }
 
-    init(tab: TerminalTab, isSelected: Bool, theme: AppTheme, status: TerminalStatus = .neverRan, backgroundOpacity: CGFloat = 1.0, showStatusIndicators: Bool = false) {
+    init(tab: TerminalTab, isSelected: Bool, theme: AppTheme, status: TerminalStatus = .neverRan, backgroundOpacity: CGFloat = 1.0, showStatusIndicators: Bool = false, quickActionsStore: QuickActionsStore? = nil) {
         self.tabId = tab.id
         self.isSelected = isSelected
         self.theme = theme
         self.backgroundOpacity = backgroundOpacity
         self.status = status
-        self.displayedKind = tab.kind
+        self.displayedQuickActionId = tab.quickActionId
+        self.quickActionsStore = quickActionsStore
         super.init(frame: .zero)
         self.showStatusIndicators = showStatusIndicators
         titleLabel.stringValue = tab.title
         setup()
-        applyKindImage(tab.kind)
+        applyQuickActionImage(tab.quickActionId)
         updateStyle()
         statusIcon.isHidden = !showStatusIndicators
         statusIcon.update(status: status, theme: theme)
@@ -534,9 +551,9 @@ private final class TabItemView: NSView, NSTextFieldDelegate, NSDraggingSource {
         if titleLabel.stringValue != tab.title && !isRenaming {
             titleLabel.stringValue = tab.title
         }
-        if displayedKind != tab.kind {
-            displayedKind = tab.kind
-            applyKindImage(tab.kind)
+        if displayedQuickActionId != tab.quickActionId {
+            displayedQuickActionId = tab.quickActionId
+            applyQuickActionImage(tab.quickActionId)
         }
         self.showStatusIndicators = showStatusIndicators
         statusIcon.isHidden = !showStatusIndicators
@@ -545,9 +562,44 @@ private final class TabItemView: NSView, NSTextFieldDelegate, NSDraggingSource {
         needsLayout = true
     }
 
-    private func applyKindImage(_ kind: TabKind?) {
-        let symbolName: String = (kind == .git) ? "arrow.triangle.branch" : "terminal"
-        kindIcon.image = NSImage(systemSymbolName: symbolName, accessibilityDescription: nil)
+    private func applyQuickActionImage(_ id: String?) {
+        guard let id = id else {
+            kindIcon.image = NSImage(systemSymbolName: "terminal", accessibilityDescription: nil)
+            return
+        }
+        let source = quickActionsStore?.iconSource(for: id) ?? .sfSymbol("terminal")
+        switch source {
+        case .sfSymbol(let name):
+            kindIcon.image = NSImage(systemSymbolName: name, accessibilityDescription: nil)
+        case .asset(let name):
+            kindIcon.image = NSImage(named: name)
+        case .letter(let c):
+            kindIcon.image = makeLetterImage(String(c))
+        }
+    }
+
+    /// Render a single character as a 14×14 NSImage, used for custom quick action tab pills.
+    /// Drawing color uses currentContext fill — the existing `kindIcon.contentTintColor`
+    /// in `updateStyle()` handles tinting via `NSImage.isTemplate = true`.
+    private func makeLetterImage(_ s: String) -> NSImage {
+        let size = NSSize(width: 14, height: 14)
+        let image = NSImage(size: size)
+        image.lockFocus()
+        let style = NSMutableParagraphStyle()
+        style.alignment = .center
+        let attrs: [NSAttributedString.Key: Any] = [
+            .font: NSFont.systemFont(ofSize: 10, weight: .semibold),
+            .foregroundColor: NSColor.labelColor,
+            .paragraphStyle: style,
+        ]
+        let attr = NSAttributedString(string: s, attributes: attrs)
+        let textSize = attr.size()
+        let rect = NSRect(x: 0, y: (size.height - textSize.height) / 2,
+                          width: size.width, height: textSize.height)
+        attr.draw(in: rect)
+        image.unlockFocus()
+        image.isTemplate = true
+        return image
     }
 
     private func updateStyle() {

@@ -6,6 +6,13 @@ struct ContentView: View {
     @State private var statusStore = TerminalStatusStore()
     @State private var pwdStore = TerminalPwdStore()
     @State private var settingsStore = SettingsConfigStore()
+    /// Lazy because QuickActionsStore depends on `settingsStore` being
+    /// initialized first (it reads from settings during `init`). SwiftUI
+    /// `@State` evaluates initial expressions at struct-init time, before
+    /// `settingsStore` has loaded — so we materialize the store on first
+    /// `.onAppear` and pass a transient fallback to `TabBridge` for the
+    /// initial body pass (the fallback init is cheap, just 3 settings reads).
+    @State private var quickActionsStore: QuickActionsStore? = nil
     @State private var sidebarCollapsed: Bool = false
     @State private var showSettings: Bool = false
     @State private var hookListener: HookSocketListener?
@@ -72,6 +79,7 @@ struct ContentView: View {
                         statusStore: statusStore,
                         pwdStore: pwdStore,
                         settings: settingsStore,
+                        quickActionsStore: quickActionsStore ?? QuickActionsStore(settings: settingsStore),
                         theme: themeManager.theme,
                         backgroundOpacity: contentBg,
                         showStatusIndicators: showStatusIndicators,
@@ -149,6 +157,9 @@ struct ContentView: View {
         // 会跟主题一致。不影响 sidebar/tab bar —— 它们本来就读 theme token。
         .preferredColorScheme(themeManager.theme.isDark ? .dark : .light)
         .onAppear {
+            if quickActionsStore == nil {
+                quickActionsStore = QuickActionsStore(settings: settingsStore)
+            }
             themeManager.loadFromGhosttyConfig()
             // ghostty 的 PWD action（OSC 7）回调在 main 上通知 pwdStore，sidebar
             // 的 MetadataRefresher 每 5s tick 从 pwdStore 读最新 cwd 跑 git。
@@ -288,7 +299,9 @@ struct ContentView: View {
             help: String(localized: L10n.Topbar.gitButtonTooltip.withLocale(locale))
         ) {
             guard let wsId = store.selectedId else { return }
-            let result = store.ensureGitTab(in: wsId)
+            let actions = quickActionsStore ?? QuickActionsStore(settings: settingsStore)
+            let title = actions.displayName(for: "lazygit", locale: locale)
+            let result = store.ensureQuickActionTab(id: "lazygit", title: title, in: wsId)
             if result.isNew, let prev = result.sourcePwdTerminalId {
                 pwdStore.inherit(from: prev, to: result.terminalId)
             }

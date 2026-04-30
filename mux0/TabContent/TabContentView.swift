@@ -25,6 +25,13 @@ final class TabContentView: NSView {
     /// Used only by `terminalViewFor` to gate consumption of pending agent
     /// resume commands against the user's Settings → Agents → Resume toggle.
     var settingsStore: SettingsConfigStore?
+    /// Resolves Quick Action tabs (`tab.quickActionId`) to the shell command to
+    /// auto-execute on the first surface — built-in defaults plus user-defined
+    /// custom actions. Optional so the view stays driveable in tests. Forwarded
+    /// to the tab strip so pill icons render via the same store.
+    var quickActionsStore: QuickActionsStore? {
+        didSet { tabBar.quickActionsStore = quickActionsStore }
+    }
 
     private var theme: AppTheme = .systemFallback(isDark: true)
     /// Mirror of ghostty `background-opacity`. Applied to paneContainer's layer so
@@ -243,10 +250,13 @@ final class TabContentView: NSView {
     }
 
     /// Pick the shell command to auto-execute on a fresh surface. Source order:
-    ///   0. Git tab's first terminal: the configured `mux0-git-viewer` command
-    ///      (default "lazygit"). Fires every time the surface is built — so
-    ///      restarting mux0 re-runs the viewer automatically. Splitting inside
-    ///      a git tab does NOT apply this to the new pane (only the layout's
+    ///   0. Quick action tab's first terminal — resolved via
+    ///      `QuickActionsStore.command(for:)`. Built-in actions fall back to
+    ///      default commands (e.g. `lazygit`); custom actions return nil if
+    ///      their command is empty (in which case the next branch's defaults
+    ///      take over). Fires every time the surface is built — so restarting
+    ///      mux0 re-runs the action automatically. Splitting inside a quick
+    ///      action tab does NOT apply this to the new pane (only the layout's
     ///      first terminal id matches).
     ///   1. Pending agent resume command (`claude --resume <id>` /
     ///      `codex resume <id>`) — only when the matching agent's Resume
@@ -255,15 +265,14 @@ final class TabContentView: NSView {
     ///      ignored, not replayed.
     ///   2. Workspace-level `defaultCommand`.
     private func resolvedStartupCommand(forTerminal id: UUID) -> String? {
-        // (0) Git tab's first terminal → mux0-git-viewer setting.
+        // (0) Quick action tab's first terminal → resolve via QuickActionsStore.
         if let tab = store?.selectedWorkspace?.tabs.first(where: {
                 $0.layout.allTerminalIds().contains(id)
             }),
-            tab.kind == .git,
-            id == tab.layout.allTerminalIds().first {
-            let raw = settingsStore?.get("mux0-git-viewer")?
-                .trimmingCharacters(in: .whitespacesAndNewlines) ?? ""
-            let cmd = raw.isEmpty ? "lazygit" : raw
+            let actionId = tab.quickActionId,
+            id == tab.layout.allTerminalIds().first,
+            let cmd = quickActionsStore?.command(for: actionId)
+        {
             return "\(cmd)\n"
         }
 

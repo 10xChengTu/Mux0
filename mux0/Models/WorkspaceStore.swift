@@ -97,17 +97,15 @@ final class WorkspaceStore {
     // MARK: - Tab CRUD
 
     @discardableResult
-    func addTab(to workspaceId: UUID, kind: TabKind? = nil) -> (tabId: UUID, terminalId: UUID)? {
+    func addTab(to workspaceId: UUID, quickActionId: String? = nil, title: String? = nil)
+        -> (tabId: UUID, terminalId: UUID)?
+    {
         guard let wsIdx = wsIndex(workspaceId) else { return nil }
         let index = workspaces[wsIdx].tabs.count + 1
-        let title: String
-        switch kind {
-        case .git:  title = "Git"
-        case .none: title = "terminal \(index)"
-        }
+        let resolvedTitle: String = title ?? "terminal \(index)"
         var tab = makeNewTab(index: index)
-        tab.title = title
-        tab.kind = kind
+        tab.title = resolvedTitle
+        tab.quickActionId = quickActionId
         workspaces[wsIdx].tabs.append(tab)
         workspaces[wsIdx].selectedTabId = tab.id
         save()
@@ -155,17 +153,17 @@ final class WorkspaceStore {
         save()
     }
 
-    /// 保证给定 workspace 至少有一个 `kind == .git` 的 tab，并切到它。
+    /// 保证给定 workspace 至少有一个 quickActionId 等于 `id` 的 tab，并切到它。
     ///
-    /// - 如果已经存在：仅 `selectTab`，不改 tabs 数组。
-    /// - 如果不存在：调 `addTab(to:kind: .git)` 创建并切。
+    /// - 已存在：仅 selectTab，不改 tabs 数组。
+    /// - 不存在：用 (quickActionId: id, title: title) 调 addTab。
     ///
     /// `sourcePwdTerminalId` = 调用此方法 *之前* selected tab 的 focusedTerminalId，
-    /// 由调用方用于 `TerminalPwdStore.inherit(from:to:)`，让 lazygit 落地在
-    /// 用户当下浏览的仓库 pwd。必须在 `selectTab` 切换之前 capture，否则之后
-    /// 取到的就是新 git tab 自身的终端，pwd 继承变成自我赋值。
+    /// 由调用方用于 `TerminalPwdStore.inherit(from:to:)`，让 quick action 命令落地在
+    /// 用户当下浏览的 cwd。必须在 selectTab 切换前 capture，否则之后取到的就是新
+    /// quick action tab 自身的终端，pwd 继承变成自我赋值。
     @discardableResult
-    func ensureGitTab(in workspaceId: UUID) -> (
+    func ensureQuickActionTab(id: String, title: String, in workspaceId: UUID) -> (
         tabId: UUID,
         terminalId: UUID,
         isNew: Bool,
@@ -174,7 +172,6 @@ final class WorkspaceStore {
         guard let wsIdx = wsIndex(workspaceId) else {
             return (UUID(), UUID(), false, nil)
         }
-        // Capture before any mutation.
         let sourcePwdTerminalId: UUID? = {
             guard let selId = workspaces[wsIdx].selectedTabId,
                   let selTab = workspaces[wsIdx].tabs.first(where: { $0.id == selId })
@@ -182,15 +179,12 @@ final class WorkspaceStore {
             return selTab.focusedTerminalId
         }()
 
-        if let existing = workspaces[wsIdx].tabs.first(where: { $0.kind == .git }) {
+        if let existing = workspaces[wsIdx].tabs.first(where: { $0.quickActionId == id }) {
             selectTab(id: existing.id, in: workspaceId)
             return (existing.id, existing.focusedTerminalId, false, sourcePwdTerminalId)
         }
 
-        guard let created = addTab(to: workspaceId, kind: .git) else {
-            // Unreachable: wsIndex(workspaceId) succeeded above, and addTab only
-            // fails when wsIndex returns nil. Surface in debug if the invariant
-            // ever breaks, but never leak misleading sourcePwd back to callers.
+        guard let created = addTab(to: workspaceId, quickActionId: id, title: title) else {
             assertionFailure("addTab failed despite validated workspaceId — invariant broken")
             return (UUID(), UUID(), false, nil)
         }

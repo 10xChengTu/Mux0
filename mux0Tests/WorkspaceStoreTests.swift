@@ -648,32 +648,32 @@ final class WorkspaceStoreTests: XCTestCase {
                        "claude --resume three")
     }
 
-    // MARK: - TabKind & ensureGitTab
+    // MARK: - quickActionId & ensureQuickActionTab
 
-    func testTerminalTabKind_codableRoundTrip_gitValue() throws {
-        var tab = TerminalTab(title: "Git")
-        tab.kind = .git
+    func testTerminalTabQuickActionId_codableRoundTrip_lazygitValue() throws {
+        var tab = TerminalTab(title: "Lazygit")
+        tab.quickActionId = "lazygit"
 
         let data = try JSONEncoder().encode(tab)
         let decoded = try JSONDecoder().decode(TerminalTab.self, from: data)
 
-        XCTAssertEqual(decoded.kind, .git)
-        XCTAssertEqual(decoded.title, "Git")
+        XCTAssertEqual(decoded.quickActionId, "lazygit")
+        XCTAssertEqual(decoded.title, "Lazygit")
     }
 
-    func testTerminalTabKind_codableRoundTrip_nilValue() throws {
+    func testTerminalTabQuickActionId_codableRoundTrip_nilValue() throws {
         let tab = TerminalTab(title: "terminal 1")
-        XCTAssertNil(tab.kind)
+        XCTAssertNil(tab.quickActionId)
 
         let data = try JSONEncoder().encode(tab)
         let decoded = try JSONDecoder().decode(TerminalTab.self, from: data)
 
-        XCTAssertNil(decoded.kind)
+        XCTAssertNil(decoded.quickActionId)
     }
 
-    func testTerminalTabKind_decodingLegacyJSONWithoutKindField() throws {
-        // Old persistence (pre-TabKind) had no `kind` key. Decoding must succeed
-        // and land on nil, otherwise existing UserDefaults blobs break on upgrade.
+    func testTerminalTabQuickActionId_decodingLegacyJSONWithoutField() throws {
+        // Old persistence had no `quickActionId` key. Decoding must succeed and
+        // land on nil, otherwise existing UserDefaults blobs break on upgrade.
         let termId = UUID()
         let tabId = UUID()
         let json = """
@@ -688,40 +688,40 @@ final class WorkspaceStoreTests: XCTestCase {
 
         let decoded = try JSONDecoder().decode(TerminalTab.self, from: data)
 
-        XCTAssertNil(decoded.kind)
+        XCTAssertNil(decoded.quickActionId)
         XCTAssertEqual(decoded.title, "old tab")
         XCTAssertEqual(decoded.id, tabId)
     }
 
-    func testEnsureGitTab_createsNewWhenAbsent() {
+    func testEnsureQuickActionTab_createsNewWhenAbsent() {
         let store = WorkspaceStore(persistenceKey: "test-\(UUID())")
         store.createWorkspace(name: "ws")
         let wsId = store.workspaces[0].id
         let tabsBefore = store.workspaces[0].tabs.count
 
-        let result = store.ensureGitTab(in: wsId)
+        let result = store.ensureQuickActionTab(id: "lazygit", title: "Lazygit", in: wsId)
 
         XCTAssertTrue(result.isNew)
         XCTAssertEqual(store.workspaces[0].tabs.count, tabsBefore + 1)
         XCTAssertEqual(store.workspaces[0].selectedTabId, result.tabId)
         let newTab = store.workspaces[0].tabs.first(where: { $0.id == result.tabId })
-        XCTAssertEqual(newTab?.kind, .git)
-        XCTAssertEqual(newTab?.title, "Git")
+        XCTAssertEqual(newTab?.quickActionId, "lazygit")
+        XCTAssertEqual(newTab?.title, "Lazygit")
         XCTAssertEqual(newTab?.layout.allTerminalIds().first, result.terminalId)
     }
 
-    func testEnsureGitTab_reusesWhenPresent() {
+    func testEnsureQuickActionTab_reusesWhenPresent() {
         let store = WorkspaceStore(persistenceKey: "test-\(UUID())")
         store.createWorkspace(name: "ws")
         let wsId = store.workspaces[0].id
-        let firstResult = store.ensureGitTab(in: wsId)
+        let firstResult = store.ensureQuickActionTab(id: "lazygit", title: "Lazygit", in: wsId)
         let tabsAfterFirst = store.workspaces[0].tabs.count
 
-        // Switch focus away from the git tab, then re-invoke
+        // Switch focus away from the lazygit tab, then re-invoke
         let originalTabId = store.workspaces[0].tabs[0].id
         store.selectTab(id: originalTabId, in: wsId)
 
-        let secondResult = store.ensureGitTab(in: wsId)
+        let secondResult = store.ensureQuickActionTab(id: "lazygit", title: "Lazygit", in: wsId)
 
         XCTAssertFalse(secondResult.isNew)
         XCTAssertEqual(secondResult.tabId, firstResult.tabId)
@@ -729,7 +729,7 @@ final class WorkspaceStoreTests: XCTestCase {
         XCTAssertEqual(store.workspaces[0].selectedTabId, firstResult.tabId)  // selection moved back
     }
 
-    func testEnsureGitTab_returnsSourcePwdTerminalIdFromPreviouslyFocusedTab() {
+    func testEnsureQuickActionTab_returnsSourcePwdTerminalIdFromPreviouslyFocusedTab() {
         let store = WorkspaceStore(persistenceKey: "test-\(UUID())")
         store.createWorkspace(name: "ws")
         let wsId = store.workspaces[0].id
@@ -738,28 +738,28 @@ final class WorkspaceStoreTests: XCTestCase {
         let originalTermId = originalTab.layout.allTerminalIds()[0]
         XCTAssertEqual(store.workspaces[0].selectedTabId, originalTab.id)
 
-        let result = store.ensureGitTab(in: wsId)
+        let result = store.ensureQuickActionTab(id: "lazygit", title: "Lazygit", in: wsId)
 
         // Source = focused terminal of the tab that was selected BEFORE we switched.
         XCTAssertEqual(result.sourcePwdTerminalId, originalTermId)
     }
 
-    func testEnsureGitTab_reuseScenarioStillReportsSourcePwdTerminalId() {
+    func testEnsureQuickActionTab_reuseScenarioStillReportsSourcePwdTerminalId() {
         let store = WorkspaceStore(persistenceKey: "test-\(UUID())")
         store.createWorkspace(name: "ws")
         let wsId = store.workspaces[0].id
-        _ = store.ensureGitTab(in: wsId)  // create
-        let nonGit = store.workspaces[0].tabs.first(where: { $0.kind == nil })!
-        store.selectTab(id: nonGit.id, in: wsId)
-        let nonGitTermId = nonGit.layout.allTerminalIds()[0]
+        _ = store.ensureQuickActionTab(id: "lazygit", title: "Lazygit", in: wsId)  // create
+        let plain = store.workspaces[0].tabs.first(where: { $0.quickActionId == nil })!
+        store.selectTab(id: plain.id, in: wsId)
+        let plainTermId = plain.layout.allTerminalIds()[0]
 
-        let result = store.ensureGitTab(in: wsId)
+        let result = store.ensureQuickActionTab(id: "lazygit", title: "Lazygit", in: wsId)
 
         XCTAssertFalse(result.isNew)
-        XCTAssertEqual(result.sourcePwdTerminalId, nonGitTermId)
+        XCTAssertEqual(result.sourcePwdTerminalId, plainTermId)
     }
 
-    func testEnsureGitTab_unknownWorkspaceReturnsNoOp() {
+    func testEnsureQuickActionTab_unknownWorkspaceReturnsNoOp() {
         let store = WorkspaceStore(persistenceKey: "test-\(UUID())")
         store.createWorkspace(name: "ws")
 
@@ -767,10 +767,42 @@ final class WorkspaceStoreTests: XCTestCase {
         // Locks the sentinel-tuple contract: isNew=false and sourcePwdTerminalId=nil
         // so future regressions toward "unknown ws creates a tab" are caught.
         let tabsBefore = store.workspaces[0].tabs.count
-        let result = store.ensureGitTab(in: UUID())
+        let result = store.ensureQuickActionTab(id: "lazygit", title: "Lazygit", in: UUID())
 
         XCTAssertEqual(store.workspaces[0].tabs.count, tabsBefore)
         XCTAssertFalse(result.isNew)
         XCTAssertNil(result.sourcePwdTerminalId)
+    }
+
+    func test_ensureQuickActionTab_differentIdsCreateDifferentTabs() {
+        let store = WorkspaceStore(persistenceKey: "test.\(UUID().uuidString)")
+        store.createWorkspace(name: "ws")
+        let wsId = store.workspaces[0].id
+        let r1 = store.ensureQuickActionTab(id: "lazygit", title: "Lazygit", in: wsId)
+        let r2 = store.ensureQuickActionTab(id: "claude", title: "Claude Code", in: wsId)
+        XCTAssertTrue(r1.isNew)
+        XCTAssertTrue(r2.isNew)
+        XCTAssertNotEqual(r1.tabId, r2.tabId)
+    }
+
+    func test_ensureQuickActionTab_sameIdReusesTab() {
+        let store = WorkspaceStore(persistenceKey: "test.\(UUID().uuidString)")
+        store.createWorkspace(name: "ws")
+        let wsId = store.workspaces[0].id
+        let r1 = store.ensureQuickActionTab(id: "lazygit", title: "Lazygit", in: wsId)
+        let r2 = store.ensureQuickActionTab(id: "lazygit", title: "Lazygit", in: wsId)
+        XCTAssertTrue(r1.isNew)
+        XCTAssertFalse(r2.isNew)
+        XCTAssertEqual(r1.tabId, r2.tabId)
+    }
+
+    func test_ensureQuickActionTab_titleAppliedOnCreate() {
+        let store = WorkspaceStore(persistenceKey: "test.\(UUID().uuidString)")
+        store.createWorkspace(name: "ws")
+        let wsId = store.workspaces[0].id
+        let r = store.ensureQuickActionTab(id: "claude", title: "Claude Code", in: wsId)
+        let tab = store.workspaces[0].tabs.first(where: { $0.id == r.tabId })!
+        XCTAssertEqual(tab.title, "Claude Code")
+        XCTAssertEqual(tab.quickActionId, "claude")
     }
 }
