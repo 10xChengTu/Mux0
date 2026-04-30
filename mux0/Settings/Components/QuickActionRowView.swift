@@ -32,12 +32,12 @@ struct QuickActionRowView: View {
                     String(localized: L10n.Settings.QuickActions.customNamePlaceholder.withLocale(locale)),
                     text: nameBinding
                 )
-                .textFieldStyle(.roundedBorder)
+                .themedTextField(theme)
                 .frame(width: 110)
             }
 
             TextField(commandPlaceholder, text: commandBinding)
-                .textFieldStyle(.roundedBorder)
+                .themedTextField(theme)
                 .frame(maxWidth: .infinity)
 
             Toggle("", isOn: enabledBinding)
