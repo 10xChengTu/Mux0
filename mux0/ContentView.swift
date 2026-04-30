@@ -130,7 +130,7 @@ struct ContentView: View {
                 .padding(.leading, sidebarToggleLeading)
                 .padding(.top, DT.Space.xs)
 
-            gitTabButton
+            quickActionsBar
                 .frame(maxWidth: .infinity, alignment: .topTrailing)
                 .padding(.trailing, cardInset + DT.Space.xs)
                 .padding(.top, DT.Space.xs)
@@ -291,21 +291,33 @@ struct ContentView: View {
         }
     }
 
-    private var gitTabButton: some View {
-        IconButton(
-            theme: themeManager.theme,
-            help: String(localized: L10n.Topbar.gitButtonTooltip.withLocale(locale))
-        ) {
+    @ViewBuilder
+    private var quickActionsBar: some View {
+        let displayList = quickActionsStore.displayList
+        if !displayList.isEmpty {
+            HStack(spacing: 4) {
+                ForEach(displayList, id: \.self) { id in
+                    quickActionButton(id: id)
+                }
+            }
+        }
+    }
+
+    private func quickActionButton(id: QuickActionId) -> some View {
+        let tooltip = quickActionsStore.displayName(for: id, locale: locale)
+        let icon = quickActionsStore.iconSource(for: id)
+        return IconButton(theme: themeManager.theme, help: tooltip) {
             guard let wsId = store.selectedId else { return }
-            let title = quickActionsStore.displayName(for: "lazygit", locale: locale)
-            let result = store.ensureQuickActionTab(id: "lazygit", title: title, in: wsId)
+            let result = store.ensureQuickActionTab(id: id, title: tooltip, in: wsId)
             if result.isNew, let prev = result.sourcePwdTerminalId {
                 pwdStore.inherit(from: prev, to: result.terminalId)
             }
         } label: {
-            Image(systemName: "arrow.triangle.branch")
-                .font(.system(size: 13, weight: .regular))
-                .foregroundColor(Color(themeManager.theme.textSecondary))
+            QuickActionIconView(
+                source: icon,
+                size: 13,
+                color: Color(themeManager.theme.textSecondary)
+            )
         }
         .disabled(store.selectedId == nil)
     }

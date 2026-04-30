@@ -81,12 +81,6 @@ enum L10n {
         // See Strings.xcstrings for the full key list.
     }
 
-    // MARK: - Topbar (overlay buttons in ContentView's title bar band)
-
-    enum Topbar {
-        static let gitButtonTooltip     = LocalizedStringResource("topbar.gitButton.tooltip")
-    }
-
     // MARK: - QuickActions
 
     /// Display names for builtin Quick Actions. Custom actions render their
@@ -177,9 +171,6 @@ enum L10n {
             static let features            = LocalizedStringResource("settings.shell.features")
             static let customCommand       = LocalizedStringResource("settings.shell.customCommand")
             static let defaultPlaceholder  = LocalizedStringResource("settings.shell.defaultPlaceholder")
-            static let gitViewerLabel      = LocalizedStringResource("settings.shell.gitViewer.label")
-            static let gitViewerHelp       = LocalizedStringResource("settings.shell.gitViewer.help")
-            static let gitViewerInstallHint = LocalizedStringResource("settings.shell.gitViewer.installHint")
         }
         enum Agents {
             static let claude              = LocalizedStringResource("settings.agents.claude")
