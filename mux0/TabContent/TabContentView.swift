@@ -243,6 +243,11 @@ final class TabContentView: NSView {
     }
 
     /// Pick the shell command to auto-execute on a fresh surface. Source order:
+    ///   0. Git tab's first terminal: the configured `mux0-git-viewer` command
+    ///      (default "lazygit"). Fires every time the surface is built — so
+    ///      restarting mux0 re-runs the viewer automatically. Splitting inside
+    ///      a git tab does NOT apply this to the new pane (only the layout's
+    ///      first terminal id matches).
     ///   1. Pending agent resume command (`claude --resume <id>` /
     ///      `codex resume <id>`) — only when the matching agent's Resume
     ///      toggle in Settings is ON. Default OFF means stale UserDefaults
@@ -250,11 +255,26 @@ final class TabContentView: NSView {
     ///      ignored, not replayed.
     ///   2. Workspace-level `defaultCommand`.
     private func resolvedStartupCommand(forTerminal id: UUID) -> String? {
+        // (0) Git tab's first terminal → mux0-git-viewer setting.
+        if let tab = store?.selectedWorkspace?.tabs.first(where: {
+                $0.layout.allTerminalIds().contains(id)
+            }),
+            tab.kind == .git,
+            id == tab.layout.allTerminalIds().first {
+            let raw = settingsStore?.get("mux0-git-viewer")?
+                .trimmingCharacters(in: .whitespacesAndNewlines)
+            let cmd = (raw?.isEmpty == false) ? raw! : "lazygit"
+            return "\(cmd)\n"
+        }
+
+        // (1) Agent resume.
         if let pending = store?.consumePendingPrefill(terminalId: id),
            let agent = HookMessage.Agent.fromResumeCommand(pending),
            settingsStore?.get(agent.resumeSettingsKey) == "true" {
             return pending
         }
+
+        // (2) Workspace default command.
         return store?.selectedWorkspace?.defaultCommand
     }
 
