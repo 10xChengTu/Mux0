@@ -295,7 +295,7 @@ struct ContentView: View {
     private var quickActionsBar: some View {
         let displayList = quickActionsStore.displayList
         if !displayList.isEmpty {
-            HStack(spacing: 4) {
+            HStack(spacing: DT.Space.xs) {
                 ForEach(displayList, id: \.self) { id in
                     quickActionButton(id: id)
                 }
