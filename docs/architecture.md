@@ -180,13 +180,21 @@ Tab + SplitPane 全部用 AppKit，原因：NSSplitView 的 divider 拖拽、z-o
 - `SurfaceScrollView` — `NSScrollView` + 空白 `documentView`，`GhosttyTerminalView` 作为 documentView 子视图并 pin 在 `visibleRect` 上。消费 ghostty 的 `SCROLLBAR`（total/offset/len 行数）与 `CELL_SIZE`（backing px → pt）action 驱动 scroller；用户拖拽时转成行号并通过 `scroll_to_row:N` binding action 回写 ghostty。永远 overlay 样式以避免非 overlay 滚动条变宽引起的 PTY reflow
 - `GhosttyTerminalView` — 持有 `ghostty_surface_t`，Metal CALayer 渲染；失焦时整体降 alpha 到 `unfocused-split-opacity`
 
-### Git Tab
+### Quick Actions
 
-`TerminalTab.kind == .git` 标记一种语义化 tab：右上角 git 图标按钮通过 `WorkspaceStore.ensureGitTab(in:)` 创建（或切到现有），标题默认 `Git`，沿用普通 tab 的重命名流程。每个 workspace 最多一个 git tab——识别只看 `kind` 字段而非 title，所以用户即便把它重命名为别的名字，再点按钮仍视作同一个。新建时通过 `TerminalPwdStore.inherit(from:to:)` 把调用前 selected tab 的 pwd 继承给新终端，让 lazygit 落地在用户当下浏览的仓库。
+WorkspaceStore 的每个 Tab 可关联一个**快捷操作 ID**（`TerminalTab.quickActionId: String?`），由顶栏的 Quick Actions Bar（`ContentView.quickActionsBar`）按 `QuickActionsStore.displayList` 顺序渲染按钮触发：点击 → `WorkspaceStore.ensureQuickActionTab(id:title:in:)` 在当前 workspace 找到/新建对应 tab，并通过 `TerminalPwdStore.inherit(from:to:)` 继承前一个焦点 pane 的 pwd（让 `lazygit` 等命令落地在用户当下浏览的 cwd）。
 
-启动命令注入路径：`TabContentView.resolvedStartupCommand(forTerminal:)` 检测到 `tab.kind == .git` 且 `id == tab.layout.allTerminalIds().first` 时，从 `mux0-git-viewer` setting 读命令（默认 `lazygit`）作为 ghostty surface 的 `initial_input`。意味着重启 mux0 → surface 重建 → viewer 自动重跑；split 出的次级 pane 不会再跑（它不是 layout 第一个终端）。
+**身份按 ID 区分，不按 title。** 用户改 tab 标题不影响"再点同样按钮 → 复用同一 tab"这条不变量；每个 workspace 对每个 quick action id 最多一个 tab。
 
-视觉上 tab pill 加了 leading SF Symbol：git tab → `arrow.triangle.branch`，普通 terminal tab → `terminal`，颜色跟随 title 文字色。详见 `docs/superpowers/specs/2026-04-30-git-tab-design.md`。
+**`QuickActionsStore`** 是 enabled 列表（按显示顺序排）+ 内置命令覆盖（per-id）+ 自定义条目数组的单一真理源，全部通过 `SettingsConfigStore` 持久化（3 个键：`mux0-quickactions-enabled` / `mux0-quickactions-builtin-command-<id>` / `mux0-quickactions-custom`）。`@Observable`，UI 直接订阅。
+
+**命令注入路径：** Tab 第一个终端启动时（`id == tab.layout.allTerminalIds().first`），`TabContentView.resolvedStartupCommand(forTerminal:)` 检测 `tab.quickActionId` 非空 → 调 `quickActionsStore.command(for: id)`：内置 = override 或默认（`lazygit` / `claude` / `codex` / `opencode`），自定义 = 用户输入命令。返回值作为 `initial_input` + `\n` 喂给 ghostty surface，shell 启动后立即执行。Split 出的次级 pane 不会再跑（它不是 layout 第一个终端）。
+
+**重启恢复：** Tab 数据序列化到 UserDefaults，重启后 `tab.quickActionId` 还在 → 同一注入路径自动重新跑命令（lazygit 重新打开、claude 重新连接……）。Surface 不序列化，重启后是新 ghostty surface。
+
+**图标：** `BuiltinQuickAction.iconSource` 三种来源——SF Symbol（lazygit 用 `arrow.triangle.branch`）、Asset Catalog（claude / codex / opencode 用 lobe-icons SVG，`template-rendering-intent: template`）、首字母（自定义）。三种统一通过 `QuickActionIconView` 渲染，跟随 theme token tint。
+
+**Settings：** `Settings → Quick Actions` 提供单一可拖拽列表，所有 4 内置 + N 自定义混排，每行可独立 toggle 启用 / 改命令；自定义可改名 / 删除。详见 `docs/superpowers/specs/2026-04-30-quick-actions.md`。
 
 ## Settings Layer
 

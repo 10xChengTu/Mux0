@@ -61,6 +61,8 @@ mux0/
 ├── Models/
 │   ├── Workspace.swift            — Workspace / TerminalTab / SplitNode / SplitDirection（Codable）
 │   ├── WorkspaceStore.swift       — @Observable，workspace / tab / split CRUD + UserDefaults 持久化
+│   ├── QuickAction.swift          — BuiltinQuickAction enum + CustomQuickAction struct + QuickActionIcon
+│   ├── QuickActionsStore.swift    — @Observable，enabled / overrides / custom 三段持久化
 │   ├── TerminalStatus.swift       — 单终端运行状态枚举（running / idle / needsInput）
 │   ├── TerminalStatusStore.swift  — @Observable，终端状态聚合（供 sidebar / tab 图标读取）
 │   ├── TerminalPwdStore.swift     — @Observable，terminalId → pwd 映射（ghostty PWD action 喂入，sidebar git 分支读取）
@@ -68,13 +70,13 @@ mux0/
 │   ├── HookMessage.swift          — agent/shell hook 的 JSON wire format
 │   └── HookSocketListener.swift   — Unix domain socket 监听，解析 HookMessage → statusStore
 ├── Settings/
-│   ├── SettingsView.swift         — SwiftUI 根面板，承载六个 Section
+│   ├── SettingsView.swift         — SwiftUI 根面板，承载七个 Section
 │   ├── SettingsConfigStore.swift  — @Observable，读写 mux0 config（200ms debounce）
-│   ├── SettingsTabBarView.swift   — Appearance / Font / Terminal / Shell / Agents / Update 分类切换
+│   ├── SettingsTabBarView.swift   — Appearance / Font / Terminal / Shell / Quick Actions / Agents / Update 分类切换
 │   ├── SettingsSection.swift      — Section 枚举定义
 │   ├── ThemeCatalog.swift         — 只读扫描 bundle 内 ghostty/themes/
-│   ├── Components/                — 复用 SwiftUI 控件（BoundControls / FontPicker / ThemePicker / ...）
-│   └── Sections/                  — 六个 Section 的视图实现（Appearance / Font / Terminal / Shell / Agents / Update）
+│   ├── Components/                — 复用 SwiftUI 控件（BoundControls / FontPicker / QuickActionIconView / QuickActionRowView / ThemePicker / ...）
+│   └── Sections/                  — 七个 Section 的视图实现（Appearance / Font / Terminal / Shell / QuickActions / Agents / Update）
 ├── Sidebar/
 │   ├── SidebarView.swift              — SwiftUI 壳：header / footer / alert / 通知订阅 / refresher 生命周期
 │   ├── WorkspaceListView.swift        — AppKit 列表 + private WorkspaceRowItemView
@@ -100,7 +102,7 @@ mux0/
 2. **ghostty API 只在 GhosttyBridge 和 GhosttyTerminalView 中调用** — 其他文件不 `import` 也不直接调用 `ghostty_*` 函数
 3. **状态写回 WorkspaceStore** — 所有持久化状态（workspace 列表、tab 列表、SplitNode tree、selectedTabId）通过 WorkspaceStore 的方法修改，不直接改 struct 字段
 4. **TabBar / SplitPane / SidebarList 用 NSView subclass；SidebarView / SettingsView 壳（header / footer / alert / 通知订阅 / 元数据 refresher 生命周期 / 设置表单）用 SwiftUI View struct** — AppKit ↔ SwiftUI 边界统一在 `*Bridge: NSViewRepresentable`
-5. **提交格式** `type(scope): description` — e.g. `feat(tabcontent): add drag-to-reorder`；scope 与目录对应，合法值：`sidebar | tabcontent | settings | theme | ghostty | models | metadata | bridge | build | docs | update | i18n`
+5. **提交格式** `type(scope): description` — e.g. `feat(tabcontent): add drag-to-reorder`；scope 与目录对应，合法值：`sidebar | tabcontent | settings | theme | ghostty | models | metadata | bridge | build | docs | update | i18n | assets`
 6. **不 push 到 master** — 用 `agent/feature-name` 分支，PR 合并
 7. **surface 不序列化** — `Workspace → tabs → SplitNode` 只存 UUID 与 split ratio；重启后 GhosttyTerminalView 按 UUID 重建 surface
 8. **文档与目录结构同步** — 增删/重命名/移动 `mux0/` 下的目录或 Swift 文件时，**同一 PR 必须同步更新** CLAUDE.md、AGENTS.md 的 Directory Structure 与 `docs/architecture.md` 中受影响的章节。提交前跑 `./scripts/check-doc-drift.sh` 自检。新模块还要在 Common Tasks 或 Documentation Map 里补条目
@@ -126,7 +128,8 @@ mux0/
 | 修改主题颜色逻辑 | `Theme/ThemeManager.swift`, `Theme/AppTheme.swift`, `docs/architecture.md#theme` |
 | 增加新的 workspace 元信息字段 | `Metadata/WorkspaceMetadata.swift` → `Metadata/MetadataRefresher.swift` → `Sidebar/WorkspaceListView.swift`（行视觉） |
 | 改标签/分割窗格交互（新建 tab、拆分、拖 divider） | `TabContent/TabBarView.swift`, `TabContent/TabContentView.swift`, `TabContent/SplitPaneView.swift`, `Models/WorkspaceStore.swift`（新 CRUD 方法） |
-| 增加新的 tab 类型 (TabKind) | `Models/Workspace.swift`（加 enum case），`Models/WorkspaceStore.swift`（addTab kind 透传 + ensure*Tab helper），`TabContent/TabContentView.swift`（resolvedStartupCommand 注入），`TabContent/TabBarView.swift`（kindIcon 映射），`ContentView.swift`（顶部入口按钮），i18n 与 settings 同步 |
+| 增加新的内置快捷操作 | `Models/QuickAction.swift`（加 `BuiltinQuickAction` case + 默认命令 + `iconSource`），`Models/QuickActionsStore.swift`（默认 enabled 列表如需调整），`Localizable.xcstrings` + `Localization/L10n.swift`（displayName key），必要时 `Assets.xcassets` 加 SVG imageset（`template-rendering-intent: template`），`docs/settings-reference.md`（如新增 builtin id 范围） |
+| 增加用户自定义快捷操作 | UI 已支持，运行时由用户在 Settings → Quick Actions 中点击「新建自定义快捷操作」创建，无需改代码 |
 | 接入新的 ghostty C API | `Ghostty/GhosttyBridge.swift`，需同步更新 `docs/ghostty-integration.md` |
 | 改自动更新 UI / 行为 | `mux0/Update/UpdateStore.swift`, `mux0/Update/UpdateUserDriver.swift`, `mux0/Settings/Sections/UpdateSectionView.swift`, `mux0/Sidebar/SidebarView.swift`（footer） |
 | 改发布流水线 / appcast 格式 | `.github/workflows/release.yml`, `.github/scripts/render-appcast.sh`, `docs/build.md` |
