@@ -262,8 +262,8 @@ final class TabContentView: NSView {
             tab.kind == .git,
             id == tab.layout.allTerminalIds().first {
             let raw = settingsStore?.get("mux0-git-viewer")?
-                .trimmingCharacters(in: .whitespacesAndNewlines)
-            let cmd = (raw?.isEmpty == false) ? raw! : "lazygit"
+                .trimmingCharacters(in: .whitespacesAndNewlines) ?? ""
+            let cmd = raw.isEmpty ? "lazygit" : raw
             return "\(cmd)\n"
         }
 
