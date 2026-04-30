@@ -344,9 +344,13 @@ private final class TabItemView: NSView, NSTextFieldDelegate, NSDraggingSource {
     }
 
     private let pillView   = NSView()
+    private let kindIcon   = NSImageView()
     private let titleLabel = NSTextField(labelWithString: "")
     private let renameField = NSTextField()
     private let statusIcon = TerminalStatusIconView(frame: .zero)
+
+    /// 当前显示的 kind —— 用来在 refresh() 时判断是否需要换 image。
+    private var displayedKind: TabKind?
     private var originalTitle: String = ""
     private var isRenaming: Bool = false
     private var isSelected: Bool
@@ -364,10 +368,12 @@ private final class TabItemView: NSView, NSTextFieldDelegate, NSDraggingSource {
         self.theme = theme
         self.backgroundOpacity = backgroundOpacity
         self.status = status
+        self.displayedKind = tab.kind
         super.init(frame: .zero)
         self.showStatusIndicators = showStatusIndicators
         titleLabel.stringValue = tab.title
         setup()
+        applyKindImage(tab.kind)
         updateStyle()
         statusIcon.isHidden = !showStatusIndicators
         statusIcon.update(status: status, theme: theme)
@@ -380,6 +386,10 @@ private final class TabItemView: NSView, NSTextFieldDelegate, NSDraggingSource {
         pillView.wantsLayer = true
         pillView.layer?.masksToBounds = true
         addSubview(pillView)
+
+        kindIcon.symbolConfiguration = NSImage.SymbolConfiguration(pointSize: 11, weight: .regular)
+        kindIcon.imageScaling = .scaleProportionallyUpOrDown
+        addSubview(kindIcon)
 
         addSubview(statusIcon)
 
@@ -421,19 +431,27 @@ private final class TabItemView: NSView, NSTextFieldDelegate, NSDraggingSource {
         pillView.layer?.cornerRadius = TabBarView.pillRadius
 
         let margin: CGFloat = 10
-        let iconSize: CGFloat = showStatusIndicators ? TerminalStatusIconView.size : 0
-        let iconGap: CGFloat = showStatusIndicators ? 6 : 0
+        let trailingIconSize: CGFloat = showStatusIndicators ? TerminalStatusIconView.size : 0
+        let trailingGap: CGFloat = showStatusIndicators ? 6 : 0
         if showStatusIndicators {
             statusIcon.frame = NSRect(
-                x: bounds.width - margin - iconSize, y: (h - iconSize) / 2,
-                width: iconSize, height: iconSize)
+                x: bounds.width - margin - trailingIconSize, y: (h - trailingIconSize) / 2,
+                width: trailingIconSize, height: trailingIconSize)
         }
 
+        // Leading kind icon: 11pt SF Symbol, fixed gap to title.
+        let leadingIconSize: CGFloat = 11
+        let leadingGap: CGFloat = 6
+        kindIcon.frame = NSRect(
+            x: margin, y: (h - leadingIconSize) / 2,
+            width: leadingIconSize, height: leadingIconSize)
+
         let textH = ceil(titleLabel.intrinsicContentSize.height)
-        let textX = margin
-        let textFrame = NSRect(x: textX, y: (h - textH) / 2,
-                               width: bounds.width - margin - iconSize - iconGap - textX,
-                               height: textH)
+        let textX = margin + leadingIconSize + leadingGap
+        let textFrame = NSRect(
+            x: textX, y: (h - textH) / 2,
+            width: bounds.width - margin - trailingIconSize - trailingGap - textX,
+            height: textH)
         titleLabel.frame = textFrame
         renameField.frame = textFrame
     }
@@ -516,11 +534,20 @@ private final class TabItemView: NSView, NSTextFieldDelegate, NSDraggingSource {
         if titleLabel.stringValue != tab.title && !isRenaming {
             titleLabel.stringValue = tab.title
         }
+        if displayedKind != tab.kind {
+            displayedKind = tab.kind
+            applyKindImage(tab.kind)
+        }
         self.showStatusIndicators = showStatusIndicators
         statusIcon.isHidden = !showStatusIndicators
         statusIcon.update(status: status, theme: theme)
         updateStyle()
         needsLayout = true
+    }
+
+    private func applyKindImage(_ kind: TabKind?) {
+        let symbolName: String = (kind == .git) ? "arrow.triangle.branch" : "terminal"
+        kindIcon.image = NSImage(systemSymbolName: symbolName, accessibilityDescription: nil)
     }
 
     private func updateStyle() {
@@ -534,6 +561,7 @@ private final class TabItemView: NSView, NSTextFieldDelegate, NSDraggingSource {
             pillView.layer?.backgroundColor = .clear
             titleLabel.textColor = theme.textSecondary
         }
+        kindIcon.contentTintColor = titleLabel.textColor
         needsDisplay = true
     }
 
