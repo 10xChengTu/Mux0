@@ -75,6 +75,7 @@ enum L10n {
 
     enum Tab {
         static let newTabTooltip        = LocalizedStringResource("tab.newTab")
+        static let gitDefaultTitle      = LocalizedStringResource("tab.git.defaultTitle")
         // Row rename/close (context menu) and close-tab alert strings are resolved
         // at runtime via L10n.string("tab.row.rename") etc. — they live only in
         // AppKit call sites (NSMenuItem, NSAlert), so no typed constant is needed.
@@ -149,6 +150,9 @@ enum L10n {
             static let features            = LocalizedStringResource("settings.shell.features")
             static let customCommand       = LocalizedStringResource("settings.shell.customCommand")
             static let defaultPlaceholder  = LocalizedStringResource("settings.shell.defaultPlaceholder")
+            static let gitViewerLabel      = LocalizedStringResource("settings.shell.gitViewer.label")
+            static let gitViewerHelp       = LocalizedStringResource("settings.shell.gitViewer.help")
+            static let gitViewerInstallHint = LocalizedStringResource("settings.shell.gitViewer.installHint")
         }
         enum Agents {
             static let claude              = LocalizedStringResource("settings.agents.claude")
@@ -197,6 +201,12 @@ enum L10n {
     enum App {
         static let ghosttyNotFoundTitle     = LocalizedStringResource("app.ghostty.notFound.title")
         static let ghosttyNotFoundDetail    = LocalizedStringResource("app.ghostty.notFound.detail")
+    }
+
+    // MARK: - Topbar (overlay buttons in ContentView's title bar band)
+
+    enum Topbar {
+        static let gitButtonTooltip     = LocalizedStringResource("topbar.gitButton.tooltip")
     }
 
     // MARK: - Menu

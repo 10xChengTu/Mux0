@@ -136,9 +136,16 @@ final class L10nSmokeTests: XCTestCase {
         "tab.close.alert.confirm",
         "tab.close.alert.message %@",
         "tab.close.alert.title",
+        "tab.git.defaultTitle",
         "tab.newTab",
         "tab.row.close",
         "tab.row.rename",
+        // Topbar
+        "topbar.gitButton.tooltip",
+        // Settings — shell (git viewer)
+        "settings.shell.gitViewer.help",
+        "settings.shell.gitViewer.installHint",
+        "settings.shell.gitViewer.label",
     ]
 
     override func tearDown() {

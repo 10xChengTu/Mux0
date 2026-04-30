@@ -463,6 +463,27 @@
         "zh-Hans" : { "stringUnit" : { "state" : "translated", "value" : "Shell 集成" } }
       }
     },
+    "settings.shell.gitViewer.label" : {
+      "extractionState" : "manual",
+      "localizations" : {
+        "en" : { "stringUnit" : { "state" : "translated", "value" : "Git viewer command" } },
+        "zh-Hans" : { "stringUnit" : { "state" : "translated", "value" : "Git 工具命令" } }
+      }
+    },
+    "settings.shell.gitViewer.help" : {
+      "extractionState" : "manual",
+      "localizations" : {
+        "en" : { "stringUnit" : { "state" : "translated", "value" : "Runs in the Git tab created by clicking the Git icon in the top-right. Try `lazygit`, `gitui`, or `tig`." } },
+        "zh-Hans" : { "stringUnit" : { "state" : "translated", "value" : "点击右上角 Git 图标后，会在新建的 Git tab 里自动执行该命令。可选：lazygit、gitui、tig。" } }
+      }
+    },
+    "settings.shell.gitViewer.installHint" : {
+      "extractionState" : "manual",
+      "localizations" : {
+        "en" : { "stringUnit" : { "state" : "translated", "value" : "Install lazygit: brew install lazygit" } },
+        "zh-Hans" : { "stringUnit" : { "state" : "translated", "value" : "安装 lazygit：brew install lazygit" } }
+      }
+    },
     "settings.terminal.confirmClose" : {
       "extractionState" : "manual",
       "localizations" : {
@@ -673,6 +694,13 @@
         "zh-Hans" : { "stringUnit" : { "state" : "translated", "value" : "关闭 tab？" } }
       }
     },
+    "tab.git.defaultTitle" : {
+      "extractionState" : "manual",
+      "localizations" : {
+        "en" : { "stringUnit" : { "state" : "translated", "value" : "Git" } },
+        "zh-Hans" : { "stringUnit" : { "state" : "translated", "value" : "Git" } }
+      }
+    },
     "tab.newTab" : {
       "extractionState" : "manual",
       "localizations" : {
@@ -839,6 +867,13 @@
       "localizations" : {
         "en" : { "stringUnit" : { "state" : "translated", "value" : "Update available" } },
         "zh-Hans" : { "stringUnit" : { "state" : "translated", "value" : "有可用更新" } }
+      }
+    },
+    "topbar.gitButton.tooltip" : {
+      "extractionState" : "manual",
+      "localizations" : {
+        "en" : { "stringUnit" : { "state" : "translated", "value" : "Open Git Viewer" } },
+        "zh-Hans" : { "stringUnit" : { "state" : "translated", "value" : "打开 Git 视图" } }
       }
     }
   },
