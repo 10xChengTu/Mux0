@@ -65,6 +65,7 @@
 		A7A8C66EE1DE6FB17046605B /* UpdateUserDriver.swift in Sources */ = {isa = PBXBuildFile; fileRef = 6E9FA78211379FE745A2A306 /* UpdateUserDriver.swift */; };
 		A88A524A7FCB090037E7DB2C /* TerminalPwdStoreTests.swift in Sources */ = {isa = PBXBuildFile; fileRef = 821BF7B943BBA8650E8769A4 /* TerminalPwdStoreTests.swift */; };
 		AAED11F9F7573A5B6BA61309 /* HookMessage.swift in Sources */ = {isa = PBXBuildFile; fileRef = FE45556476624565D24827DD /* HookMessage.swift */; };
+		AD0E26BEE5234D9F2F9146C7 /* QuickActionsSectionView.swift in Sources */ = {isa = PBXBuildFile; fileRef = 6CB172F8B41CDB874661F90C /* QuickActionsSectionView.swift */; };
 		B10F416FF03BF20B04C7BD74 /* ThemePickerView.swift in Sources */ = {isa = PBXBuildFile; fileRef = CD1034A9A7330C528BE1EFE1 /* ThemePickerView.swift */; };
 		B146356665E4C8B072624939 /* ShellSectionView.swift in Sources */ = {isa = PBXBuildFile; fileRef = 47A19B43AC5D68C431FBB96C /* ShellSectionView.swift */; };
 		B35766C44967278D296440C0 /* HookMessageTests.swift in Sources */ = {isa = PBXBuildFile; fileRef = 399D6E84F70926B48FDB254D /* HookMessageTests.swift */; };
@@ -137,6 +138,7 @@
 		6A963A750BA08BAAF5629075 /* SidebarView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = SidebarView.swift; sourceTree = "<group>"; };
 		6B95FF6C4289EE3D48831A08 /* BoundControls.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = BoundControls.swift; sourceTree = "<group>"; };
 		6C02DE9F1EA5DB3D6EFBA311 /* Config.xcconfig */ = {isa = PBXFileReference; lastKnownFileType = text.xcconfig; path = Config.xcconfig; sourceTree = "<group>"; };
+		6CB172F8B41CDB874661F90C /* QuickActionsSectionView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = QuickActionsSectionView.swift; sourceTree = "<group>"; };
 		6E9FA78211379FE745A2A306 /* UpdateUserDriver.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = UpdateUserDriver.swift; sourceTree = "<group>"; };
 		6ECD49D2FB00996850D13632 /* TabBridge.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = TabBridge.swift; sourceTree = "<group>"; };
 		70BBA11237B9EA46D6D3FFD6 /* ThemeManagerTests.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = ThemeManagerTests.swift; sourceTree = "<group>"; };
@@ -280,6 +282,7 @@
 				98AEAE23A5BABC68B717A3C5 /* AgentsSectionView.swift */,
 				F3A60150D4D181A6D9B55930 /* AppearanceSectionView.swift */,
 				CB9A34DFA116CE4541DC15CC /* FontSectionView.swift */,
+				6CB172F8B41CDB874661F90C /* QuickActionsSectionView.swift */,
 				47A19B43AC5D68C431FBB96C /* ShellSectionView.swift */,
 				674574CDF31582712885AF2A /* TerminalSectionView.swift */,
 				E5FB076458B5D37F30A649F5 /* UpdateSectionView.swift */,
@@ -642,6 +645,7 @@
 				8D92A0B981408874C548B7CE /* MetadataRefresher.swift in Sources */,
 				C25EEE04D310E199A62D191C /* PasteboardTypes.swift in Sources */,
 				5050C197246573A2D7174B05 /* QuickAction.swift in Sources */,
+				AD0E26BEE5234D9F2F9146C7 /* QuickActionsSectionView.swift in Sources */,
 				205D81DA92E72BA9F8C00522 /* QuickActionsStore.swift in Sources */,
 				6EF0E2148355BAE5EEE90A2A /* SettingsConfigStore.swift in Sources */,
 				764C52B851F870CEAD204A76 /* SettingsResetRow.swift in Sources */,

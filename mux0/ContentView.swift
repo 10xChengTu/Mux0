@@ -94,6 +94,7 @@ struct ContentView: View {
                             settings: settingsStore,
                             updateStore: updateStore,
                             workspaceStore: store,
+                            quickActionsStore: quickActionsStore,
                             initialSection: pendingSettingsSection,
                             onClose: { showSettings = false }
                         )

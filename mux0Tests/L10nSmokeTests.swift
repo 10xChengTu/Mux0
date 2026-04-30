@@ -78,6 +78,7 @@ final class L10nSmokeTests: XCTestCase {
         "settings.section.agents",
         "settings.section.appearance",
         "settings.section.font",
+        "settings.section.quickActions",
         "settings.section.shell",
         "settings.section.terminal",
         "settings.section.update",

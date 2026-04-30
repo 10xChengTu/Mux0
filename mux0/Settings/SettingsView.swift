@@ -5,6 +5,7 @@ struct SettingsView: View {
     let settings: SettingsConfigStore
     let updateStore: UpdateStore
     let workspaceStore: WorkspaceStore
+    let quickActionsStore: QuickActionsStore
     let onClose: () -> Void
 
     @Environment(ThemeManager.self) private var themeManager
@@ -16,6 +17,7 @@ struct SettingsView: View {
         settings: SettingsConfigStore,
         updateStore: UpdateStore,
         workspaceStore: WorkspaceStore,
+        quickActionsStore: QuickActionsStore,
         initialSection: SettingsSection? = nil,
         onClose: @escaping () -> Void
     ) {
@@ -23,6 +25,7 @@ struct SettingsView: View {
         self.settings = settings
         self.updateStore = updateStore
         self.workspaceStore = workspaceStore
+        self.quickActionsStore = quickActionsStore
         self.onClose = onClose
         _section = State(initialValue: initialSection ?? .appearance)
     }
@@ -68,12 +71,13 @@ struct SettingsView: View {
     @ViewBuilder
     private var sectionBody: some View {
         switch section {
-        case .appearance: AppearanceSectionView(theme: theme, settings: settings)
-        case .font:       FontSectionView(theme: theme, settings: settings)
-        case .terminal:   TerminalSectionView(theme: theme, settings: settings)
-        case .shell:      ShellSectionView(theme: theme, settings: settings)
-        case .agents:     AgentsSectionView(theme: theme, settings: settings, workspaceStore: workspaceStore)
-        case .update:     UpdateSectionView(theme: theme, updateStore: updateStore)
+        case .appearance:   AppearanceSectionView(theme: theme, settings: settings)
+        case .font:         FontSectionView(theme: theme, settings: settings)
+        case .terminal:     TerminalSectionView(theme: theme, settings: settings)
+        case .shell:        ShellSectionView(theme: theme, settings: settings)
+        case .quickActions: QuickActionsSectionView(theme: theme, settings: settings, quickActionsStore: quickActionsStore)
+        case .agents:       AgentsSectionView(theme: theme, settings: settings, workspaceStore: workspaceStore)
+        case .update:       UpdateSectionView(theme: theme, updateStore: updateStore)
         }
     }
 

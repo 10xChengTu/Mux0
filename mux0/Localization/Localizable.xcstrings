@@ -449,6 +449,13 @@
         "zh-Hans" : { "stringUnit" : { "state" : "translated", "value" : "字体" } }
       }
     },
+    "settings.section.quickActions" : {
+      "extractionState" : "manual",
+      "localizations" : {
+        "en" : { "stringUnit" : { "state" : "translated", "value" : "Quick Actions" } },
+        "zh-Hans" : { "stringUnit" : { "state" : "translated", "value" : "快捷操作" } }
+      }
+    },
     "settings.section.shell" : {
       "extractionState" : "manual",
       "localizations" : {

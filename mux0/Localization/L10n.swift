@@ -108,6 +108,7 @@ enum L10n {
         static let sectionFont          = LocalizedStringResource("settings.section.font")
         static let sectionTerminal      = LocalizedStringResource("settings.section.terminal")
         static let sectionShell         = LocalizedStringResource("settings.section.shell")
+        static let sectionQuickActions  = LocalizedStringResource("settings.section.quickActions")
         static let sectionAgents        = LocalizedStringResource("settings.section.agents")
         static let sectionUpdate        = LocalizedStringResource("settings.section.update")
 
