@@ -87,6 +87,19 @@ enum L10n {
         static let gitButtonTooltip     = LocalizedStringResource("topbar.gitButton.tooltip")
     }
 
+    // MARK: - QuickActions
+
+    /// Display names for builtin Quick Actions. Custom actions render their
+    /// user-entered name verbatim and don't pass through this namespace.
+    enum QuickActions {
+        enum Builtin {
+            static let lazygit  = LocalizedStringResource("quickActions.builtin.lazygit")
+            static let claude   = LocalizedStringResource("quickActions.builtin.claude")
+            static let codex    = LocalizedStringResource("quickActions.builtin.codex")
+            static let opencode = LocalizedStringResource("quickActions.builtin.opencode")
+        }
+    }
+
     // MARK: - Settings
 
     enum Settings {

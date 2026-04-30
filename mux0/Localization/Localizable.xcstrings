@@ -134,6 +134,34 @@
         "zh-Hans" : { "stringUnit" : { "state" : "translated", "value" : "终端" } }
       }
     },
+    "quickActions.builtin.claude" : {
+      "extractionState" : "manual",
+      "localizations" : {
+        "en" : { "stringUnit" : { "state" : "translated", "value" : "Claude Code" } },
+        "zh-Hans" : { "stringUnit" : { "state" : "translated", "value" : "Claude Code" } }
+      }
+    },
+    "quickActions.builtin.codex" : {
+      "extractionState" : "manual",
+      "localizations" : {
+        "en" : { "stringUnit" : { "state" : "translated", "value" : "Codex" } },
+        "zh-Hans" : { "stringUnit" : { "state" : "translated", "value" : "Codex" } }
+      }
+    },
+    "quickActions.builtin.lazygit" : {
+      "extractionState" : "manual",
+      "localizations" : {
+        "en" : { "stringUnit" : { "state" : "translated", "value" : "Lazygit" } },
+        "zh-Hans" : { "stringUnit" : { "state" : "translated", "value" : "Lazygit" } }
+      }
+    },
+    "quickActions.builtin.opencode" : {
+      "extractionState" : "manual",
+      "localizations" : {
+        "en" : { "stringUnit" : { "state" : "translated", "value" : "opencode" } },
+        "zh-Hans" : { "stringUnit" : { "state" : "translated", "value" : "opencode" } }
+      }
+    },
     "settings.appearance.backgroundBlur" : {
       "extractionState" : "manual",
       "localizations" : {

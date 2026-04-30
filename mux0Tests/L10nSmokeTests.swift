@@ -34,6 +34,11 @@ final class L10nSmokeTests: XCTestCase {
         "menu.splitHorizontal",
         "menu.splitVertical",
         "menu.terminal",
+        // QuickActions
+        "quickActions.builtin.claude",
+        "quickActions.builtin.codex",
+        "quickActions.builtin.lazygit",
+        "quickActions.builtin.opencode",
         // Settings — appearance
         "settings.appearance.backgroundBlur",
         "settings.appearance.backgroundOpacity",
