@@ -647,4 +647,49 @@ final class WorkspaceStoreTests: XCTestCase {
         XCTAssertEqual(store.workspaces[0].pendingPrefills[extra.terminalId.uuidString],
                        "claude --resume three")
     }
+
+    // MARK: - TabKind & ensureGitTab
+
+    func testTerminalTabKind_codableRoundTrip_gitValue() throws {
+        var tab = TerminalTab(title: "Git")
+        tab.kind = .git
+
+        let data = try JSONEncoder().encode(tab)
+        let decoded = try JSONDecoder().decode(TerminalTab.self, from: data)
+
+        XCTAssertEqual(decoded.kind, .git)
+        XCTAssertEqual(decoded.title, "Git")
+    }
+
+    func testTerminalTabKind_codableRoundTrip_nilValue() throws {
+        let tab = TerminalTab(title: "terminal 1")
+        XCTAssertNil(tab.kind)
+
+        let data = try JSONEncoder().encode(tab)
+        let decoded = try JSONDecoder().decode(TerminalTab.self, from: data)
+
+        XCTAssertNil(decoded.kind)
+    }
+
+    func testTerminalTabKind_decodingLegacyJSONWithoutKindField() throws {
+        // Old persistence (pre-TabKind) had no `kind` key. Decoding must succeed
+        // and land on nil, otherwise existing UserDefaults blobs break on upgrade.
+        let termId = UUID()
+        let tabId = UUID()
+        let json = """
+        {
+            "id": "\(tabId.uuidString)",
+            "title": "old tab",
+            "layout": { "type": "terminal", "terminalId": "\(termId.uuidString)" },
+            "focusedTerminalId": "\(termId.uuidString)"
+        }
+        """
+        let data = json.data(using: .utf8)!
+
+        let decoded = try JSONDecoder().decode(TerminalTab.self, from: data)
+
+        XCTAssertNil(decoded.kind)
+        XCTAssertEqual(decoded.title, "old tab")
+        XCTAssertEqual(decoded.id, tabId)
+    }
 }

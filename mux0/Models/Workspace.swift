@@ -123,6 +123,16 @@ extension SplitNode: Codable {
     }
 }
 
+// MARK: - TabKind
+
+/// 标记 tab 的语义类型。nil 表示普通终端 tab。
+/// 当前唯一的非 nil 取值是 `.git` —— 由右上角 git 图标创建，渲染时
+/// `TabContentView.resolvedStartupCommand` 会把 `mux0-git-viewer` 设置中
+/// 的命令作为 initial_input 注入到该 tab 的首终端。
+enum TabKind: String, Codable, Equatable {
+    case git
+}
+
 // MARK: - TerminalTab
 
 struct TerminalTab: Codable, Identifiable, Equatable {
@@ -130,12 +140,14 @@ struct TerminalTab: Codable, Identifiable, Equatable {
     var title: String
     var layout: SplitNode
     var focusedTerminalId: UUID
+    var kind: TabKind? = nil
 
-    init(id: UUID = UUID(), title: String, terminalId: UUID = UUID()) {
+    init(id: UUID = UUID(), title: String, terminalId: UUID = UUID(), kind: TabKind? = nil) {
         self.id = id
         self.title = title
         self.layout = .terminal(terminalId)
         self.focusedTerminalId = terminalId
+        self.kind = kind
     }
 }
 
