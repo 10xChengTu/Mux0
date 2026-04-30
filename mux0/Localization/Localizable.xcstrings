@@ -316,6 +316,13 @@
         "zh-Hans" : { "stringUnit" : { "state" : "translated", "value" : "跟随系统" } }
       }
     },
+    "settings.quickActions.addCustomButton" : {
+      "extractionState" : "manual",
+      "localizations" : {
+        "en" : { "stringUnit" : { "state" : "translated", "value" : "Add Custom Action" } },
+        "zh-Hans" : { "stringUnit" : { "state" : "translated", "value" : "新建自定义快捷操作" } }
+      }
+    },
     "settings.quickActions.customCommandPlaceholder" : {
       "extractionState" : "manual",
       "localizations" : {
@@ -335,6 +342,20 @@
       "localizations" : {
         "en" : { "stringUnit" : { "state" : "translated", "value" : "Delete custom action" } },
         "zh-Hans" : { "stringUnit" : { "state" : "translated", "value" : "删除自定义快捷操作" } }
+      }
+    },
+    "settings.quickActions.heading" : {
+      "extractionState" : "manual",
+      "localizations" : {
+        "en" : { "stringUnit" : { "state" : "translated", "value" : "Enabled & Order" } },
+        "zh-Hans" : { "stringUnit" : { "state" : "translated", "value" : "启用与排序" } }
+      }
+    },
+    "settings.quickActions.headingFooter" : {
+      "extractionState" : "manual",
+      "localizations" : {
+        "en" : { "stringUnit" : { "state" : "translated", "value" : "Enabled buttons appear in the top-right corner of the window. Drag to reorder." } },
+        "zh-Hans" : { "stringUnit" : { "state" : "translated", "value" : "启用的按钮会按下方顺序出现在窗口右上角，可拖拽排序。" } }
       }
     },
     "settings.reset.alertTitle" : {

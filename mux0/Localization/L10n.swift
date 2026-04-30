@@ -168,6 +168,9 @@ enum L10n {
             static let customNamePlaceholder    = LocalizedStringResource("settings.quickActions.customNamePlaceholder")
             static let customCommandPlaceholder = LocalizedStringResource("settings.quickActions.customCommandPlaceholder")
             static let deleteCustomTooltip      = LocalizedStringResource("settings.quickActions.deleteCustom.tooltip")
+            static let heading                  = LocalizedStringResource("settings.quickActions.heading")
+            static let headingFooter            = LocalizedStringResource("settings.quickActions.headingFooter")
+            static let addCustomButton          = LocalizedStringResource("settings.quickActions.addCustomButton")
         }
         enum Shell {
             static let integration         = LocalizedStringResource("settings.shell.integration")

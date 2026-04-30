@@ -167,4 +167,76 @@ final class QuickActionsStoreTests: XCTestCase {
         store.reorderDisplay(from: IndexSet([codexIdx]), to: 0)
         XCTAssertEqual(store.displayList.first, "codex")
     }
+
+    func test_fullList_orderEnabledFirstThenBuiltinsThenCustoms() {
+        let (store, _) = makeIsolatedStore()
+        let custom1 = store.addCustomAction()
+        let custom2 = store.addCustomAction()
+
+        // Enable lazygit + custom1 (in that order)
+        store.setEnabled("lazygit", true)
+        store.setEnabled(custom1, true)
+
+        let list = store.fullList
+        // Enabled items first, in enabledIds order
+        XCTAssertEqual(list.prefix(2), ["lazygit", custom1])
+        // Then disabled built-ins (in BuiltinQuickAction.allCases order)
+        XCTAssertTrue(list.contains("claude"))
+        XCTAssertTrue(list.contains("codex"))
+        XCTAssertTrue(list.contains("opencode"))
+        // Then disabled customs
+        XCTAssertTrue(list.contains(custom2))
+        // No duplicates
+        XCTAssertEqual(list.count, Set(list).count)
+        // Total: 4 builtins + 2 customs = 6
+        XCTAssertEqual(list.count, 6)
+    }
+
+    func test_fullList_dropsOrphanEnabledIds() {
+        let (_, settings) = makeIsolatedStore()
+        let orphan = "orphan-uuid"
+        let json = try! JSONEncoder().encode([orphan])
+        settings.set("mux0-quickactions-enabled", String(data: json, encoding: .utf8))
+        let store = QuickActionsStore(settings: settings)
+        XCTAssertFalse(store.fullList.contains(orphan))
+    }
+
+    func test_reorderFull_movesEnabledBuiltinUpdatesEnabledIdsOrder() {
+        let (store, _) = makeIsolatedStore()
+        store.setEnabled("lazygit", true)
+        store.setEnabled("claude", true)
+        store.setEnabled("codex", true)
+        // fullList prefix is [lazygit, claude, codex, ...]; move codex (idx 2) to 0
+        let codexIdx = store.fullList.firstIndex(of: "codex")!
+        store.reorderFull(from: IndexSet([codexIdx]), to: 0)
+        XCTAssertEqual(store.enabledIds, ["codex", "lazygit", "claude"])
+        XCTAssertEqual(store.displayList, ["codex", "lazygit", "claude"])
+    }
+
+    func test_reorderFull_movingDisabledItemDoesNotChangeEnabledIds() {
+        let (store, _) = makeIsolatedStore()
+        store.setEnabled("lazygit", true)
+        let beforeEnabled = store.enabledIds
+        // Move codex (disabled) somewhere
+        let codexIdx = store.fullList.firstIndex(of: "codex")!
+        store.reorderFull(from: IndexSet([codexIdx]), to: 0)
+        XCTAssertEqual(store.enabledIds, beforeEnabled, "moving disabled item should not touch enabledIds")
+    }
+
+    func test_reorderFull_movingCustomUpdatesCustomActionsOrder() {
+        let (store, _) = makeIsolatedStore()
+        let c1 = store.addCustomAction()
+        let c2 = store.addCustomAction()
+        let c3 = store.addCustomAction()
+        // customActions order: [c1, c2, c3]
+        // Move c3 (last in fullList) to right after lazygit (position 1).
+        let c3Idx = store.fullList.firstIndex(of: c3)!
+        let lazygitIdx = store.fullList.firstIndex(of: "lazygit")!
+        store.reorderFull(from: IndexSet([c3Idx]), to: lazygitIdx + 1)
+        // customActions array's relative order should now be [c3, c1, c2] OR [c1, c3, c2] OR similar — verify via fullList
+        let customsInFull = store.fullList.filter { id in store.customActions.contains(where: { $0.id == id }) }
+        XCTAssertEqual(customsInFull, [c3, c1, c2])
+        // And the customActions array itself should match
+        XCTAssertEqual(store.customActions.map(\.id), [c3, c1, c2])
+    }
 }

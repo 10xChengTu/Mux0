@@ -142,6 +142,34 @@ final class QuickActionsStore {
         }
     }
 
+    /// Settings list render source: ALL actions (built-in + custom), in display order.
+    /// Order: enabled ids first (preserving their order), then unenabled built-ins
+    /// (in `BuiltinQuickAction.allCases` order), then unenabled customs (in
+    /// `customActions` array order). Orphan ids in `enabledIds` are skipped (same
+    /// filter rule as `displayList`).
+    var fullList: [QuickActionId] {
+        var seen = Set<QuickActionId>()
+        var result: [QuickActionId] = []
+
+        // 1. Enabled ids (filtered for orphans, preserving enabledIds order)
+        for id in enabledIds where !seen.contains(id) {
+            let exists = BuiltinQuickAction.from(id: id) != nil
+                || customActions.contains(where: { $0.id == id })
+            if exists {
+                result.append(id); seen.insert(id)
+            }
+        }
+        // 2. Disabled built-ins
+        for builtin in BuiltinQuickAction.allCases where !seen.contains(builtin.id) {
+            result.append(builtin.id); seen.insert(builtin.id)
+        }
+        // 3. Disabled customs (in customActions array order)
+        for custom in customActions where !seen.contains(custom.id) {
+            result.append(custom.id); seen.insert(custom.id)
+        }
+        return result
+    }
+
     // MARK: - Mutate
 
     /// Toggle visibility in the top bar. Idempotent. New ids append at the
@@ -212,6 +240,41 @@ final class QuickActionsStore {
         let dirty = before.filter { !validSet.contains($0) }
         enabledIds = working + dirty
         if enabledIds != before { saveEnabled() }
+    }
+
+    /// `fullList`-dimension reorder. Updates two backing arrays in lockstep:
+    /// (1) `enabledIds`: only the enabled items participate in display order, so
+    ///     their order is updated to match the new `fullList` projection.
+    /// (2) `customActions`: reorder so its array matches the new `fullList`
+    ///     position of each custom id (so disabled customs end up at the right
+    ///     "tail" position too).
+    /// Disabled built-ins reordering only affects future enable transitions —
+    /// they're not in `enabledIds`, so nothing observable changes.
+    func reorderFull(from source: IndexSet, to destination: Int) {
+        var working = fullList
+        working.move(fromOffsets: source, toOffset: destination)
+
+        let beforeEnabled = enabledIds
+        let beforeCustom = customActions
+
+        // Update enabledIds: keep only enabled items, in working's order; preserve dirty/orphan ids.
+        let enabledSet = Set(enabledIds)
+        let workingValid = Set(working)
+        let enabledFromWorking = working.filter { enabledSet.contains($0) }
+        let dirtyEnabled = enabledIds.filter { !workingValid.contains($0) }
+        enabledIds = enabledFromWorking + dirtyEnabled
+
+        // Update customActions: reorder to match working's order of custom ids; preserve any
+        // not in working (shouldn't happen since fullList includes all, but defensive).
+        let customById = Dictionary(uniqueKeysWithValues: customActions.map { ($0.id, $0) })
+        let reorderedCustoms = working.compactMap { id -> CustomQuickAction? in
+            BuiltinQuickAction.from(id: id) == nil ? customById[id] : nil
+        }
+        let dirtyCustoms = customActions.filter { !working.contains($0.id) }
+        customActions = reorderedCustoms + dirtyCustoms
+
+        if enabledIds != beforeEnabled { saveEnabled() }
+        if customActions != beforeCustom { saveCustom() }
     }
 
     // MARK: - Persist
