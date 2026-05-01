@@ -1,6 +1,6 @@
 # mux0 设置项说明
 
-mux0 的设置面板分成六个 tab：**Appearance（外观）**、**Font（字体）**、**Terminal（终端）**、**Shell**、**Agents**、**Update（更新）**。
+mux0 的设置面板分成七个 tab：**Appearance（外观）**、**Font（字体）**、**Terminal（终端）**、**Shell**、**Quick Actions（快捷操作）**、**Agents**、**Update（更新）**。
 每个设置项底层都对应一个 ghostty 的 config key，写入到 mux0 的 override 配置里（保存后即时生效）。
 每个 tab 底部的 **Reset** 按钮会把这个 tab 涉及到的 key 从 override 里清空，回到默认值。
 
@@ -60,11 +60,27 @@ mux0 的设置面板分成六个 tab：**Appearance（外观）**、**Font（字
 
 ---
 
-## 5. Agents
+## 5. Quick Actions
+
+控制顶栏 Quick Actions Bar 的内容：哪些快捷操作启用、按什么顺序排、内置 action 的命令是否被用户覆盖、有哪些自定义条目。整组数据通过下面三个 key 持久化在 mux0 config，UI 在 `Settings → Quick Actions` 下统一编辑。
+
+| 设置项 | config key | 类型 | 默认值 | 说明 |
+|---|---|---|---|---|
+| Enabled & order | `mux0-quickactions-enabled` | JSON 数组 | `[]` | 启用且按显示顺序排列的 quick action id。同时承载启用集合与启用集合内部顺序。 |
+| Builtin command override | `mux0-quickactions-builtin-command-<id>` | string | （空 = 默认命令） | 内置 action 的命令覆盖。`<id>` ∈ `{gitui, claude, codex, opencode}`。空字符串等同删除该覆盖。 |
+| Custom actions | `mux0-quickactions-custom` | JSON 数组 | `[]` | 自定义 action 列表。`[{"id":"<uuid>","name":"...","command":"..."}]`。 |
+
+命令字段的语义：传给 shell 直接执行的字符串（不含 `\n`，由 ghostty 启动逻辑追加）。可以包含 shell 解释的语法，例如 `gitui`、`claude --resume`、`tig log`。
+
+身份按 id 区分（不是 name 也不是 command）；改命令不会让现有 tab 变成另一个 action 的 tab。
+
+---
+
+## 6. Agents
 
 设置面板分成两个分组：**Notifications** 控制状态图标；**Resume on Launch** 控制下次启动时是否自动恢复上次的 agent 会话。两个分组下的开关互相独立，默认全部关闭。底部 **Reset** 一次性清掉本 tab 的全部 key。
 
-### 5.1 Notifications
+### 6.1 Notifications
 
 控制哪些 code agent 会在 sidebar / tab 上显示状态图标。至少打开一个时，图标列才会出现在 UI 上。
 
@@ -74,7 +90,7 @@ mux0 的设置面板分成六个 tab：**Appearance（外观）**、**Font（字
 | Codex | `mux0-agent-status-codex` | `false` | 同上，对应 Codex wrapper。Codex 需要用户在 `~/.codex/config.toml` 中显式打开 `[features] codex_hooks = true`，否则只有 turn 完成事件，见 `docs/agent-hooks.md#codex-的特殊规则`。 |
 | OpenCode | `mux0-agent-status-opencode` | `false` | 同上，对应 OpenCode 插件。 |
 
-### 5.2 Resume on Launch
+### 6.2 Resume on Launch
 
 启用后，每次 `UserPromptSubmit` 都会把 `claude --resume <id>` / `codex resume <id>` 持久化到对应 terminal 的 `pendingPrefills`；下次启动该 terminal 时自动把这条命令塞进 shell 执行（优先级高于侧边栏 `defaultCommand`）。详见 `docs/agent-hooks.md#resume-command-持久化`。
 
@@ -82,7 +98,7 @@ mux0 的设置面板分成六个 tab：**Appearance（外观）**、**Font（字
 |---|---|---|---|
 | Claude Code | `mux0-agent-resume-claude` | `false` | 开启后，每次 `UserPromptSubmit` 都把 `claude --resume <session_id>` 落盘；关闭时 `HookDispatcher` 直接丢弃 `resumeCommand` 字段，且立刻调 `WorkspaceStore.clearResumePrefills(forAgent: .claude)` 把已存的 claude 命令全清空。 |
 | OpenCode | `mux0-agent-resume-opencode` | `false` | 同上，对应 OpenCode（命令形态 `opencode --session <id>`）。session id 由 `mux0-status.js` plugin 在 `tool.execute.before` 的 `input.sessionID` 拿到，每次 tool 调用都附；mux0 端 equality guard 自动 dedup。 |
-| Codex | `mux0-agent-resume-codex` | `false` | 同上，对应 Codex。需要先开 5.1 里的 Codex 通知开关（hook 才会跑）。 |
+| Codex | `mux0-agent-resume-codex` | `false` | 同上，对应 Codex。需要先开 6.1 里的 Codex 通知开关（hook 才会跑）。 |
 
 **扩展性**：将来新增 code agent 时，`HookMessage.Agent` 枚举加一个 case；Notifications 分组自动多出一行 Toggle（managed keys + 行列表均由 `.allCases` 派生）。Resume 分组里所有 `supportsResume` 返回 true 的 agent 都会渲染，所以新 agent 默认 supportsResume = false，等到把 wrapper 端的 `resume_command_for` / plugin 接好且 `Agent.supportsResume` 改成 true = 自动出现在 UI。
 
@@ -100,7 +116,7 @@ mux0 的设置面板分成六个 tab：**Appearance（外观）**、**Font（字
 每个 tab 底部都有一个 Reset 行。点击后会把**当前 tab 涉及到的所有 key** 从 mux0 的 override 配置里删除，恢复成 ghostty 默认值（或主题/字体的默认值）。
 不会影响其它 tab 的设置。
 
-## Update
+## 7. Update
 
 新增在 Settings tab 条最后一位。与其它 section 不同：不读写 mux0 config 文件，状态全部活在内存（`UpdateStore`）+ Sparkle 自管的 `UserDefaults` keys。
 

@@ -134,6 +134,34 @@
         "zh-Hans" : { "stringUnit" : { "state" : "translated", "value" : "终端" } }
       }
     },
+    "quickActions.builtin.claude" : {
+      "extractionState" : "manual",
+      "localizations" : {
+        "en" : { "stringUnit" : { "state" : "translated", "value" : "Claude Code" } },
+        "zh-Hans" : { "stringUnit" : { "state" : "translated", "value" : "Claude Code" } }
+      }
+    },
+    "quickActions.builtin.codex" : {
+      "extractionState" : "manual",
+      "localizations" : {
+        "en" : { "stringUnit" : { "state" : "translated", "value" : "Codex" } },
+        "zh-Hans" : { "stringUnit" : { "state" : "translated", "value" : "Codex" } }
+      }
+    },
+    "quickActions.builtin.gitui" : {
+      "extractionState" : "manual",
+      "localizations" : {
+        "en" : { "stringUnit" : { "state" : "translated", "value" : "Git" } },
+        "zh-Hans" : { "stringUnit" : { "state" : "translated", "value" : "Git" } }
+      }
+    },
+    "quickActions.builtin.opencode" : {
+      "extractionState" : "manual",
+      "localizations" : {
+        "en" : { "stringUnit" : { "state" : "translated", "value" : "OpenCode" } },
+        "zh-Hans" : { "stringUnit" : { "state" : "translated", "value" : "OpenCode" } }
+      }
+    },
     "settings.appearance.backgroundBlur" : {
       "extractionState" : "manual",
       "localizations" : {
@@ -288,6 +316,48 @@
         "zh-Hans" : { "stringUnit" : { "state" : "translated", "value" : "跟随系统" } }
       }
     },
+    "settings.quickActions.addCustomButton" : {
+      "extractionState" : "manual",
+      "localizations" : {
+        "en" : { "stringUnit" : { "state" : "translated", "value" : "Add Custom Action" } },
+        "zh-Hans" : { "stringUnit" : { "state" : "translated", "value" : "新建自定义快捷操作" } }
+      }
+    },
+    "settings.quickActions.customCommandPlaceholder" : {
+      "extractionState" : "manual",
+      "localizations" : {
+        "en" : { "stringUnit" : { "state" : "translated", "value" : "Command" } },
+        "zh-Hans" : { "stringUnit" : { "state" : "translated", "value" : "命令" } }
+      }
+    },
+    "settings.quickActions.customNamePlaceholder" : {
+      "extractionState" : "manual",
+      "localizations" : {
+        "en" : { "stringUnit" : { "state" : "translated", "value" : "Name" } },
+        "zh-Hans" : { "stringUnit" : { "state" : "translated", "value" : "名称" } }
+      }
+    },
+    "settings.quickActions.deleteCustom.tooltip" : {
+      "extractionState" : "manual",
+      "localizations" : {
+        "en" : { "stringUnit" : { "state" : "translated", "value" : "Delete custom action" } },
+        "zh-Hans" : { "stringUnit" : { "state" : "translated", "value" : "删除自定义快捷操作" } }
+      }
+    },
+    "settings.quickActions.heading" : {
+      "extractionState" : "manual",
+      "localizations" : {
+        "en" : { "stringUnit" : { "state" : "translated", "value" : "Enabled & Order" } },
+        "zh-Hans" : { "stringUnit" : { "state" : "translated", "value" : "启用与排序" } }
+      }
+    },
+    "settings.quickActions.headingFooter" : {
+      "extractionState" : "manual",
+      "localizations" : {
+        "en" : { "stringUnit" : { "state" : "translated", "value" : "Enabled buttons appear in the top-right corner of the window. Drag to reorder." } },
+        "zh-Hans" : { "stringUnit" : { "state" : "translated", "value" : "启用的按钮会按下方顺序出现在窗口右上角，可拖拽排序。" } }
+      }
+    },
     "settings.reset.alertTitle" : {
       "extractionState" : "manual",
       "localizations" : {
@@ -419,6 +489,13 @@
       "localizations" : {
         "en" : { "stringUnit" : { "state" : "translated", "value" : "Font" } },
         "zh-Hans" : { "stringUnit" : { "state" : "translated", "value" : "字体" } }
+      }
+    },
+    "settings.section.quickActions" : {
+      "extractionState" : "manual",
+      "localizations" : {
+        "en" : { "stringUnit" : { "state" : "translated", "value" : "Quick Actions" } },
+        "zh-Hans" : { "stringUnit" : { "state" : "translated", "value" : "快捷操作" } }
       }
     },
     "settings.section.shell" : {

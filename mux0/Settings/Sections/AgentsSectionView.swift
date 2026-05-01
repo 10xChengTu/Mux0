@@ -104,7 +104,12 @@ private struct AgentToggleRow: View {
         } label: {
             HStack(spacing: DT.Space.sm) {
                 Text(agent.label)
-                BetaBadge(theme: theme)
+                // Codex hooks ride an experimental flag in the user's
+                // ~/.codex/config.toml, so we keep the BETA badge there as a
+                // discoverability cue. Claude/OpenCode are stable.
+                if agent == .codex {
+                    BetaBadge(theme: theme)
+                }
             }
         }
     }
@@ -141,10 +146,7 @@ private struct AgentResumeToggleRow: View {
                 .labelsHidden()
                 .toggleStyle(.switch)
         } label: {
-            HStack(spacing: DT.Space.sm) {
-                Text(agent.label)
-                BetaBadge(theme: theme)
-            }
+            Text(agent.label)
         }
     }
 

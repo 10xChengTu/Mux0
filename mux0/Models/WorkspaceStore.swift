@@ -97,10 +97,15 @@ final class WorkspaceStore {
     // MARK: - Tab CRUD
 
     @discardableResult
-    func addTab(to workspaceId: UUID) -> (tabId: UUID, terminalId: UUID)? {
+    func addTab(to workspaceId: UUID, quickActionId: String? = nil, title: String? = nil)
+        -> (tabId: UUID, terminalId: UUID)?
+    {
         guard let wsIdx = wsIndex(workspaceId) else { return nil }
         let index = workspaces[wsIdx].tabs.count + 1
-        let tab = makeNewTab(index: index)
+        let resolvedTitle: String = title ?? "terminal \(index)"
+        var tab = makeNewTab(index: index)
+        tab.title = resolvedTitle
+        tab.quickActionId = quickActionId
         workspaces[wsIdx].tabs.append(tab)
         workspaces[wsIdx].selectedTabId = tab.id
         save()
@@ -146,6 +151,36 @@ final class WorkspaceStore {
               workspaces[wsIdx].tabs[tIdx].title != trimmed else { return }
         workspaces[wsIdx].tabs[tIdx].title = trimmed
         save()
+    }
+
+    /// 在给定 workspace 总是新建一个 quickActionId 等于 `id` 的 tab，并切到它。
+    ///
+    /// 不复用同 id 的现有 tab —— 顶栏的 Quick Actions 按钮是"新建快捷 tab"，
+    /// 而非"切到那个 tab"，每点一次都要起一个全新会话。
+    ///
+    /// `sourcePwdTerminalId` = 调用此方法 *之前* selected tab 的 focusedTerminalId，
+    /// 由调用方用于 `TerminalPwdStore.inherit(from:to:)`，让 quick action 命令落地在
+    /// 用户当下浏览的 cwd。必须在 addTab 切换 selectedTabId 之前 capture，否则之后
+    /// 取到的就是新 quick action tab 自身的终端，pwd 继承变成自我赋值。
+    @discardableResult
+    func addQuickActionTab(id: String, title: String, in workspaceId: UUID) -> (
+        tabId: UUID,
+        terminalId: UUID,
+        sourcePwdTerminalId: UUID?
+    )? {
+        guard let wsIdx = wsIndex(workspaceId) else { return nil }
+        let sourcePwdTerminalId: UUID? = {
+            guard let selId = workspaces[wsIdx].selectedTabId,
+                  let selTab = workspaces[wsIdx].tabs.first(where: { $0.id == selId })
+            else { return nil }
+            return selTab.focusedTerminalId
+        }()
+
+        guard let created = addTab(to: workspaceId, quickActionId: id, title: title) else {
+            assertionFailure("addTab failed despite validated workspaceId — invariant broken")
+            return nil
+        }
+        return (created.tabId, created.terminalId, sourcePwdTerminalId)
     }
 
     // MARK: - Split operations

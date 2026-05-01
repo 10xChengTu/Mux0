@@ -81,6 +81,19 @@ enum L10n {
         // See Strings.xcstrings for the full key list.
     }
 
+    // MARK: - QuickActions
+
+    /// Display names for builtin Quick Actions. Custom actions render their
+    /// user-entered name verbatim and don't pass through this namespace.
+    enum QuickActions {
+        enum Builtin {
+            static let gitui    = LocalizedStringResource("quickActions.builtin.gitui")
+            static let claude   = LocalizedStringResource("quickActions.builtin.claude")
+            static let codex    = LocalizedStringResource("quickActions.builtin.codex")
+            static let opencode = LocalizedStringResource("quickActions.builtin.opencode")
+        }
+    }
+
     // MARK: - Settings
 
     enum Settings {
@@ -89,6 +102,7 @@ enum L10n {
         static let sectionFont          = LocalizedStringResource("settings.section.font")
         static let sectionTerminal      = LocalizedStringResource("settings.section.terminal")
         static let sectionShell         = LocalizedStringResource("settings.section.shell")
+        static let sectionQuickActions  = LocalizedStringResource("settings.section.quickActions")
         static let sectionAgents        = LocalizedStringResource("settings.section.agents")
         static let sectionUpdate        = LocalizedStringResource("settings.section.update")
 
@@ -143,6 +157,14 @@ enum L10n {
             static let copyOnSelect           = LocalizedStringResource("settings.terminal.copyOnSelect")
             static let hideMouseWhileTyping   = LocalizedStringResource("settings.terminal.hideMouseWhileTyping")
             static let confirmClose           = LocalizedStringResource("settings.terminal.confirmClose")
+        }
+        enum QuickActions {
+            static let customNamePlaceholder    = LocalizedStringResource("settings.quickActions.customNamePlaceholder")
+            static let customCommandPlaceholder = LocalizedStringResource("settings.quickActions.customCommandPlaceholder")
+            static let deleteCustomTooltip      = LocalizedStringResource("settings.quickActions.deleteCustom.tooltip")
+            static let heading                  = LocalizedStringResource("settings.quickActions.heading")
+            static let headingFooter            = LocalizedStringResource("settings.quickActions.headingFooter")
+            static let addCustomButton          = LocalizedStringResource("settings.quickActions.addCustomButton")
         }
         enum Shell {
             static let integration         = LocalizedStringResource("settings.shell.integration")

@@ -647,4 +647,138 @@ final class WorkspaceStoreTests: XCTestCase {
         XCTAssertEqual(store.workspaces[0].pendingPrefills[extra.terminalId.uuidString],
                        "claude --resume three")
     }
+
+    // MARK: - quickActionId & addQuickActionTab
+
+    func testTerminalTabQuickActionId_codableRoundTrip_gituiValue() throws {
+        var tab = TerminalTab(title: "GitUI")
+        tab.quickActionId = "gitui"
+
+        let data = try JSONEncoder().encode(tab)
+        let decoded = try JSONDecoder().decode(TerminalTab.self, from: data)
+
+        XCTAssertEqual(decoded.quickActionId, "gitui")
+        XCTAssertEqual(decoded.title, "GitUI")
+    }
+
+    func testTerminalTabQuickActionId_codableRoundTrip_nilValue() throws {
+        let tab = TerminalTab(title: "terminal 1")
+        XCTAssertNil(tab.quickActionId)
+
+        let data = try JSONEncoder().encode(tab)
+        let decoded = try JSONDecoder().decode(TerminalTab.self, from: data)
+
+        XCTAssertNil(decoded.quickActionId)
+    }
+
+    func testTerminalTabQuickActionId_decodingLegacyJSONWithoutField() throws {
+        // Old persistence had no `quickActionId` key. Decoding must succeed and
+        // land on nil, otherwise existing UserDefaults blobs break on upgrade.
+        let termId = UUID()
+        let tabId = UUID()
+        let json = """
+        {
+            "id": "\(tabId.uuidString)",
+            "title": "old tab",
+            "layout": { "type": "terminal", "terminalId": "\(termId.uuidString)" },
+            "focusedTerminalId": "\(termId.uuidString)"
+        }
+        """
+        let data = json.data(using: .utf8)!
+
+        let decoded = try JSONDecoder().decode(TerminalTab.self, from: data)
+
+        XCTAssertNil(decoded.quickActionId)
+        XCTAssertEqual(decoded.title, "old tab")
+        XCTAssertEqual(decoded.id, tabId)
+    }
+
+    func testAddQuickActionTab_createsNewWhenAbsent() {
+        let store = WorkspaceStore(persistenceKey: "test-\(UUID())")
+        store.createWorkspace(name: "ws")
+        let wsId = store.workspaces[0].id
+        let tabsBefore = store.workspaces[0].tabs.count
+
+        let result = store.addQuickActionTab(id: "gitui", title: "GitUI", in: wsId)
+
+        XCTAssertNotNil(result)
+        XCTAssertEqual(store.workspaces[0].tabs.count, tabsBefore + 1)
+        XCTAssertEqual(store.workspaces[0].selectedTabId, result?.tabId)
+        let newTab = store.workspaces[0].tabs.first(where: { $0.id == result?.tabId })
+        XCTAssertEqual(newTab?.quickActionId, "gitui")
+        XCTAssertEqual(newTab?.title, "GitUI")
+        XCTAssertEqual(newTab?.layout.allTerminalIds().first, result?.terminalId)
+    }
+
+    func testAddQuickActionTab_alwaysCreatesNewEvenWhenIdMatchesExisting() {
+        let store = WorkspaceStore(persistenceKey: "test-\(UUID())")
+        store.createWorkspace(name: "ws")
+        let wsId = store.workspaces[0].id
+        let firstResult = store.addQuickActionTab(id: "gitui", title: "GitUI", in: wsId)
+        XCTAssertNotNil(firstResult)
+        let tabsAfterFirst = store.workspaces[0].tabs.count
+
+        // Switch focus away from the gitui tab, then re-invoke
+        let originalTabId = store.workspaces[0].tabs[0].id
+        store.selectTab(id: originalTabId, in: wsId)
+
+        let secondResult = store.addQuickActionTab(id: "gitui", title: "GitUI", in: wsId)
+
+        // Top-bar quick-action button is "create new" — must NOT reuse the existing
+        // gitui tab. Each click must spawn a fresh session.
+        XCTAssertNotNil(secondResult)
+        XCTAssertNotEqual(secondResult?.tabId, firstResult?.tabId)
+        XCTAssertEqual(store.workspaces[0].tabs.count, tabsAfterFirst + 1)
+        XCTAssertEqual(store.workspaces[0].selectedTabId, secondResult?.tabId)
+        let gituiTabs = store.workspaces[0].tabs.filter { $0.quickActionId == "gitui" }
+        XCTAssertEqual(gituiTabs.count, 2)
+    }
+
+    func testAddQuickActionTab_returnsSourcePwdTerminalIdFromPreviouslyFocusedTab() {
+        let store = WorkspaceStore(persistenceKey: "test-\(UUID())")
+        store.createWorkspace(name: "ws")
+        let wsId = store.workspaces[0].id
+        // The auto-created tab from createWorkspace has one terminal — capture its id.
+        let originalTab = store.workspaces[0].tabs[0]
+        let originalTermId = originalTab.layout.allTerminalIds()[0]
+        XCTAssertEqual(store.workspaces[0].selectedTabId, originalTab.id)
+
+        let result = store.addQuickActionTab(id: "gitui", title: "GitUI", in: wsId)
+
+        // Source = focused terminal of the tab that was selected BEFORE we switched.
+        XCTAssertEqual(result?.sourcePwdTerminalId, originalTermId)
+    }
+
+    func testAddQuickActionTab_unknownWorkspaceReturnsNil() {
+        let store = WorkspaceStore(persistenceKey: "test-\(UUID())")
+        store.createWorkspace(name: "ws")
+
+        // Calling on an unknown workspace must not crash and must not mutate anything.
+        let tabsBefore = store.workspaces[0].tabs.count
+        let result = store.addQuickActionTab(id: "gitui", title: "GitUI", in: UUID())
+
+        XCTAssertNil(result)
+        XCTAssertEqual(store.workspaces[0].tabs.count, tabsBefore)
+    }
+
+    func test_addQuickActionTab_differentIdsCreateDifferentTabs() {
+        let store = WorkspaceStore(persistenceKey: "test.\(UUID().uuidString)")
+        store.createWorkspace(name: "ws")
+        let wsId = store.workspaces[0].id
+        let r1 = store.addQuickActionTab(id: "gitui", title: "GitUI", in: wsId)
+        let r2 = store.addQuickActionTab(id: "claude", title: "Claude Code", in: wsId)
+        XCTAssertNotNil(r1)
+        XCTAssertNotNil(r2)
+        XCTAssertNotEqual(r1?.tabId, r2?.tabId)
+    }
+
+    func test_addQuickActionTab_titleAppliedOnCreate() {
+        let store = WorkspaceStore(persistenceKey: "test.\(UUID().uuidString)")
+        store.createWorkspace(name: "ws")
+        let wsId = store.workspaces[0].id
+        let r = store.addQuickActionTab(id: "claude", title: "Claude Code", in: wsId)
+        let tab = store.workspaces[0].tabs.first(where: { $0.id == r?.tabId })!
+        XCTAssertEqual(tab.title, "Claude Code")
+        XCTAssertEqual(tab.quickActionId, "claude")
+    }
 }

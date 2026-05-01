@@ -5,7 +5,8 @@ struct ContentView: View {
     @State private var store = WorkspaceStore()
     @State private var statusStore = TerminalStatusStore()
     @State private var pwdStore = TerminalPwdStore()
-    @State private var settingsStore = SettingsConfigStore()
+    @State private var settingsStore: SettingsConfigStore
+    @State private var quickActionsStore: QuickActionsStore
     @State private var sidebarCollapsed: Bool = false
     @State private var showSettings: Bool = false
     @State private var hookListener: HookSocketListener?
@@ -18,13 +19,20 @@ struct ContentView: View {
     @Environment(LanguageStore.self) private var languageStore
     @Environment(\.locale) private var locale
 
+    init() {
+        let settings = SettingsConfigStore()
+        self._settingsStore = State(initialValue: settings)
+        self._quickActionsStore = State(initialValue: QuickActionsStore(settings: settings))
+    }
+
     private let trafficLightInset: CGFloat = 28
     private let cardInset: CGFloat = 8
     private let cardRadius: CGFloat = DT.Radius.card
-    /// 与 sidebar row 的状态图标列同中轴：图标中心距 sidebar 右 =
-    /// outerHorizontalInset(8) + hPad(12) + iconSize/2(5) = 25；按钮(22)左边距 = width - 25 - 11。
-    /// 三个按钮（本按钮、header "+"、footer 齿轮）都落在这条轴上。
-    private let sidebarToggleLeading: CGFloat = DT.Layout.sidebarWidth - 25 - 11
+    /// 顶部一对按钮（toggle 在左、"+"" 在右）容器 leading：
+    /// 让"+"按钮中心仍与 sidebar row 状态图标列对齐 = sidebarWidth - 25；
+    /// 容器起点 = (sidebarWidth - 25) - 11 - (按钮宽 22 + xs 间距 4) = sidebarWidth - 62。
+    /// 这样 toggle 相对原位置向左挪了一格，"+"接管原 toggle 的图标列轴线。
+    private let headerControlsLeading: CGFloat = DT.Layout.sidebarWidth - 25 - 11 - (22 + DT.Space.xs)
 
     /// Master UI gate for the sidebar + tab bar status icons. True iff the user
     /// has enabled at least one agent in Settings → Agents; false collapses the
@@ -72,6 +80,7 @@ struct ContentView: View {
                         statusStore: statusStore,
                         pwdStore: pwdStore,
                         settings: settingsStore,
+                        quickActionsStore: quickActionsStore,
                         theme: themeManager.theme,
                         backgroundOpacity: contentBg,
                         showStatusIndicators: showStatusIndicators,
@@ -86,6 +95,7 @@ struct ContentView: View {
                             settings: settingsStore,
                             updateStore: updateStore,
                             workspaceStore: store,
+                            quickActionsStore: quickActionsStore,
                             initialSection: pendingSettingsSection,
                             onClose: { showSettings = false }
                         )
@@ -117,8 +127,18 @@ struct ContentView: View {
                 .padding(.bottom, cardInset)
             }
 
-            sidebarToggleButton
-                .padding(.leading, sidebarToggleLeading)
+            HStack(spacing: DT.Space.xs) {
+                sidebarToggleButton
+                if !sidebarCollapsed {
+                    addWorkspaceButton
+                }
+            }
+            .padding(.leading, headerControlsLeading)
+            .padding(.top, DT.Space.xs)
+
+            quickActionsBar
+                .frame(maxWidth: .infinity, alignment: .topTrailing)
+                .padding(.trailing, cardInset + DT.Space.xs)
                 .padding(.top, DT.Space.xs)
         }
         .frame(minWidth: 960, minHeight: 620)
@@ -275,6 +295,54 @@ struct ContentView: View {
                 .font(.system(size: 13, weight: .regular))
                 .foregroundColor(Color(themeManager.theme.textSecondary))
         }
+    }
+
+    /// 顶部"+"按钮：触发 SidebarView 监听的 mux0BeginCreateWorkspace 通知，
+    /// 由 sidebar 内部计算默认名称并继承当前 pwd。仅在 sidebar 展开时显示——
+    /// 收起时 SidebarView 不在视图树里，没人响应该通知。
+    private var addWorkspaceButton: some View {
+        IconButton(
+            theme: themeManager.theme,
+            help: String(localized: L10n.Sidebar.newWorkspace.withLocale(locale))
+        ) {
+            NotificationCenter.default.post(name: .mux0BeginCreateWorkspace, object: nil)
+        } label: {
+            Image(systemName: "plus")
+                .font(.system(size: 13, weight: .regular))
+                .foregroundColor(Color(themeManager.theme.textSecondary))
+        }
+    }
+
+    @ViewBuilder
+    private var quickActionsBar: some View {
+        let displayList = quickActionsStore.displayList
+        if !displayList.isEmpty {
+            HStack(spacing: DT.Space.xs) {
+                ForEach(displayList, id: \.self) { id in
+                    quickActionButton(id: id)
+                }
+            }
+        }
+    }
+
+    private func quickActionButton(id: QuickActionId) -> some View {
+        let tooltip = quickActionsStore.displayName(for: id, locale: locale)
+        let icon = quickActionsStore.iconSource(for: id)
+        return IconButton(theme: themeManager.theme, help: tooltip) {
+            guard let wsId = store.selectedId,
+                  let result = store.addQuickActionTab(id: id, title: tooltip, in: wsId)
+            else { return }
+            if let prev = result.sourcePwdTerminalId {
+                pwdStore.inherit(from: prev, to: result.terminalId)
+            }
+        } label: {
+            QuickActionIconView(
+                source: icon,
+                size: 13,
+                color: Color(themeManager.theme.textSecondary)
+            )
+        }
+        .disabled(store.selectedId == nil)
     }
 }
 

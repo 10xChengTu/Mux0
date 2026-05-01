@@ -34,6 +34,11 @@ final class L10nSmokeTests: XCTestCase {
         "menu.splitHorizontal",
         "menu.splitVertical",
         "menu.terminal",
+        // QuickActions
+        "quickActions.builtin.claude",
+        "quickActions.builtin.codex",
+        "quickActions.builtin.gitui",
+        "quickActions.builtin.opencode",
         // Settings — appearance
         "settings.appearance.backgroundBlur",
         "settings.appearance.backgroundOpacity",
@@ -63,6 +68,13 @@ final class L10nSmokeTests: XCTestCase {
         "settings.font.thicken",
         // Settings — language
         "settings.language.system",
+        // Settings — quickActions
+        "settings.quickActions.addCustomButton",
+        "settings.quickActions.customCommandPlaceholder",
+        "settings.quickActions.customNamePlaceholder",
+        "settings.quickActions.deleteCustom.tooltip",
+        "settings.quickActions.heading",
+        "settings.quickActions.headingFooter",
         // Settings — reset
         "settings.reset.alertTitle",
         "settings.reset.button",
@@ -73,6 +85,7 @@ final class L10nSmokeTests: XCTestCase {
         "settings.section.agents",
         "settings.section.appearance",
         "settings.section.font",
+        "settings.section.quickActions",
         "settings.section.shell",
         "settings.section.terminal",
         "settings.section.update",
