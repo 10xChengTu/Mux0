@@ -48,7 +48,7 @@ enum BuiltinQuickAction: String, CaseIterable, Identifiable {
     /// chip (`.letter`) computed from the action's name.
     var iconSource: QuickActionIcon {
         switch self {
-        case .gitui:    return .sfSymbol("arrow.triangle.branch")
+        case .gitui:    return .sfSymbol("arrow.branch")
         case .claude:   return .asset("quick-action-claudecode")
         case .codex:    return .asset("quick-action-codex")
         case .opencode: return .asset("quick-action-opencode")

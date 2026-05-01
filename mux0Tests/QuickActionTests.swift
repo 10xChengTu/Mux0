@@ -26,7 +26,7 @@ final class QuickActionTests: XCTestCase {
         guard case .sfSymbol(let name) = BuiltinQuickAction.gitui.iconSource else {
             XCTFail("gitui should be sfSymbol"); return
         }
-        XCTAssertEqual(name, "arrow.triangle.branch")
+        XCTAssertEqual(name, "arrow.branch")
     }
 
     func test_quickActionIcon_assetForClaude() {

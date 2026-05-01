@@ -8,7 +8,11 @@ struct QuickActionsSectionView: View {
     @Environment(\.locale) private var locale
 
     private var managedKeys: [String] {
-        var keys = ["mux0-quickactions-enabled", "mux0-quickactions-custom"]
+        var keys = [
+            "mux0-quickactions-enabled",
+            "mux0-quickactions-custom",
+            "mux0-quickactions-order",
+        ]
         keys.append(contentsOf: BuiltinQuickAction.allCases.map {
             "mux0-quickactions-builtin-command-\($0.id)"
         })

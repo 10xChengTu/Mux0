@@ -17,13 +17,17 @@ final class QuickActionsStoreTests: XCTestCase {
         super.tearDown()
     }
 
-    private func makeIsolatedStore() -> (QuickActionsStore, SettingsConfigStore) {
+    private func makeIsolatedSettings() -> SettingsConfigStore {
         let dir = NSTemporaryDirectory()
         let path = (dir as NSString).appendingPathComponent(
             "mux0-quickactions-\(UUID().uuidString).conf"
         )
         tmpPaths.append(path)
-        let settings = SettingsConfigStore(filePath: path)
+        return SettingsConfigStore(filePath: path)
+    }
+
+    private func makeIsolatedStore() -> (QuickActionsStore, SettingsConfigStore) {
+        let settings = makeIsolatedSettings()
         let store = QuickActionsStore(settings: settings)
         return (store, settings)
     }
@@ -126,8 +130,11 @@ final class QuickActionsStoreTests: XCTestCase {
         let json = try! JSONEncoder().encode([orphan])
         settings.set("mux0-quickactions-enabled", String(data: json, encoding: .utf8))
         let store2 = QuickActionsStore(settings: settings)
-        XCTAssertEqual(store2.enabledIds, [orphan])  // raw retained — not silently cleaned
-        XCTAssertTrue(store2.displayList.isEmpty)     // but filtered from displayList
+        // enabledIds filters orphans (the public API is "enabled AND existing");
+        // the underlying enabledSet still contains the orphan so an external
+        // edit doesn't silently lose it.
+        XCTAssertTrue(store2.enabledIds.isEmpty)
+        XCTAssertTrue(store2.displayList.isEmpty)
     }
 
     func test_iconSource_letterForCustom() {
@@ -168,28 +175,27 @@ final class QuickActionsStoreTests: XCTestCase {
         XCTAssertEqual(store.displayList.first, "codex")
     }
 
-    func test_fullList_orderEnabledFirstThenBuiltinsThenCustoms() {
+    func test_fullList_stableAcrossEnableToggles() {
+        // Visual order is owned by `orderedIds` and does NOT shuffle on
+        // enable/disable. Default order on a fresh store is built-ins in
+        // declaration order followed by customs in addCustomAction order.
         let (store, _) = makeIsolatedStore()
         let custom1 = store.addCustomAction()
         let custom2 = store.addCustomAction()
 
-        // Enable gitui + custom1 (in that order)
-        store.setEnabled("gitui", true)
-        store.setEnabled(custom1, true)
+        let initial = store.fullList
+        XCTAssertEqual(initial,
+                       BuiltinQuickAction.allCases.map(\.id) + [custom1, custom2])
 
-        let list = store.fullList
-        // Enabled items first, in enabledIds order
-        XCTAssertEqual(list.prefix(2), ["gitui", custom1])
-        // Then disabled built-ins (in BuiltinQuickAction.allCases order)
-        XCTAssertTrue(list.contains("claude"))
-        XCTAssertTrue(list.contains("codex"))
-        XCTAssertTrue(list.contains("opencode"))
-        // Then disabled customs
-        XCTAssertTrue(list.contains(custom2))
-        // No duplicates
-        XCTAssertEqual(list.count, Set(list).count)
-        // Total: 4 builtins + 2 customs = 6
-        XCTAssertEqual(list.count, 6)
+        // Toggling any subset of items must NOT mutate the order.
+        store.setEnabled("codex", true)
+        store.setEnabled(custom2, true)
+        XCTAssertEqual(store.fullList, initial,
+                       "enabling items should not reshuffle fullList")
+
+        store.setEnabled("codex", false)
+        XCTAssertEqual(store.fullList, initial,
+                       "disabling items should not reshuffle fullList")
     }
 
     func test_fullList_dropsOrphanEnabledIds() {
@@ -223,20 +229,72 @@ final class QuickActionsStoreTests: XCTestCase {
         XCTAssertEqual(store.enabledIds, beforeEnabled, "moving disabled item should not touch enabledIds")
     }
 
-    func test_reorderFull_movingCustomUpdatesCustomActionsOrder() {
+    func test_reorderFull_movingCustomUpdatesFullListOrder() {
         let (store, _) = makeIsolatedStore()
         let c1 = store.addCustomAction()
         let c2 = store.addCustomAction()
         let c3 = store.addCustomAction()
-        // customActions order: [c1, c2, c3]
         // Move c3 (last in fullList) to right after gitui (position 1).
         let c3Idx = store.fullList.firstIndex(of: c3)!
         let gituiIdx = store.fullList.firstIndex(of: "gitui")!
         store.reorderFull(from: IndexSet([c3Idx]), to: gituiIdx + 1)
-        // customActions array's relative order should now be [c3, c1, c2] OR [c1, c3, c2] OR similar — verify via fullList
+        // Customs as projected through fullList reflect the new order.
         let customsInFull = store.fullList.filter { id in store.customActions.contains(where: { $0.id == id }) }
         XCTAssertEqual(customsInFull, [c3, c1, c2])
-        // And the customActions array itself should match
-        XCTAssertEqual(store.customActions.map(\.id), [c3, c1, c2])
+        // `customActions` is now a pure data array (not order-bearing); we
+        // intentionally don't assert anything about its index order here.
+    }
+
+    func test_setEnabled_preservesFullListOrderAcrossToggles() {
+        // Regression for the user-reported "rows shuffle on toggle" bug:
+        // a stable orderedIds means flipping the switch must keep the row in
+        // place across BOTH the Settings list (`fullList`) and the top bar
+        // (`displayList` follows `orderedIds` too).
+        let (store, _) = makeIsolatedStore()
+        store.setEnabled("gitui", true)
+        store.setEnabled("claude", true)
+        store.setEnabled("codex", true)
+        store.setEnabled("opencode", true)
+        let baseline = store.fullList
+
+        store.setEnabled("claude", false)
+        XCTAssertEqual(store.fullList, baseline)
+        XCTAssertEqual(store.displayList,
+                       baseline.filter { $0 != "claude" })
+
+        store.setEnabled("claude", true)
+        XCTAssertEqual(store.fullList, baseline)
+        XCTAssertEqual(store.displayList, baseline)
+    }
+
+    func test_orderedIds_persistsAcrossReload() {
+        let (store, settings) = makeIsolatedStore()
+        // Move codex to the front via a fullList-dimension reorder.
+        let codexIdx = store.fullList.firstIndex(of: "codex")!
+        store.reorderFull(from: IndexSet([codexIdx]), to: 0)
+        let snapshot = store.fullList
+        settings.save()
+
+        let store2 = QuickActionsStore(settings: settings)
+        XCTAssertEqual(store2.fullList, snapshot,
+                       "orderedIds should round-trip via mux0-quickactions-order")
+    }
+
+    func test_legacyMigration_derivesOrderFromOldEnabledIds() {
+        // Simulate an older config that only persisted `enabled` (no `order`
+        // key). Build the settings file directly (bypassing makeIsolatedStore,
+        // which would otherwise initialize a Store and pre-populate kOrder).
+        let settings = makeIsolatedSettings()
+        let json = try! JSONEncoder().encode(["codex", "gitui"])
+        settings.set("mux0-quickactions-enabled", String(data: json, encoding: .utf8))
+
+        let migrated = QuickActionsStore(settings: settings)
+        // Migrated order: enabled first (codex, gitui), then the remaining
+        // built-ins in BuiltinQuickAction.allCases order (claude, opencode).
+        XCTAssertEqual(migrated.fullList, ["codex", "gitui", "claude", "opencode"])
+
+        // Subsequent toggles do NOT shuffle the now-frozen order.
+        migrated.setEnabled("codex", false)
+        XCTAssertEqual(migrated.fullList, ["codex", "gitui", "claude", "opencode"])
     }
 }

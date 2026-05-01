@@ -1,15 +1,23 @@
 import Foundation
 import Observation
 
-/// State for the Quick Actions feature: which actions appear in the top bar
-/// (`enabledIds`), per-builtin command overrides, and the user's custom
-/// action list.
+/// State for the Quick Actions feature: a stable visual order across all
+/// known ids (`orderedIds`), an enabled set (`enabledSet`), per-builtin
+/// command overrides, and the user's custom action list.
+///
+/// **Ordering model.** A single `orderedIds` array owns the visual order for
+/// both the Settings list and the top bar; it is NOT mutated by toggling
+/// enable/disable — only by `reorderFull` (drag-reorder). This way a row
+/// stays put when the user flips its switch instead of jumping between
+/// "enabled" and "disabled" groups.
 ///
 /// Persistence piggybacks on `SettingsConfigStore` (the mux0 config file at
-/// `~/Library/Application Support/mux0/config`). Three keys:
+/// `~/Library/Application Support/mux0/config`). Four keys:
 ///
-/// - `mux0-quickactions-enabled` — JSON array of enabled `QuickActionId`
-///   strings, ordered.
+/// - `mux0-quickactions-order`   — JSON array of all known `QuickActionId`
+///   strings, in user-curated visual order. Source of truth for display.
+/// - `mux0-quickactions-enabled` — JSON array of enabled ids (membership
+///   only; written in `orderedIds` order for human-readable diffs).
 /// - `mux0-quickactions-custom`  — JSON array of `CustomQuickAction`.
 /// - `mux0-quickactions-builtin-command-<id>` — string, present only when
 ///   the user has overridden the builtin's default command.
@@ -19,12 +27,19 @@ import Observation
 /// drives that wire-up.
 @Observable
 final class QuickActionsStore {
-    /// User's chosen visible-and-ordered Quick Actions. Mix of builtin ids
-    /// and custom UUIDs. Ordering matters — this is also the top-bar render
-    /// order. Orphan ids (custom UUIDs whose action was deleted) stay in
-    /// this array but are filtered out of `displayList`; we don't silently
-    /// strip them on load to avoid clobbering edits made in another window.
-    private(set) var enabledIds: [QuickActionId] = []
+    /// Stable visual order across ALL known ids (built-ins + customs). Owns
+    /// both the Settings list order and the top-bar order. Mutated only by
+    /// `reorderFull` / `addCustomAction` / `removeCustomAction` and by load-
+    /// time migration. Never touched by `setEnabled`.
+    ///
+    /// May contain orphan ids (refs to deleted custom actions); they are
+    /// filtered out of `fullList` / `displayList` but kept in storage so an
+    /// out-of-band edit doesn't silently lose them.
+    private(set) var orderedIds: [QuickActionId] = []
+
+    /// Enabled membership. Order is held by `orderedIds`; this is just a set
+    /// for O(1) membership checks.
+    private var enabledSet: Set<QuickActionId> = []
 
     /// Sparse map: only contains an entry for builtins whose command the
     /// user has explicitly set. Empty / whitespace overrides are stored as
@@ -32,14 +47,21 @@ final class QuickActionsStore {
     /// the BuiltinQuickAction default.
     private(set) var builtinCommandOverrides: [QuickActionId: String] = [:]
 
-    /// User-defined actions. Order is the user's authoring order; the
-    /// top-bar render order comes from `enabledIds`, not this array.
+    /// User-defined actions. Visual order is owned by `orderedIds`, NOT this
+    /// array — `customActions` is just the data store keyed by id.
     private(set) var customActions: [CustomQuickAction] = []
+
+    /// Backward-compatible array view for callers that want "enabled, in
+    /// display order" (tests, debugging). Filters orphans.
+    var enabledIds: [QuickActionId] {
+        orderedIds.filter { enabledSet.contains($0) && exists($0) }
+    }
 
     private let settings: SettingsConfigStore
 
     private static let kEnabled = "mux0-quickactions-enabled"
     private static let kCustom  = "mux0-quickactions-custom"
+    private static let kOrder   = "mux0-quickactions-order"
     private static func kBuiltinCmd(_ id: QuickActionId) -> String {
         "mux0-quickactions-builtin-command-\(id)"
     }
@@ -49,33 +71,82 @@ final class QuickActionsStore {
         load()
     }
 
-    /// Read all three Quick Actions keys out of the SettingsConfigStore's
+    /// Read all four Quick Actions keys out of the SettingsConfigStore's
     /// in-memory `lines`. Caller is responsible for clearing existing state
     /// first if this is a reload (see `reloadFromSettings`).
     private func load() {
-        if let raw = settings.get(Self.kEnabled),
-           let data = raw.data(using: .utf8),
-           let decoded = try? JSONDecoder().decode([QuickActionId].self, from: data) {
-            enabledIds = decoded
-        }
+        // 1. customActions (so order migration can validate ids).
         if let raw = settings.get(Self.kCustom),
            let data = raw.data(using: .utf8),
            let decoded = try? JSONDecoder().decode([CustomQuickAction].self, from: data) {
             customActions = decoded
         }
+
+        // 2. enabledSet (legacy key — array semantics, but we use it as a set).
+        var legacyEnabledOrder: [QuickActionId] = []
+        if let raw = settings.get(Self.kEnabled),
+           let data = raw.data(using: .utf8),
+           let decoded = try? JSONDecoder().decode([QuickActionId].self, from: data) {
+            legacyEnabledOrder = decoded
+            enabledSet = Set(decoded)
+        }
+
+        // 3. orderedIds — load from new key, or migrate from legacy snapshot.
+        if let raw = settings.get(Self.kOrder),
+           let data = raw.data(using: .utf8),
+           let decoded = try? JSONDecoder().decode([QuickActionId].self, from: data) {
+            orderedIds = decoded
+        } else {
+            // Legacy migration: take the snapshot of the OLD fullList logic
+            // (enabled order, then disabled built-ins in allCases order, then
+            // disabled customs in customActions array order). After this
+            // first load we persist `kOrder` so future toggles never
+            // re-shuffle.
+            var seen = Set<QuickActionId>()
+            var result: [QuickActionId] = []
+            for id in legacyEnabledOrder where !seen.contains(id) {
+                result.append(id); seen.insert(id)
+            }
+            for builtin in BuiltinQuickAction.allCases where !seen.contains(builtin.id) {
+                result.append(builtin.id); seen.insert(builtin.id)
+            }
+            for custom in customActions where !seen.contains(custom.id) {
+                result.append(custom.id); seen.insert(custom.id)
+            }
+            orderedIds = result
+        }
+
+        // 4. Append any new ids that the saved order didn't have yet (e.g.
+        //    builtin shipped in a newer app version, or a custom that
+        //    somehow wasn't recorded). Preserves prior ordering for known ids.
+        var seen = Set(orderedIds)
+        for builtin in BuiltinQuickAction.allCases where !seen.contains(builtin.id) {
+            orderedIds.append(builtin.id); seen.insert(builtin.id)
+        }
+        for custom in customActions where !seen.contains(custom.id) {
+            orderedIds.append(custom.id); seen.insert(custom.id)
+        }
+
+        // 5. builtin command overrides.
         for builtin in BuiltinQuickAction.allCases {
             if let raw = settings.get(Self.kBuiltinCmd(builtin.id)),
                !raw.trimmingCharacters(in: .whitespacesAndNewlines).isEmpty {
                 builtinCommandOverrides[builtin.id] = raw
             }
         }
+
+        // Persist the order — this writes the migrated/appended state on
+        // first load (so the next launch reads `kOrder` directly) and is a
+        // no-op (idempotent) when `kOrder` already matches.
+        saveOrder()
     }
 
     /// Reload from settings — used when the underlying mux0 config file
     /// changes (e.g. user edited it in their text editor) and we need to
     /// pick up new values without recreating the store.
     func reloadFromSettings() {
-        enabledIds.removeAll()
+        orderedIds.removeAll()
+        enabledSet.removeAll()
         builtinCommandOverrides.removeAll()
         customActions.removeAll()
         load()
@@ -84,7 +155,12 @@ final class QuickActionsStore {
     // MARK: - Read
 
     func isEnabled(_ id: QuickActionId) -> Bool {
-        enabledIds.contains(id)
+        enabledSet.contains(id)
+    }
+
+    private func exists(_ id: QuickActionId) -> Bool {
+        BuiltinQuickAction.from(id: id) != nil
+            || customActions.contains(where: { $0.id == id })
     }
 
     /// The shell command associated with `id`, after applying builtin
@@ -132,56 +208,31 @@ final class QuickActionsStore {
         return .letter(first)
     }
 
-    /// Top-bar render source: keeps `enabledIds` order, filters out orphan
-    /// ids (ids referencing a custom action that no longer exists). Builtin
-    /// ids always pass.
+    /// Top-bar render source: `orderedIds` filtered by enabled membership +
+    /// existence (orphans dropped).
     var displayList: [QuickActionId] {
-        enabledIds.filter { id in
-            BuiltinQuickAction.from(id: id) != nil
-                || customActions.contains(where: { $0.id == id })
-        }
+        orderedIds.filter { enabledSet.contains($0) && exists($0) }
     }
 
-    /// Settings list render source: ALL actions (built-in + custom), in display order.
-    /// Order: enabled ids first (preserving their order), then unenabled built-ins
-    /// (in `BuiltinQuickAction.allCases` order), then unenabled customs (in
-    /// `customActions` array order). Orphan ids in `enabledIds` are skipped (same
-    /// filter rule as `displayList`).
+    /// Settings list render source: `orderedIds` filtered by existence
+    /// (orphans dropped).
     var fullList: [QuickActionId] {
-        var seen = Set<QuickActionId>()
-        var result: [QuickActionId] = []
-
-        // 1. Enabled ids (filtered for orphans, preserving enabledIds order)
-        for id in enabledIds where !seen.contains(id) {
-            let exists = BuiltinQuickAction.from(id: id) != nil
-                || customActions.contains(where: { $0.id == id })
-            if exists {
-                result.append(id); seen.insert(id)
-            }
-        }
-        // 2. Disabled built-ins
-        for builtin in BuiltinQuickAction.allCases where !seen.contains(builtin.id) {
-            result.append(builtin.id); seen.insert(builtin.id)
-        }
-        // 3. Disabled customs (in customActions array order)
-        for custom in customActions where !seen.contains(custom.id) {
-            result.append(custom.id); seen.insert(custom.id)
-        }
-        return result
+        orderedIds.filter { exists($0) }
     }
 
     // MARK: - Mutate
 
-    /// Toggle visibility in the top bar. Idempotent. New ids append at the
-    /// end (preserves user-curated ordering of older ids).
+    /// Toggle visibility in the top bar. Idempotent. Does NOT change
+    /// `orderedIds` — the row keeps its position in both the Settings list
+    /// and the top bar across enable/disable transitions.
     func setEnabled(_ id: QuickActionId, _ enabled: Bool) {
-        let before = enabledIds
-        if enabled, !enabledIds.contains(id) {
-            enabledIds.append(id)
-        } else if !enabled {
-            enabledIds.removeAll { $0 == id }
+        let was = enabledSet.contains(id)
+        if enabled {
+            enabledSet.insert(id)
+        } else {
+            enabledSet.remove(id)
         }
-        if enabledIds != before { saveEnabled() }
+        if was != enabled { saveEnabled() }
     }
 
     /// Set a per-builtin command override. No-ops for non-builtin ids.
@@ -199,12 +250,15 @@ final class QuickActionsStore {
     }
 
     /// Append a new empty custom action and return its UUID. Caller should
-    /// follow up with `updateCustomAction` to fill in name + command.
+    /// follow up with `updateCustomAction` to fill in name + command. The
+    /// new id appears at the bottom of `orderedIds`.
     @discardableResult
     func addCustomAction() -> QuickActionId {
         let id = UUID().uuidString
         customActions.append(CustomQuickAction(id: id, name: "", command: ""))
+        orderedIds.append(id)
         saveCustom()
+        saveOrder()
         return id
     }
 
@@ -218,69 +272,60 @@ final class QuickActionsStore {
         saveCustom()
     }
 
-    /// Remove a custom action by id. Also un-enables it (removes from
-    /// `enabledIds`) so the top bar updates immediately.
+    /// Remove a custom action by id. Also un-enables it and removes it from
+    /// `orderedIds` so the top bar updates immediately.
     func removeCustomAction(_ id: QuickActionId) {
+        let beforeEnabled = enabledSet
+        let beforeOrder = orderedIds
         customActions.removeAll { $0.id == id }
-        let beforeEnabled = enabledIds
-        enabledIds.removeAll { $0 == id }
+        enabledSet.remove(id)
+        orderedIds.removeAll { $0 == id }
         saveCustom()
-        if enabledIds != beforeEnabled { saveEnabled() }
+        if enabledSet != beforeEnabled { saveEnabled() }
+        if orderedIds != beforeOrder { saveOrder() }
     }
 
-    /// `displayList`-dimension reorder. Maps the reorder back onto
-    /// `enabledIds` (the ordering source). Preserves any orphan ids in
-    /// `enabledIds` (filtered from displayList) by appending them at the
-    /// end so we don't accidentally clobber config from another window.
+    /// `displayList`-dimension reorder. Maps the post-move displayList back
+    /// onto `orderedIds` by walking it and swapping enabled positions in the
+    /// new order. Disabled items between enabled positions stay put.
     func reorderDisplay(from source: IndexSet, to destination: Int) {
-        let before = enabledIds
         var working = displayList
         working.move(fromOffsets: source, toOffset: destination)
-        let validSet = Set(working)
-        let dirty = before.filter { !validSet.contains($0) }
-        enabledIds = working + dirty
-        if enabledIds != before { saveEnabled() }
+        let beforeOrder = orderedIds
+        var iter = working.makeIterator()
+        for (idx, id) in orderedIds.enumerated()
+        where enabledSet.contains(id) && exists(id) {
+            if let next = iter.next() {
+                orderedIds[idx] = next
+            }
+        }
+        if orderedIds != beforeOrder { saveOrder() }
     }
 
-    /// `fullList`-dimension reorder. Updates two backing arrays in lockstep:
-    /// (1) `enabledIds`: only the enabled items participate in display order, so
-    ///     their order is updated to match the new `fullList` projection.
-    /// (2) `customActions`: reorder so its array matches the new `fullList`
-    ///     position of each custom id (so disabled customs end up at the right
-    ///     "tail" position too).
-    /// Disabled built-ins reordering only affects future enable transitions —
-    /// they're not in `enabledIds`, so nothing observable changes.
+    /// `fullList`-dimension reorder. Same anchor-mapping as `reorderDisplay`,
+    /// but over all existing ids. Orphan ids in `orderedIds` are skipped
+    /// (they aren't in `fullList`) and keep their position.
     func reorderFull(from source: IndexSet, to destination: Int) {
         var working = fullList
         working.move(fromOffsets: source, toOffset: destination)
-
-        let beforeEnabled = enabledIds
-        let beforeCustom = customActions
-
-        // Update enabledIds: keep only enabled items, in working's order; preserve dirty/orphan ids.
-        let enabledSet = Set(enabledIds)
-        let workingValid = Set(working)
-        let enabledFromWorking = working.filter { enabledSet.contains($0) }
-        let dirtyEnabled = enabledIds.filter { !workingValid.contains($0) }
-        enabledIds = enabledFromWorking + dirtyEnabled
-
-        // Update customActions: reorder to match working's order of custom ids; preserve any
-        // not in working (shouldn't happen since fullList includes all, but defensive).
-        let customById = Dictionary(uniqueKeysWithValues: customActions.map { ($0.id, $0) })
-        let reorderedCustoms = working.compactMap { id -> CustomQuickAction? in
-            BuiltinQuickAction.from(id: id) == nil ? customById[id] : nil
+        let beforeOrder = orderedIds
+        var iter = working.makeIterator()
+        for (idx, id) in orderedIds.enumerated() where exists(id) {
+            if let next = iter.next() {
+                orderedIds[idx] = next
+            }
         }
-        let dirtyCustoms = customActions.filter { !working.contains($0.id) }
-        customActions = reorderedCustoms + dirtyCustoms
-
-        if enabledIds != beforeEnabled { saveEnabled() }
-        if customActions != beforeCustom { saveCustom() }
+        if orderedIds != beforeOrder { saveOrder() }
     }
 
     // MARK: - Persist
 
     private func saveEnabled() {
-        if let data = try? JSONEncoder().encode(enabledIds),
+        // Write enabled ids in `orderedIds` order so the on-disk JSON has a
+        // human-readable, deterministic shape — Set has no order, but we'd
+        // rather not write a randomized array.
+        let arr = orderedIds.filter { enabledSet.contains($0) }
+        if let data = try? JSONEncoder().encode(arr),
            let s = String(data: data, encoding: .utf8) {
             settings.set(Self.kEnabled, s)
         }
@@ -290,6 +335,13 @@ final class QuickActionsStore {
         if let data = try? JSONEncoder().encode(customActions),
            let s = String(data: data, encoding: .utf8) {
             settings.set(Self.kCustom, s)
+        }
+    }
+
+    private func saveOrder() {
+        if let data = try? JSONEncoder().encode(orderedIds),
+           let s = String(data: data, encoding: .utf8) {
+            settings.set(Self.kOrder, s)
         }
     }
 }
