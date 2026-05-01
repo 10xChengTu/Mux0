@@ -151,15 +151,15 @@
     "quickActions.builtin.gitui" : {
       "extractionState" : "manual",
       "localizations" : {
-        "en" : { "stringUnit" : { "state" : "translated", "value" : "GitUI" } },
-        "zh-Hans" : { "stringUnit" : { "state" : "translated", "value" : "GitUI" } }
+        "en" : { "stringUnit" : { "state" : "translated", "value" : "Git" } },
+        "zh-Hans" : { "stringUnit" : { "state" : "translated", "value" : "Git" } }
       }
     },
     "quickActions.builtin.opencode" : {
       "extractionState" : "manual",
       "localizations" : {
-        "en" : { "stringUnit" : { "state" : "translated", "value" : "opencode" } },
-        "zh-Hans" : { "stringUnit" : { "state" : "translated", "value" : "opencode" } }
+        "en" : { "stringUnit" : { "state" : "translated", "value" : "OpenCode" } },
+        "zh-Hans" : { "stringUnit" : { "state" : "translated", "value" : "OpenCode" } }
       }
     },
     "settings.appearance.backgroundBlur" : {
