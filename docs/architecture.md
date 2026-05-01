@@ -182,9 +182,9 @@ Tab + SplitPane 全部用 AppKit，原因：NSSplitView 的 divider 拖拽、z-o
 
 ### Quick Actions
 
-WorkspaceStore 的每个 Tab 可关联一个**快捷操作 ID**（`TerminalTab.quickActionId: String?`），由顶栏的 Quick Actions Bar（`ContentView.quickActionsBar`）按 `QuickActionsStore.displayList` 顺序渲染按钮触发：点击 → `WorkspaceStore.ensureQuickActionTab(id:title:in:)` 在当前 workspace 找到/新建对应 tab，并通过 `TerminalPwdStore.inherit(from:to:)` 继承前一个焦点 pane 的 pwd（让 `lazygit` 等命令落地在用户当下浏览的 cwd）。
+WorkspaceStore 的每个 Tab 可关联一个**快捷操作 ID**（`TerminalTab.quickActionId: String?`），由顶栏的 Quick Actions Bar（`ContentView.quickActionsBar`）按 `QuickActionsStore.displayList` 顺序渲染按钮触发：点击 → `WorkspaceStore.addQuickActionTab(id:title:in:)` 在当前 workspace 始终新建一个带该 quickActionId 的 tab，并通过 `TerminalPwdStore.inherit(from:to:)` 继承前一个焦点 pane 的 pwd（让 `lazygit` 等命令落地在用户当下浏览的 cwd）。
 
-**身份按 ID 区分，不按 title。** 用户改 tab 标题不影响"再点同样按钮 → 复用同一 tab"这条不变量；每个 workspace 对每个 quick action id 最多一个 tab。
+**每点一次都新建。** 顶栏快捷按钮是"新建快捷 tab"而非"切到那个 tab"，每次点击都起一个全新会话。同一 workspace 内可以同时存在多个相同 quickActionId 的 tab。
 
 **`QuickActionsStore`** 是 enabled 列表（按显示顺序排）+ 内置命令覆盖（per-id）+ 自定义条目数组的单一真理源，全部通过 `SettingsConfigStore` 持久化（3 个键：`mux0-quickactions-enabled` / `mux0-quickactions-builtin-command-<id>` / `mux0-quickactions-custom`）。`@Observable`，UI 直接订阅。
 

@@ -307,9 +307,10 @@ struct ContentView: View {
         let tooltip = quickActionsStore.displayName(for: id, locale: locale)
         let icon = quickActionsStore.iconSource(for: id)
         return IconButton(theme: themeManager.theme, help: tooltip) {
-            guard let wsId = store.selectedId else { return }
-            let result = store.ensureQuickActionTab(id: id, title: tooltip, in: wsId)
-            if result.isNew, let prev = result.sourcePwdTerminalId {
+            guard let wsId = store.selectedId,
+                  let result = store.addQuickActionTab(id: id, title: tooltip, in: wsId)
+            else { return }
+            if let prev = result.sourcePwdTerminalId {
                 pwdStore.inherit(from: prev, to: result.terminalId)
             }
         } label: {

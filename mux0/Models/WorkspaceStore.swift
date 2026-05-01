@@ -153,25 +153,22 @@ final class WorkspaceStore {
         save()
     }
 
-    /// 保证给定 workspace 至少有一个 quickActionId 等于 `id` 的 tab，并切到它。
+    /// 在给定 workspace 总是新建一个 quickActionId 等于 `id` 的 tab，并切到它。
     ///
-    /// - 已存在：仅 selectTab，不改 tabs 数组。
-    /// - 不存在：用 (quickActionId: id, title: title) 调 addTab。
+    /// 不复用同 id 的现有 tab —— 顶栏的 Quick Actions 按钮是"新建快捷 tab"，
+    /// 而非"切到那个 tab"，每点一次都要起一个全新会话。
     ///
     /// `sourcePwdTerminalId` = 调用此方法 *之前* selected tab 的 focusedTerminalId，
     /// 由调用方用于 `TerminalPwdStore.inherit(from:to:)`，让 quick action 命令落地在
-    /// 用户当下浏览的 cwd。必须在 selectTab 切换前 capture，否则之后取到的就是新
-    /// quick action tab 自身的终端，pwd 继承变成自我赋值。
+    /// 用户当下浏览的 cwd。必须在 addTab 切换 selectedTabId 之前 capture，否则之后
+    /// 取到的就是新 quick action tab 自身的终端，pwd 继承变成自我赋值。
     @discardableResult
-    func ensureQuickActionTab(id: String, title: String, in workspaceId: UUID) -> (
+    func addQuickActionTab(id: String, title: String, in workspaceId: UUID) -> (
         tabId: UUID,
         terminalId: UUID,
-        isNew: Bool,
         sourcePwdTerminalId: UUID?
-    ) {
-        guard let wsIdx = wsIndex(workspaceId) else {
-            return (UUID(), UUID(), false, nil)
-        }
+    )? {
+        guard let wsIdx = wsIndex(workspaceId) else { return nil }
         let sourcePwdTerminalId: UUID? = {
             guard let selId = workspaces[wsIdx].selectedTabId,
                   let selTab = workspaces[wsIdx].tabs.first(where: { $0.id == selId })
@@ -179,16 +176,11 @@ final class WorkspaceStore {
             return selTab.focusedTerminalId
         }()
 
-        if let existing = workspaces[wsIdx].tabs.first(where: { $0.quickActionId == id }) {
-            selectTab(id: existing.id, in: workspaceId)
-            return (existing.id, existing.focusedTerminalId, false, sourcePwdTerminalId)
-        }
-
         guard let created = addTab(to: workspaceId, quickActionId: id, title: title) else {
             assertionFailure("addTab failed despite validated workspaceId — invariant broken")
-            return (UUID(), UUID(), false, nil)
+            return nil
         }
-        return (created.tabId, created.terminalId, true, sourcePwdTerminalId)
+        return (created.tabId, created.terminalId, sourcePwdTerminalId)
     }
 
     // MARK: - Split operations
