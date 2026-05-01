@@ -249,8 +249,8 @@ final class TabBarView: NSView {
             IconButton(theme: currentTheme, help: String(localized: L10n.Tab.newTabTooltip.withLocale(currentLocale)), action: { [weak self] in
                 self?.onAddTab?()
             }) {
-                Text("+")
-                    .font(Font(DT.Font.body))
+                Image(systemName: "plus")
+                    .font(.system(size: 13, weight: .regular))
                     .foregroundColor(Color(currentTheme.textSecondary))
             }
             .environment(\.locale, currentLocale)
@@ -404,7 +404,7 @@ private final class TabItemView: NSView, NSTextFieldDelegate, NSDraggingSource {
         pillView.layer?.masksToBounds = true
         addSubview(pillView)
 
-        kindIcon.symbolConfiguration = NSImage.SymbolConfiguration(pointSize: 11, weight: .regular)
+        kindIcon.symbolConfiguration = NSImage.SymbolConfiguration(pointSize: 13, weight: .regular)
         kindIcon.imageScaling = .scaleProportionallyUpOrDown
         addSubview(kindIcon)
 
@@ -456,8 +456,8 @@ private final class TabItemView: NSView, NSTextFieldDelegate, NSDraggingSource {
                 width: trailingIconSize, height: trailingIconSize)
         }
 
-        // Leading kind icon: 11pt SF Symbol, fixed gap to title.
-        let leadingIconSize: CGFloat = 11
+        // Leading kind icon: 13pt SF Symbol, fixed gap to title.
+        let leadingIconSize: CGFloat = 13
         let leadingGap: CGFloat = 6
         kindIcon.frame = NSRect(
             x: margin, y: (h - leadingIconSize) / 2,
@@ -572,31 +572,79 @@ private final class TabItemView: NSView, NSTextFieldDelegate, NSDraggingSource {
         case .sfSymbol(let name):
             kindIcon.image = NSImage(systemSymbolName: name, accessibilityDescription: nil)
         case .asset(let name):
-            kindIcon.image = NSImage(named: name)
+            // Pad raw asset to 13×13 with 10×10 inner content so PNG/PDF assets
+            // render at the same visible ink size as a 13pt SF Symbol (which has
+            // ~25% optical padding inside its 13pt box). Without padding the asset
+            // fills 13×13 edge-to-edge and looks ~30% larger than neighbouring SF
+            // Symbol icons.
+            kindIcon.image = NSImage(named: name).map { padAssetImage($0) }
         case .letter(let c):
             kindIcon.image = makeLetterImage(String(c))
         }
     }
 
-    /// Render a single character as a 14×14 NSImage, used for custom quick action tab pills.
-    /// Drawing color uses currentContext fill — the existing `kindIcon.contentTintColor`
-    /// in `updateStyle()` handles tinting via `NSImage.isTemplate = true`.
+    /// Wrap `raw` in a 13×13 canvas with 12×12 inner content centered (0.5pt
+    /// inset on every side) — leaves just enough optical breathing room so the
+    /// asset doesn't bleed into the title gap, while keeping the visible ink
+    /// roughly aligned with the medium-weight SF Symbol glyphs in the same row.
+    /// Forwarding `isTemplate` keeps the `kindIcon.contentTintColor` recoloring
+    /// path working.
+    private func padAssetImage(_ raw: NSImage) -> NSImage {
+        let canvas = NSSize(width: 13, height: 13)
+        let inner: CGFloat = 12
+        let inset = (canvas.width - inner) / 2
+        let image = NSImage(size: canvas)
+        image.lockFocus()
+        raw.draw(in: NSRect(x: inset, y: inset, width: inner, height: inner))
+        image.unlockFocus()
+        image.isTemplate = raw.isTemplate
+        return image
+    }
+
+    /// Render a single character as a 13×13 NSImage with a 1pt circle outline,
+    /// used for custom quick action tab pills. Mirrors the SwiftUI `.letter`
+    /// branch in `QuickActionIconView` so the tab pill, top-bar bar, and
+    /// settings row all show the same letter-in-circle glyph at the same
+    /// visual size. 11pt rounded semibold matches SF Symbol cap-height roughly,
+    /// the 0.4-alpha circle stroke keeps the outline visually subordinate to
+    /// the letter while staying tinted via `isTemplate = true`.
     private func makeLetterImage(_ s: String) -> NSImage {
-        let size = NSSize(width: 14, height: 14)
+        let size = NSSize(width: 13, height: 13)
         let image = NSImage(size: size)
         image.lockFocus()
+
+        // Letter — 11pt rounded semibold, centered.
+        let baseFont = NSFont.systemFont(ofSize: 11, weight: .semibold)
+        let letterFont: NSFont = {
+            if let desc = baseFont.fontDescriptor.withDesign(.rounded),
+               let rounded = NSFont(descriptor: desc, size: 11) {
+                return rounded
+            }
+            return baseFont
+        }()
         let style = NSMutableParagraphStyle()
         style.alignment = .center
         let attrs: [NSAttributedString.Key: Any] = [
-            .font: NSFont.systemFont(ofSize: 10, weight: .semibold),
+            .font: letterFont,
             .foregroundColor: NSColor.labelColor,
             .paragraphStyle: style,
         ]
         let attr = NSAttributedString(string: s, attributes: attrs)
         let textSize = attr.size()
-        let rect = NSRect(x: 0, y: (size.height - textSize.height) / 2,
-                          width: size.width, height: textSize.height)
-        attr.draw(in: rect)
+        let textRect = NSRect(x: 0, y: (size.height - textSize.height) / 2,
+                              width: size.width, height: textSize.height)
+        attr.draw(in: textRect)
+
+        // Circle outline at 40% alpha — preserved by template tinting.
+        let circleInset: CGFloat = 0.5
+        let circleRect = NSRect(x: circleInset, y: circleInset,
+                                width: size.width - 2 * circleInset,
+                                height: size.height - 2 * circleInset)
+        let path = NSBezierPath(ovalIn: circleRect)
+        path.lineWidth = 1
+        NSColor.labelColor.withAlphaComponent(0.4).setStroke()
+        path.stroke()
+
         image.unlockFocus()
         image.isTemplate = true
         return image
