@@ -28,10 +28,11 @@ struct ContentView: View {
     private let trafficLightInset: CGFloat = 28
     private let cardInset: CGFloat = 8
     private let cardRadius: CGFloat = DT.Radius.card
-    /// 与 sidebar row 的状态图标列同中轴：图标中心距 sidebar 右 =
-    /// outerHorizontalInset(8) + hPad(12) + iconSize/2(5) = 25；按钮(22)左边距 = width - 25 - 11。
-    /// 三个按钮（本按钮、header "+"、footer 齿轮）都落在这条轴上。
-    private let sidebarToggleLeading: CGFloat = DT.Layout.sidebarWidth - 25 - 11
+    /// 顶部一对按钮（toggle 在左、"+"" 在右）容器 leading：
+    /// 让"+"按钮中心仍与 sidebar row 状态图标列对齐 = sidebarWidth - 25；
+    /// 容器起点 = (sidebarWidth - 25) - 11 - (按钮宽 22 + xs 间距 4) = sidebarWidth - 62。
+    /// 这样 toggle 相对原位置向左挪了一格，"+"接管原 toggle 的图标列轴线。
+    private let headerControlsLeading: CGFloat = DT.Layout.sidebarWidth - 25 - 11 - (22 + DT.Space.xs)
 
     /// Master UI gate for the sidebar + tab bar status icons. True iff the user
     /// has enabled at least one agent in Settings → Agents; false collapses the
@@ -126,9 +127,14 @@ struct ContentView: View {
                 .padding(.bottom, cardInset)
             }
 
-            sidebarToggleButton
-                .padding(.leading, sidebarToggleLeading)
-                .padding(.top, DT.Space.xs)
+            HStack(spacing: DT.Space.xs) {
+                sidebarToggleButton
+                if !sidebarCollapsed {
+                    addWorkspaceButton
+                }
+            }
+            .padding(.leading, headerControlsLeading)
+            .padding(.top, DT.Space.xs)
 
             quickActionsBar
                 .frame(maxWidth: .infinity, alignment: .topTrailing)
@@ -286,6 +292,22 @@ struct ContentView: View {
             }
         } label: {
             Image(systemName: "sidebar.left")
+                .font(.system(size: 13, weight: .regular))
+                .foregroundColor(Color(themeManager.theme.textSecondary))
+        }
+    }
+
+    /// 顶部"+"按钮：触发 SidebarView 监听的 mux0BeginCreateWorkspace 通知，
+    /// 由 sidebar 内部计算默认名称并继承当前 pwd。仅在 sidebar 展开时显示——
+    /// 收起时 SidebarView 不在视图树里，没人响应该通知。
+    private var addWorkspaceButton: some View {
+        IconButton(
+            theme: themeManager.theme,
+            help: String(localized: L10n.Sidebar.newWorkspace.withLocale(locale))
+        ) {
+            NotificationCenter.default.post(name: .mux0BeginCreateWorkspace, object: nil)
+        } label: {
+            Image(systemName: "plus")
                 .font(.system(size: 13, weight: .regular))
                 .foregroundColor(Color(themeManager.theme.textSecondary))
         }

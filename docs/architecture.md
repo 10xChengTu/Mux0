@@ -9,7 +9,7 @@ mux0 是 SwiftUI 侧边栏 + AppKit 标签页 / 分割窗格混合架构。两�
 ```
 mux0.app
 ├── Sidebar (SwiftUI 壳 + AppKit 列表)  — workspace 列表，元信息展示
-│   └── SidebarView (SwiftUI: header / footer / alert / 通知 / refresher)
+│   └── SidebarView (SwiftUI: footer / alert / 通知 / refresher)
 │       └── SidebarListBridge (NSViewRepresentable)
 │           └── WorkspaceListView (NSView)
 │               └── WorkspaceRowItemView[] (private NSView)

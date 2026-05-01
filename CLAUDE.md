@@ -78,7 +78,7 @@ mux0/
 │   ├── Components/                — 复用 SwiftUI 控件（BoundControls / FontPicker / QuickActionIconView / QuickActionRowView / ThemePicker / ...）
 │   └── Sections/                  — 七个 Section 的视图实现（Appearance / Font / Terminal / Shell / QuickActions / Agents / Update）
 ├── Sidebar/
-│   ├── SidebarView.swift              — SwiftUI 壳：header / footer / alert / 通知订阅 / refresher 生命周期
+│   ├── SidebarView.swift              — SwiftUI 壳：footer / alert / 通知订阅 / refresher 生命周期
 │   ├── WorkspaceListView.swift        — AppKit 列表 + private WorkspaceRowItemView
 │   └── WorkspacePasteboardType.swift  — .mux0Workspace UTI 常量
 ├── Update/
@@ -101,7 +101,7 @@ mux0/
 1. **所有颜色取自 AppTheme token** — 禁止在视图里硬编码 `Color(...)` 或 `NSColor(...)`，从 `@Environment(ThemeManager.self)` 取 `.currentTheme` 或直接传 `theme` 参数
 2. **ghostty API 只在 GhosttyBridge 和 GhosttyTerminalView 中调用** — 其他文件不 `import` 也不直接调用 `ghostty_*` 函数
 3. **状态写回 WorkspaceStore** — 所有持久化状态（workspace 列表、tab 列表、SplitNode tree、selectedTabId）通过 WorkspaceStore 的方法修改，不直接改 struct 字段
-4. **TabBar / SplitPane / SidebarList 用 NSView subclass；SidebarView / SettingsView 壳（header / footer / alert / 通知订阅 / 元数据 refresher 生命周期 / 设置表单）用 SwiftUI View struct** — AppKit ↔ SwiftUI 边界统一在 `*Bridge: NSViewRepresentable`
+4. **TabBar / SplitPane / SidebarList 用 NSView subclass；SidebarView / SettingsView 壳（footer / alert / 通知订阅 / 元数据 refresher 生命周期 / 设置表单）用 SwiftUI View struct** — AppKit ↔ SwiftUI 边界统一在 `*Bridge: NSViewRepresentable`
 5. **提交格式** `type(scope): description` — e.g. `feat(tabcontent): add drag-to-reorder`；scope 与目录对应，合法值：`sidebar | tabcontent | settings | theme | ghostty | models | metadata | bridge | build | docs | update | i18n | assets`
 6. **不 push 到 master** — 用 `agent/feature-name` 分支，PR 合并
 7. **surface 不序列化** — `Workspace → tabs → SplitNode` 只存 UUID 与 split ratio；重启后 GhosttyTerminalView 按 UUID 重建 surface

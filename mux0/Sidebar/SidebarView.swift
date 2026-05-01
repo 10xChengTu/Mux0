@@ -1,4 +1,5 @@
 import SwiftUI
+import AppKit
 import Observation
 
 /// 引用类型 ticker：MetadataRefresher 的 onRefresh 是逃逸闭包，
@@ -40,7 +41,6 @@ struct SidebarView: View {
 
     var body: some View {
         VStack(alignment: .leading, spacing: 0) {
-            header
             SidebarListBridge(
                 store: store,
                 statusStore: statusStore,
@@ -56,6 +56,10 @@ struct SidebarView: View {
                     workspaceForCommandEdit = id
                 }
             )
+            // 顶部留出与 traffic light 区的呼吸：原 header 撤掉后，第一行
+            // workspace 直接贴到 28pt traffic light inset 下沿会显得局促；
+            // lg(16) 让 workspace 列表距 trafficLightInset 下沿有足够喘息。
+            .padding(.top, DT.Space.lg)
             footer
         }
         .frame(width: DT.Layout.sidebarWidth)
@@ -108,7 +112,7 @@ struct SidebarView: View {
 
     private var footer: some View {
         HStack(spacing: DT.Space.xs) {
-            versionButton
+            brandVersionButton
             if updateStore.hasUpdate {
                 Image(systemName: "circle.fill")
                     .font(.system(size: 6))
@@ -135,7 +139,10 @@ struct SidebarView: View {
     /// outerHorizontalInset(8) + hPad(12) + iconSize/2(5) = 25；22pt 按钮右边距 = 25 - 11 = 14。
     fileprivate static let iconColumnButtonTrailing: CGFloat = 14
 
-    private var versionButton: some View {
+    /// "Mux0 v0.0.0" 合体按钮：整块都可点击，行为等同原 versionButton（跳转
+    /// Settings → Update）。hover 时光标切到 pointing hand，与其他可点击图标
+    /// 一致。`.contentShape(Rectangle())` 让两段 Text 之间的空白也吃 hit test。
+    private var brandVersionButton: some View {
         Button {
             NotificationCenter.default.post(
                 name: .mux0OpenSettings,
@@ -143,33 +150,21 @@ struct SidebarView: View {
                 userInfo: ["section": "update"]
             )
         } label: {
-            Text("v\(updateStore.currentVersion)")
-                .font(Font(DT.Font.small))
-                .foregroundColor(Color(theme.textSecondary))
+            HStack(spacing: DT.Space.xs) {
+                Text(L10n.Sidebar.title)
+                    .font(Font(DT.Font.smallB))
+                    .foregroundColor(Color(theme.textPrimary))
+                Text("v\(updateStore.currentVersion)")
+                    .font(Font(DT.Font.small))
+                    .foregroundColor(Color(theme.textSecondary))
+            }
+            .contentShape(Rectangle())
         }
         .buttonStyle(.plain)
         .help(String(localized: (L10n.Sidebar.checkForUpdates).withLocale(locale)))
-    }
-
-    // MARK: - Header
-
-    private var header: some View {
-        HStack(spacing: DT.Space.sm) {
-            Text(L10n.Sidebar.title)
-                .font(Font(DT.Font.title))
-                .foregroundColor(Color(theme.textPrimary))
-            Spacer()
-            IconButton(theme: theme, help: String(localized: (L10n.Sidebar.newWorkspace).withLocale(locale))) {
-                createWorkspaceWithDefaultName()
-            } label: {
-                Text("+")
-                    .font(Font(DT.Font.body))
-                    .foregroundColor(Color(theme.textSecondary))
-            }
+        .onHover { inside in
+            if inside { NSCursor.pointingHand.push() } else { NSCursor.pop() }
         }
-        .padding(.leading, DT.Space.sm + DT.Space.md)
-        .padding(.trailing, Self.iconColumnButtonTrailing)
-        .padding(.vertical, DT.Space.sm)
     }
 
     // MARK: - Create
