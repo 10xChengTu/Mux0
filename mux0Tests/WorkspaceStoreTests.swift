@@ -24,6 +24,24 @@ final class WorkspaceStoreTests: XCTestCase {
         XCTAssertEqual(store.selectedId, betaId)
     }
 
+    func testSelectWorkspace_unknownIdIsNoop() {
+        let store = WorkspaceStore(persistenceKey: "test-\(UUID())")
+        store.createWorkspace(name: "alpha")
+        let alphaId = store.workspaces[0].id
+        let unknownId = UUID()
+        store.select(id: unknownId)
+        XCTAssertEqual(store.selectedId, alphaId,
+                       "Selecting an unknown workspace id should not change selectedId")
+    }
+
+    func testSelectWorkspace_sameIdIsNoop() {
+        let store = WorkspaceStore(persistenceKey: "test-\(UUID())")
+        store.createWorkspace(name: "alpha")
+        let alphaId = store.workspaces[0].id
+        store.select(id: alphaId)  // already selected
+        XCTAssertEqual(store.selectedId, alphaId)
+    }
+
     func testDeleteWorkspace() {
         let store = WorkspaceStore(persistenceKey: "test-\(UUID())")
         store.createWorkspace(name: "to-delete")
