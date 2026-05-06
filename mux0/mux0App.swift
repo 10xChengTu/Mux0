@@ -87,6 +87,7 @@ struct mux0App: App {
                 .keyboardShortcut("a", modifiers: .command)
             }
 
+            workspaceCommands
             terminalCommands
         }
     }
@@ -102,6 +103,25 @@ struct mux0App: App {
         CommandGroup(replacing: .windowArrangement) { EmptyView() }  // NSWindow-tab items
         CommandGroup(replacing: .help) {
             Button(String(localized: L10n.Menu.help.withLocale(LanguageStore.shared.locale))) {}.disabled(true)  // placeholder; removes default Search field
+        }
+    }
+
+    @CommandsBuilder private var workspaceCommands: some Commands {
+        // 把 Cmd+1-9 绑成「切第 N 个 workspace」放在 File 菜单的 New Workspace 后面。
+        // 旧的「Cmd+1-9 切第 N 个 Tab」被降级到 Cmd+Opt+1-9（见 terminalCommands 末尾）。
+        // workspace 数量 < N 时由 SidebarView.onReceive 静默忽略，不弹 alert / 不 beep。
+        CommandGroup(after: .newItem) {
+            Divider()
+            ForEach(1...9, id: \.self) { idx in
+                Button(String(localized: L10n.Menu.selectWorkspaceN(idx)
+                                  .withLocale(LanguageStore.shared.locale))) {
+                    NotificationCenter.default.post(
+                        name: .mux0SelectWorkspaceAtIndex,
+                        object: nil,
+                        userInfo: ["index": idx - 1])
+                }
+                .keyboardShortcut(KeyEquivalent(Character(String(idx))), modifiers: .command)
+            }
         }
     }
 
@@ -152,7 +172,7 @@ struct mux0App: App {
                         object: nil,
                         userInfo: ["index": idx - 1])
                 }
-                .keyboardShortcut(KeyEquivalent(Character(String(idx))), modifiers: .command)
+                .keyboardShortcut(KeyEquivalent(Character(String(idx))), modifiers: [.command, .option])
             }
         }
     }
