@@ -52,6 +52,10 @@ final class TabContentView: NSView {
     /// Last layout snapshot per tab; used with SplitNode.sameStructure to decide whether
     /// the cached pane is still valid.
     private var tabPaneLayouts: [UUID: SplitNode] = [:]
+    /// 上次 activateTab 真正给该 tab 聚焦过的终端 id。用来识别同 tab 内
+    /// `tab.focusedTerminalId` 是否被外部（split/close/⌘⌥→/SplitPaneView.onFocus）
+    /// 改过，以便决定要不要重抓 first responder。详见 activateTab 末尾。
+    private var lastFocusedTerminalByTab: [UUID: UUID] = [:]
     /// The tab whose pane is currently installed as a subview.
     private var visibleTabId: UUID?
     private var keyMonitor: Any?
@@ -142,6 +146,7 @@ final class TabContentView: NSView {
             tabPanes[id]?.removeFromSuperview()
             tabPanes.removeValue(forKey: id)
             tabPaneLayouts.removeValue(forKey: id)
+            lastFocusedTerminalByTab.removeValue(forKey: id)
         }
 
         // Update tab bar with status dict
@@ -190,6 +195,8 @@ final class TabContentView: NSView {
 
         // Swap visible pane: detach whichever pane is currently installed, then make
         // sure `pane` is parented to self with the right frame.
+        let didSwitchTab = visibleTabId != tab.id
+        let didFocusedTerminalChange = lastFocusedTerminalByTab[tab.id] != tab.focusedTerminalId
         if let currentId = visibleTabId, currentId != tab.id {
             tabPanes[currentId]?.removeFromSuperview()
         }
@@ -204,8 +211,25 @@ final class TabContentView: NSView {
         }
         pane.applyTheme(theme)
 
-        // Restore focus
-        focusTerminal(tab.focusedTerminalId)
+        // 三类需要主动把 first responder 拽到终端的"用户行为驱动"路径：
+        //   1. 真切 tab（含首次安装：visibleTabId 旧值 nil → tab.id）
+        //   2. layout 结构变了（split / close 让 SplitPaneView 整棵被替换，
+        //      旧 GhosttyTerminalView 已 removeFromSuperview，window.firstResponder
+        //      若指向它会失效）
+        //   3. focusedTerminalId 变了（split 落到新 pane / close 退到兄弟 pane /
+        //      ⌘⌥→ 切窗格 / SplitPaneView.onFocus 程序焦点切换）—— 这种情况下
+        //      要么用户已经手动让目标 view 当 firstResponder（再调 makeFirstResponder
+        //      是 idempotent），要么 store 单方面切了 focus 我们必须跟上
+        //
+        // 其余场景（status / pwd / metadata / workspace 列表 / 设置面板状态等任一
+        // @Observable 变化触发的 SwiftUI 重渲）不会让上述三个值变化——保持当前
+        // first responder 不动，避免把侧栏 / 标签的内联 rename 字段（NSText 子类）
+        // 强行 resign，触发 controlTextDidEndEditing 把用户没编辑完的内容当成
+        // 确认提交并关掉 rename UI。
+        if didSwitchTab || !structureMatches || didFocusedTerminalChange {
+            focusTerminal(tab.focusedTerminalId)
+        }
+        lastFocusedTerminalByTab[tab.id] = tab.focusedTerminalId
     }
 
     private func buildSplitPane(for tab: TerminalTab) -> SplitPaneView {
@@ -338,13 +362,16 @@ final class TabContentView: NSView {
     // MARK: - Notification subscriptions
 
     private func subscribeNotifications() {
+        // 注：Edit > Copy / Paste / Select All 不在这里订阅。⌘C/⌘V/⌘A 由 mux0App 的
+        // pasteboard CommandGroup 通过 NSApp.sendAction(_:to:nil) 沿 responder chain
+        // 派发，由 NSText 子类（rename 字段 / 设置 TextField）或 GhosttyTerminalView
+        // 的同名 selector 直接处理。
         let names: [Notification.Name] = [
             .mux0NewTab, .mux0ClosePane,
             .mux0SplitVertical, .mux0SplitHorizontal,
             .mux0SelectNextTab, .mux0SelectPrevTab,
             .mux0SelectTabAtIndex,
             .mux0FocusNextPane, .mux0FocusPrevPane,
-            .mux0Copy, .mux0Paste, .mux0SelectAll,
         ]
         for name in names {
             NotificationCenter.default.addObserver(
@@ -366,9 +393,6 @@ final class TabContentView: NSView {
             if let idx = note.userInfo?["index"] as? Int { selectTab(at: idx) }
         case .mux0FocusNextPane:    focusAdjacentPane(forward: true)
         case .mux0FocusPrevPane:    focusAdjacentPane(forward: false)
-        case .mux0Copy:             focusedTerminalView()?.copySelection()
-        case .mux0Paste:            focusedTerminalView()?.pasteClipboard()
-        case .mux0SelectAll:        focusedTerminalView()?.selectAll()
         default: break
         }
     }

@@ -362,10 +362,10 @@ extension Notification.Name {
     static let mux0FocusNextPane        = Notification.Name("mux0.focusNextPane")
     static let mux0FocusPrevPane        = Notification.Name("mux0.focusPrevPane")
 
-    // Edit menu → focused GhosttyTerminalView (routes to ghostty_surface_binding_action).
-    static let mux0Copy                 = Notification.Name("mux0.copy")
-    static let mux0Paste                = Notification.Name("mux0.paste")
-    static let mux0SelectAll            = Notification.Name("mux0.selectAll")
+    // 注：Edit > Copy / Paste / Select All 不走通知。⌘C/⌘V/⌘A 在 mux0App 的
+    // pasteboard CommandGroup 里通过 NSApp.sendAction(_:to:nil) 沿 responder
+    // chain 派发，命中 NSText（rename / 设置面板的 TextField）或终端
+    // GhosttyTerminalView 的同名 selector。
 
     // Settings
     static let mux0OpenSettings         = Notification.Name("mux0.openSettings")

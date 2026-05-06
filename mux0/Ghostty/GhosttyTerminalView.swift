@@ -420,7 +420,35 @@ final class GhosttyTerminalView: NSView, NSTextInputClient {
 
     /// Select the entire scrollback contents.
     @discardableResult
-    func selectAll() -> Bool { runBindingAction("select_all") }
+    func selectAllRows() -> Bool { runBindingAction("select_all") }
+
+    // MARK: - Standard Edit-menu actions (responder chain entry points)
+    //
+    // mux0App 的 Edit > Copy/Paste/Select All 用 NSApp.sendAction(:to:nil) 沿
+    // responder chain 派发标准 selector。当终端是 first responder 时这三个
+    // 入口会被 AppKit 命中——把动作转发给 ghostty binding action，行为与之前
+    // 直接 post 通知的版本等价。
+    //
+    // 为什么不直接复用 `copySelection()` / `pasteClipboard()` 的名字：让方法名
+    // 区分 "selector 入口" 与 "纯函数实现"，避免别处误以为 `paste(_:)` 是
+    // 内部 API；同时可以在不破坏 binding-action 接口的前提下给 selector 单独
+    // 加 validation / logging。
+    //
+    // selectAll 必须用 `override`：NSResponder 已经声明了 `selectAll(_:)`，默认
+    // 实现会 forward 到下一个 responder 或 beep。ghostty 的滚动回放选择走的是
+    // binding action `select_all`，与 NSText 的"选中全部"语义一致。
+
+    @objc func paste(_ sender: Any?) {
+        _ = pasteClipboard()
+    }
+
+    @objc func copy(_ sender: Any?) {
+        _ = copySelection()
+    }
+
+    @objc override func selectAll(_ sender: Any?) {
+        _ = selectAllRows()
+    }
 
     // MARK: - Keyboard input
 
