@@ -61,13 +61,30 @@ struct mux0App: App {
             // ── Edit ──────────────────────────────────────────────────
             // Replace the default pasteboard group so we keep only the three items
             // that make sense for a terminal surface.
+            //
+            // 实现细节：闭包统一用 `NSApp.sendAction(_:to:nil)` 把动作沿 responder
+            // chain 派发，而不是直接 `post(.mux0Paste)`。这样：
+            //   · 当 first responder 是 NSText 子类（例如侧栏 / 标签的内联 rename
+            //     字段、设置面板里的 TextField 的 field editor）时，由 NSText
+            //     标准实现处理 —— rename 框里 ⌘V 真的会粘贴系统剪贴板。
+            //   · 否则链上下走到终端的 GhosttyTerminalView，它实现了同名 selector
+            //     转发给 ghostty binding action，行为与之前一致。
+            //
+            // 之前直接 post 通知会强制把动作打给当前焦点 pane，无视真正的 first
+            // responder，导致 NSTextField 的 paste: 永远收不到 ⌘V。
             CommandGroup(replacing: .pasteboard) {
-                Button(String(localized: L10n.Menu.copy.withLocale(LanguageStore.shared.locale))) { post(.mux0Copy) }
-                    .keyboardShortcut("c", modifiers: .command)
-                Button(String(localized: L10n.Menu.paste.withLocale(LanguageStore.shared.locale))) { post(.mux0Paste) }
-                    .keyboardShortcut("v", modifiers: .command)
-                Button(String(localized: L10n.Menu.selectAll.withLocale(LanguageStore.shared.locale))) { post(.mux0SelectAll) }
-                    .keyboardShortcut("a", modifiers: .command)
+                Button(String(localized: L10n.Menu.copy.withLocale(LanguageStore.shared.locale))) {
+                    NSApp.sendAction(#selector(NSText.copy(_:)), to: nil, from: nil)
+                }
+                .keyboardShortcut("c", modifiers: .command)
+                Button(String(localized: L10n.Menu.paste.withLocale(LanguageStore.shared.locale))) {
+                    NSApp.sendAction(#selector(NSText.paste(_:)), to: nil, from: nil)
+                }
+                .keyboardShortcut("v", modifiers: .command)
+                Button(String(localized: L10n.Menu.selectAll.withLocale(LanguageStore.shared.locale))) {
+                    NSApp.sendAction(#selector(NSText.selectAll(_:)), to: nil, from: nil)
+                }
+                .keyboardShortcut("a", modifiers: .command)
             }
 
             terminalCommands
