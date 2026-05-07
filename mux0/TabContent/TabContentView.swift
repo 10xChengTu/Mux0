@@ -273,21 +273,9 @@ final class TabContentView: NSView {
         return tv
     }
 
-    /// Pick the shell command to auto-execute on a fresh surface. Source order:
-    ///   0. Quick action tab's first terminal — resolved via
-    ///      `QuickActionsStore.command(for:)`. Built-in actions fall back to
-    ///      default commands (e.g. `gitui`); custom actions return nil if
-    ///      their command is empty (in which case the next branch's defaults
-    ///      take over). Fires every time the surface is built — so restarting
-    ///      mux0 re-runs the action automatically. Splitting inside a quick
-    ///      action tab does NOT apply this to the new pane (only the layout's
-    ///      first terminal id matches).
-    ///   1. Pending agent resume command (`claude --resume <id>` /
-    ///      `codex resume <id>`) — only when the matching agent's Resume
-    ///      toggle in Settings is ON. Default OFF means stale UserDefaults
-    ///      entries from earlier runs (or before the toggle existed) are
-    ///      ignored, not replayed.
-    ///   2. Workspace-level `defaultCommand`.
+    /// Thin wrapper that gathers state from the active workspace and forwards
+    /// to `StartupCommandResolver.resolve` — see that type's doc comment for
+    /// the full source-order rules (Quick Action / agent resume / default).
     private func resolvedStartupCommand(forTerminal id: UUID) -> String? {
         let workspace = store?.selectedWorkspace
         let tab = workspace?.tabs.first { $0.layout.allTerminalIds().contains(id) }
