@@ -66,25 +66,40 @@ Claude Code 的 `Notification` hook 本身是一个双重信号：**真实的权
 
 因此 `HookDispatcher` 对 `needsInput` 事件加了一道门：**只有当当前状态是 `.running` 时才转入 `.needsInput`**，在 `success / failed / idle / neverRan` 状态下收到 `needsInput` 直接丢弃。这样能保留 turn 结束后的终态不被后续心跳污染，同时不影响真实的权限请求场景（权限请求发生在 turn 进行中，状态必然是 `.running`）。OpenCode 的 `permission.asked` 同理适用。
 
-## Codex 的特殊规则：实验 flag
+## Codex 的特殊规则：feature flag + hook trust
 
-**Codex 的 hooks 默认不生效，用户必须在 `~/.codex/config.toml` 里显式打开：**
+### Feature flag（0.130 之后已经是 stable）
+
+历史上 codex 0.12x 把 hook 引擎放在 `Stage::UnderDevelopment` 的 `codex_hooks` flag 后面，必须在 `~/.codex/config.toml` 里写 `[features] codex_hooks = true` 才会读 `hooks.json`。**0.130 起这个 flag 改名成 `hooks`，并升到 `stable`，默认 `true`**——绝大多数情况下不需要用户在 config 里写任何东西。`codex features list` 可以快速确认（`hooks   stable   true`）。如果环境里残留了旧的 `codex_hooks = true`，codex 会把它视为未知 key，按 `deny_unknown_fields` 在配置层报错；新装就别再写了。
+
+### Hook trust（0.130 引入）
+
+0.130 起 codex 给 `hooks.json` 加了一道 **trust 闸门**：每条 hook 第一次被加载时都是 `untrusted`，codex 启动时会在 TUI 顶部显示一行类似 `1 hook needs review before it can run. Open /hooks to review it.`，必须用户进 `/hooks` 手动 approve 后才会执行。**不 trust 的话 `UserPromptSubmit` / `PreToolUse` / `PostToolUse` / `Stop` 一个都不会跑**，表面症状就是 mux0 sidebar / tab 图标常驻 idle、turn 进行中也不变 running——0.130 升级后用户最常碰到的就是这个。
+
+**Trust state 的存储位置**：是 `$CODEX_HOME/config.toml` 的 `[hooks.state]` 段（不是单独的 `hooks.state` 文件），由 codex 通过 `tempfile + rename(2)` 整体替换写出。每条 entry 形如：
 
 ```toml
-[features]
-codex_hooks = true
+[hooks.state."<hooks.json 绝对路径>:<event_name_snake_case>:<group_idx>:<handler_idx>"]
+trusted_hash = "sha256:..."
 ```
 
-**为什么需要**：`codex_hooks` 是 OpenAI 标记的 `Stage::UnderDevelopment` 特性（源码在 `codex-rs/features/src/lib.rs`），官方保留修改权，默认关闭。我们的 wrapper 用 overlay `CODEX_HOME` 放 `hooks.json`，但 flag 必须在用户主 config 里声明——overlay 也无法替用户打开未声明的实验 flag。
+**mux0 overlay 模式下的关键约束**：每个 codex tab，wrapper 都 `mktemp -d` 出一个独立 OVERLAY (`/var/folders/.../T/mux0-codex.XXXXXX.<8 字符随机>`)，把 `hooks.json` 写进去，把 `~/.codex` 下其它文件 symlink 进去。trust state 的 key 因此包含每次都会变的随机 OVERLAY 路径——**所以每次新开 codex tab 都需要再 `/hooks` approve 一次**。这是 codex 0.130 trust 模型跟 mux0 隔离方案的根本冲突，单靠 wrapper 改 cleanup 解决不了。等价的真修复方向是让 OVERLAY 路径稳定（例如按 `MUX0_TERMINAL_ID` 派生）或者引入 `bypass_hook_trust`，后续可以补，但 trust 一次性手动这个 UX 本身已经够轻，目前选择接受。
 
-**不开的后果**：
-- `hooks.json` 被 codex 完全忽略，`UserPromptSubmit` / `PreToolUse` / `Stop` 都收不到
-- 只剩 `notify = [...]`（turn 完成时触发）和 wrapper 启动时主动 emit 的一次 idle
-- 表现：codex 启动/结束时正确显示 idle，但 **turn 进行中状态不会变成 running**（停留在 idle）
+**Cleanup 的实际作用**：早期想用 cleanup 解决 trust 持久化（误以为 trust 在独立 `hooks.state` 文件里），实际**不是这条主路**。cleanup 真正修的是另两件事：
 
-**开了之后的预期**：UserPromptSubmit → running，Stop → idle，PreToolUse → running（目前 codex 只对 `Bash` 工具触发 PreToolUse，MCP/文件工具还没接）。
+1. **OVERLAY 不再泄露在 `/tmp` 里**——wrapper 退出时 `rm -rf` 自己 mktemp 出来的目录
+2. **`codex login` / `codex features enable` 这类会改 `config.toml` 的子命令的写入**——codex 用 `tempfile + rename(2)` 把 overlay 里的 `config.toml` symlink 替换成 regular file，cleanup 把它 cp 回 `~/.codex/config.toml`（顺带也把每个 OVERLAY 的 trust state 条目持久化到用户家目录，但因为 key 里包含 OVERLAY 路径，长期会在 `config.toml` 末尾累积一堆死 entry，定期手工清理一次即可——影响微乎其微）
 
-**调试入口**：用户反馈 "codex 状态不对"，先问 flag 是否打开——未开是已知限制，非 bug；开了仍不对才去查 `~/Library/Caches/mux0/hook-emit.log` 和 `codex-wrapper.sh`。
+cleanup 现在的策略：**任何 overlay 顶层从 symlink 变成 regular file 的条目都 cp 回 `$USER_HOME`**（除我们自己写的 `hooks.json`），细节见 `codex-wrapper.sh:88-118` 注释。能跑成是因为 wrapper 末尾改成 subprocess + wait 模式而不是 `exec`——bash 的 EXIT trap 在 `exec` 后不触发，旧版 wrapper 这段 cleanup 是死代码。
+
+### 调试入口
+
+用户反馈 "codex 状态不对" 时按这条顺序查：
+
+1. 在 mux0 里启动 codex tab，进入 codex TUI 后输入 `/hooks`——若三条 hook 显示 `untrusted` 或 `needs review`，approve 一遍就好（**每个新 codex tab 都要做一次**，见上文 trust 一节）
+2. 看 `~/.codex/config.toml` 末尾有没有 `[hooks.state]` 段，里面 entry 是不是包含**当前** OVERLAY 的路径（OVERLAY 路径从 codex 进程的 `CODEX_HOME` env 看，或者 `ls -dt /var/folders/*/T/mux0-codex.XXXXXX.* | head -1`）
+3. 看 `~/Library/Caches/mux0/hook-emit.log` 里 `agent=codex` 的事件类型——`grep 'agent=codex' ~/Library/Caches/mux0/hook-emit.log | awk '{print $2}' | sort -u`。如果只有 `event=idle`，说明 hook 根本没在 turn 进行中触发，回去查 trust
+4. 最后再看 `codex features list` 确认 `hooks` 是 `stable=true`，以及 `codex-wrapper.sh` 自己的逻辑（subprocess 形态 + cleanup 真的执行）
 
 ### hooks.json Schema 注意事项
 

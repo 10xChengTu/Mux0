@@ -88,27 +88,56 @@ export CODEX_HOME="$OVERLAY"
 # Also mark the terminal idle on exit — otherwise the precmd hook has to fire
 # before the icon updates, which can lag if the user closes the window.
 cleanup() {
-    # Codex writes config.toml via `tempfile + rename(2)`, which replaces the
-    # symlink we placed at $OVERLAY/config.toml with a regular file. If that
-    # happened (i.e. it's no longer a symlink but is a real file), copy it
-    # back to the user's real CODEX_HOME so changes from `codex features
-    # enable`, `codex login`, etc. persist across sessions.
-    if [ -f "$OVERLAY/config.toml" ] && [ ! -L "$OVERLAY/config.toml" ]; then
-        mkdir -p "$USER_HOME"
-        cp -f "$OVERLAY/config.toml" "$USER_HOME/config.toml" 2>/dev/null || true
+    # Codex persists state files (config.toml, hooks.state, possibly others)
+    # via `tempfile + rename(2)`, which atomically REPLACES the symlink we
+    # placed in the overlay with a regular file. Any top-level entry that's
+    # now a regular file (not a symlink) is something codex wrote during this
+    # session; copy it back to the user's real CODEX_HOME so it survives the
+    # `rm -rf` below. This is what lets `codex features enable`, `codex
+    # login`, and — most importantly — hook trust approvals from `/hooks`
+    # persist across mux0-launched codex sessions.
+    #
+    # hooks.json is excluded because we wrote it ourselves into the overlay
+    # and the user's real CODEX_HOME shouldn't grow a mux0-managed file.
+    if [ -d "$OVERLAY" ]; then
+        for item in "$OVERLAY"/*; do
+            [ -f "$item" ] || continue
+            [ -L "$item" ] && continue
+            name=$(basename "$item")
+            case "$name" in
+                hooks.json) continue ;;
+            esac
+            mkdir -p "$USER_HOME"
+            cp -f "$item" "$USER_HOME/$name" 2>/dev/null || true
+        done
     fi
     rm -rf "$OVERLAY" 2>/dev/null || true
     "$EMIT" idle codex 2>/dev/null || true
 }
 trap cleanup EXIT INT TERM
 
-# Emit idle BEFORE exec: shell preexec already marked us running when the user
-# typed `codex`, but codex's own `notify` only fires on turn completion, and
-# hooks.json requires features.codex_hooks. Without this, the UI sits on
-# "running" from launch until the first turn completes — which is wrong,
-# since codex is actually idle at its input prompt.
+# Emit idle BEFORE handing off to codex: shell preexec already marked us
+# running when the user typed `codex`, but codex's own `notify` only fires
+# on turn completion. Without this, the UI sits on "running" from launch
+# until the first turn completes — wrong, since codex is actually idle at
+# its input prompt.
 "$EMIT" idle codex 2>/dev/null || true
 
-# Inject `notify` via -c so we don't have to mutate the user's config.toml.
-# Codex's `-c key=value` parses value as TOML; arrays work (see `codex --help`).
-exec "$REAL_CODEX" -c "notify=[\"$EMIT\", \"idle\", \"codex\"]" "$@"
+# Run codex as a subprocess instead of `exec`ing it. `exec` would replace
+# this bash process entirely, and bash does NOT fire EXIT/INT/TERM traps
+# after a successful exec — the overlay below would leak in $TMPDIR and,
+# more importantly, the cleanup trap would never copy codex's persisted
+# state files (hooks.state for `/hooks` trust approvals, config.toml for
+# `codex login` / `codex features enable`) back to the user's real
+# CODEX_HOME. The next mux0-launched codex session would then see a fresh
+# untrusted state and silently never run any hook.
+#
+# `notify` is injected via -c so we don't have to mutate the user's
+# config.toml. Codex's `-c key=value` parses value as TOML; arrays work
+# (see `codex --help`).
+#
+# `|| EXIT_CODE=$?` consumes a non-zero exit so `set -e` (top of file) does
+# not short-circuit before we forward the code via the final `exit`.
+EXIT_CODE=0
+"$REAL_CODEX" -c "notify=[\"$EMIT\", \"idle\", \"codex\"]" "$@" || EXIT_CODE=$?
+exit "$EXIT_CODE"
