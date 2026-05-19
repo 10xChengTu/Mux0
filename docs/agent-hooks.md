@@ -50,7 +50,7 @@ Agent turn 没有真实的 exit code，但 Claude Code / Codex 的 `PostToolUse`
 
 | Agent | 机制 | 文件 |
 |-------|------|------|
-| Claude Code | `--settings` 注入 hooks JSON（SessionStart/UserPromptSubmit/PreToolUse/Stop/Notification/SessionEnd） | `claude-wrapper.sh` |
+| Claude Code | overlay `CLAUDE_CONFIG_DIR` 注入 hooks（SessionStart/UserPromptSubmit/PreToolUse/PostToolUse/Stop/Notification/SessionEnd），symlink 用户原 dir 其余条目，cleanup 时把 mux0 hook 组从 settings.json strip 后回写 | `claude-wrapper.sh` |
 | OpenCode | 插件订阅 bus 事件（tool.execute.before / permission.asked / session.idle 等） | `opencode-plugin/mux0-status.js` |
 | Codex | 实验性 `hooks.json` + `notify` 兜底 | `codex-wrapper.sh` |
 
