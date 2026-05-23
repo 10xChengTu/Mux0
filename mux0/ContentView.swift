@@ -357,6 +357,7 @@ extension Notification.Name {
     static let mux0SelectNextTab        = Notification.Name("mux0.selectNextTab")
     static let mux0SelectPrevTab        = Notification.Name("mux0.selectPrevTab")
     static let mux0SelectTabAtIndex     = Notification.Name("mux0.selectTabAtIndex")
+    static let mux0SelectWorkspaceAtIndex = Notification.Name("mux0.selectWorkspaceAtIndex")
 
     // Pane focus navigation (also bound in the "Terminal" menu).
     static let mux0FocusNextPane        = Notification.Name("mux0.focusNextPane")

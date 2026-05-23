@@ -71,6 +71,11 @@ struct SidebarView: View {
         .onReceive(NotificationCenter.default.publisher(for: .mux0BeginCreateWorkspace)) { _ in
             createWorkspaceWithDefaultName()
         }
+        .onReceive(NotificationCenter.default.publisher(for: .mux0SelectWorkspaceAtIndex)) { note in
+            guard let idx = note.userInfo?["index"] as? Int,
+                  idx >= 0, idx < store.workspaces.count else { return }
+            store.select(id: store.workspaces[idx].id)
+        }
         .alert(String(localized: (L10n.Sidebar.deleteAlertTitle).withLocale(locale)),
                isPresented: Binding(
                    get: { workspaceToDelete != nil },

@@ -106,6 +106,13 @@
         "zh-Hans" : { "stringUnit" : { "state" : "translated", "value" : "切换到第 %lld 个 Tab" } }
       }
     },
+    "menu.selectWorkspace %lld" : {
+      "extractionState" : "manual",
+      "localizations" : {
+        "en" : { "stringUnit" : { "state" : "translated", "value" : "Select Workspace %lld" } },
+        "zh-Hans" : { "stringUnit" : { "state" : "translated", "value" : "切换到第 %lld 个工作区" } }
+      }
+    },
     "menu.settings" : {
       "extractionState" : "manual",
       "localizations" : {

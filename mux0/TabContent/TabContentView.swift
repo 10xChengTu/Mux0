@@ -461,22 +461,41 @@ final class TabContentView: NSView {
         return terminalViews[tab.focusedTerminalId]
     }
 
-    // MARK: - Key monitor for ⌘⌥arrow pane navigation
+    // MARK: - Key monitor (hidden shortcut aliases)
 
     private func installKeyMonitor() {
-        // ⌘⌥→ and ⌘⌥← are now menu items (Terminal → Focus Next/Previous Pane),
-        // so SwiftUI dispatches those via .mux0FocusNextPane / .mux0FocusPrevPane.
-        // The monitor remains only for the ↑/↓ aliases — intentional hidden duplicates
-        // not shown in the menu, kept because they're a common pane-nav habit.
+        // 处理两组 menu 不可见的 hidden duplicate 快捷键：
+        // - ⌘⌥↑/↓ 是 Terminal → Focus Next/Previous Pane 的别名（菜单展示
+        //   ⌘⌥→/← 给水平 pane 直觉；↑/↓ 是常见 pane-nav 习惯）
+        // - Ctrl+Tab / Ctrl+Shift+Tab 是 Terminal → Select Next/Previous Tab
+        //   (⌘⇧]/[) 的浏览器/iTerm 风格别名
         keyMonitor = NSEvent.addLocalMonitorForEvents(matching: .keyDown) { [weak self] event in
-            guard let self,
-                  event.modifierFlags.intersection([.command, .option]) == [.command, .option]
-            else { return event }
-            switch event.keyCode {
-            case 125: self.focusAdjacentPane(forward: true);  return nil  // ↓
-            case 126: self.focusAdjacentPane(forward: false); return nil  // ↑
-            default: return event
+            guard let self else { return event }
+
+            // 只看 ⌘⌃⌥⇧ 这四位，忽略 .numericPad / .function / .capsLock 等
+            let interesting: NSEvent.ModifierFlags = [.command, .control, .option, .shift]
+            let mods = event.modifierFlags.intersection(interesting)
+
+            // ⌘⌥↑/↓ — pane 切焦点
+            if mods == [.command, .option] {
+                switch event.keyCode {
+                case 125: self.focusAdjacentPane(forward: true);  return nil  // ↓
+                case 126: self.focusAdjacentPane(forward: false); return nil  // ↑
+                default: break
+                }
             }
+
+            // Ctrl+Tab / Ctrl+Shift+Tab — tab 循环（keyCode 48 = Tab）
+            if event.keyCode == 48 {
+                if mods == [.control] {
+                    self.cycleTab(forward: true);  return nil
+                }
+                if mods == [.control, .shift] {
+                    self.cycleTab(forward: false); return nil
+                }
+            }
+
+            return event
         }
     }
 

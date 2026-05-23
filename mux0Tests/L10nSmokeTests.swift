@@ -30,6 +30,7 @@ final class L10nSmokeTests: XCTestCase {
         "menu.selectNextTab",
         "menu.selectPrevTab",
         "menu.selectTab %lld",
+        "menu.selectWorkspace %lld",   // ← new
         "menu.settings",
         "menu.splitHorizontal",
         "menu.splitVertical",

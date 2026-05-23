@@ -244,5 +244,9 @@ enum L10n {
         static func selectTabN(_ n: Int) -> LocalizedStringResource {
             LocalizedStringResource("menu.selectTab \(n)")
         }
+        /// `%lld` will be formatted at call site in mux0App.
+        static func selectWorkspaceN(_ n: Int) -> LocalizedStringResource {
+            LocalizedStringResource("menu.selectWorkspace \(n)")
+        }
     }
 }
