@@ -5,6 +5,7 @@ struct ContentView: View {
     @State private var store = WorkspaceStore()
     @State private var statusStore = TerminalStatusStore()
     @State private var pwdStore = TerminalPwdStore()
+    @State private var sessionTitleStore = TerminalSessionTitleStore()
     @State private var settingsStore: SettingsConfigStore
     @State private var quickActionsStore: QuickActionsStore
     @State private var sidebarCollapsed: Bool = false
@@ -79,6 +80,7 @@ struct ContentView: View {
                         store: store,
                         statusStore: statusStore,
                         pwdStore: pwdStore,
+                        sessionTitleStore: sessionTitleStore,
                         settings: settingsStore,
                         quickActionsStore: quickActionsStore,
                         theme: themeManager.theme,
@@ -186,6 +188,9 @@ struct ContentView: View {
                 themeManager.refresh()
                 applyUnfocusedOpacityFromSettings()
             }
+            // Inject the session title store into WorkspaceStore so rename-lock
+            // cleanup can clear titles when a tab is closed or a terminal is split.
+            store.sessionTitleStore = sessionTitleStore
             if hookListener == nil {
                 let path = HookSocketListener.defaultPath
                 do {
@@ -193,11 +198,13 @@ struct ContentView: View {
                     let store = self.statusStore
                     let settingsStoreRef = self.settingsStore
                     let workspaceStoreRef = self.store
+                    let sessionTitleStoreRef = self.sessionTitleStore
                     listener.onMessage = { msg in
                         HookDispatcher.dispatch(msg,
                                                 settings: settingsStoreRef,
                                                 store: store,
-                                                workspaceStore: workspaceStoreRef)
+                                                workspaceStore: workspaceStoreRef,
+                                                sessionTitleStore: sessionTitleStoreRef)
                     }
                     try listener.start()
                     hookListener = listener

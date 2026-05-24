@@ -75,10 +75,11 @@ enum L10n {
 
     enum Tab {
         static let newTabTooltip        = LocalizedStringResource("tab.newTab")
-        // Row rename/close (context menu) and close-tab alert strings are resolved
+        // Row rename/close/reset (context menu) and close-tab alert strings are resolved
         // at runtime via L10n.string("tab.row.rename") etc. — they live only in
         // AppKit call sites (NSMenuItem, NSAlert), so no typed constant is needed.
         // See Strings.xcstrings for the full key list.
+        static let resetAutoTitle       = LocalizedStringResource("tab.row.resetAutoTitle")
     }
 
     // MARK: - QuickActions

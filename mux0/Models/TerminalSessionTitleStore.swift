@@ -50,6 +50,17 @@ final class TerminalSessionTitleStore {
         if changed { scheduleSave() }
     }
 
+    /// Snapshot of all titles keyed by `UUID`. The AppKit tab bar reads this
+    /// once per `update(...)` so the render path doesn't depend on Observable
+    /// tracking of the SwiftUI side.
+    func titlesSnapshot() -> [UUID: String] {
+        var out: [UUID: String] = [:]
+        for (k, v) in storage {
+            if let id = UUID(uuidString: k) { out[id] = v }
+        }
+        return out
+    }
+
     // MARK: - Persistence
 
     #if DEBUG

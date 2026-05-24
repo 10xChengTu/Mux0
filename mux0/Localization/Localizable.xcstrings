@@ -1,930 +1,2267 @@
 {
-  "sourceLanguage" : "en",
-  "strings" : {
-    "app.ghostty.notFound.detail" : {
-      "extractionState" : "manual",
-      "localizations" : {
-        "en" : { "stringUnit" : { "state" : "translated", "value" : "Mux0 requires Ghostty to be installed.\nRun scripts/build-vendor.sh first, then relaunch." } },
-        "zh-Hans" : { "stringUnit" : { "state" : "translated", "value" : "Mux0 需要安装 Ghostty。请先运行 scripts/build-vendor.sh，然后重新启动。" } }
-      }
-    },
-    "app.ghostty.notFound.title" : {
-      "extractionState" : "manual",
-      "localizations" : {
-        "en" : { "stringUnit" : { "state" : "translated", "value" : "Ghostty not found" } },
-        "zh-Hans" : { "stringUnit" : { "state" : "translated", "value" : "未找到 Ghostty" } }
-      }
-    },
-    "menu.closePane" : {
-      "extractionState" : "manual",
-      "localizations" : {
-        "en" : { "stringUnit" : { "state" : "translated", "value" : "Close Pane" } },
-        "zh-Hans" : { "stringUnit" : { "state" : "translated", "value" : "关闭窗格" } }
-      }
-    },
-    "menu.copy" : {
-      "extractionState" : "manual",
-      "localizations" : {
-        "en" : { "stringUnit" : { "state" : "translated", "value" : "Copy" } },
-        "zh-Hans" : { "stringUnit" : { "state" : "translated", "value" : "拷贝" } }
-      }
-    },
-    "menu.editConfig" : {
-      "extractionState" : "manual",
-      "localizations" : {
-        "en" : { "stringUnit" : { "state" : "translated", "value" : "Edit Config File…" } },
-        "zh-Hans" : { "stringUnit" : { "state" : "translated", "value" : "编辑配置文件…" } }
-      }
-    },
-    "menu.focusNextPane" : {
-      "extractionState" : "manual",
-      "localizations" : {
-        "en" : { "stringUnit" : { "state" : "translated", "value" : "Focus Next Pane" } },
-        "zh-Hans" : { "stringUnit" : { "state" : "translated", "value" : "聚焦下一窗格" } }
-      }
-    },
-    "menu.focusPrevPane" : {
-      "extractionState" : "manual",
-      "localizations" : {
-        "en" : { "stringUnit" : { "state" : "translated", "value" : "Focus Previous Pane" } },
-        "zh-Hans" : { "stringUnit" : { "state" : "translated", "value" : "聚焦上一窗格" } }
-      }
-    },
-    "menu.help" : {
-      "extractionState" : "manual",
-      "localizations" : {
-        "en" : { "stringUnit" : { "state" : "translated", "value" : "Mux0 Help" } },
-        "zh-Hans" : { "stringUnit" : { "state" : "translated", "value" : "Mux0 帮助" } }
-      }
-    },
-    "menu.newTab" : {
-      "extractionState" : "manual",
-      "localizations" : {
-        "en" : { "stringUnit" : { "state" : "translated", "value" : "New Tab" } },
-        "zh-Hans" : { "stringUnit" : { "state" : "translated", "value" : "新建 Tab" } }
-      }
-    },
-    "menu.newWorkspace" : {
-      "extractionState" : "manual",
-      "localizations" : {
-        "en" : { "stringUnit" : { "state" : "translated", "value" : "New Workspace" } },
-        "zh-Hans" : { "stringUnit" : { "state" : "translated", "value" : "新建 Workspace" } }
-      }
-    },
-    "menu.paste" : {
-      "extractionState" : "manual",
-      "localizations" : {
-        "en" : { "stringUnit" : { "state" : "translated", "value" : "Paste" } },
-        "zh-Hans" : { "stringUnit" : { "state" : "translated", "value" : "粘贴" } }
-      }
-    },
-    "menu.selectAll" : {
-      "extractionState" : "manual",
-      "localizations" : {
-        "en" : { "stringUnit" : { "state" : "translated", "value" : "Select All" } },
-        "zh-Hans" : { "stringUnit" : { "state" : "translated", "value" : "全选" } }
-      }
-    },
-    "menu.selectNextTab" : {
-      "extractionState" : "manual",
-      "localizations" : {
-        "en" : { "stringUnit" : { "state" : "translated", "value" : "Select Next Tab" } },
-        "zh-Hans" : { "stringUnit" : { "state" : "translated", "value" : "下一个 Tab" } }
-      }
-    },
-    "menu.selectPrevTab" : {
-      "extractionState" : "manual",
-      "localizations" : {
-        "en" : { "stringUnit" : { "state" : "translated", "value" : "Select Previous Tab" } },
-        "zh-Hans" : { "stringUnit" : { "state" : "translated", "value" : "上一个 Tab" } }
-      }
-    },
-    "menu.selectTab %lld" : {
-      "extractionState" : "manual",
-      "localizations" : {
-        "en" : { "stringUnit" : { "state" : "translated", "value" : "Select Tab %lld" } },
-        "zh-Hans" : { "stringUnit" : { "state" : "translated", "value" : "切换到第 %lld 个 Tab" } }
-      }
-    },
-    "menu.selectWorkspace %lld" : {
-      "extractionState" : "manual",
-      "localizations" : {
-        "en" : { "stringUnit" : { "state" : "translated", "value" : "Select Workspace %lld" } },
-        "zh-Hans" : { "stringUnit" : { "state" : "translated", "value" : "切换到第 %lld 个工作区" } }
-      }
-    },
-    "menu.settings" : {
-      "extractionState" : "manual",
-      "localizations" : {
-        "en" : { "stringUnit" : { "state" : "translated", "value" : "Settings…" } },
-        "zh-Hans" : { "stringUnit" : { "state" : "translated", "value" : "设置…" } }
-      }
-    },
-    "menu.splitHorizontal" : {
-      "extractionState" : "manual",
-      "localizations" : {
-        "en" : { "stringUnit" : { "state" : "translated", "value" : "Split Horizontally (Top/Bottom)" } },
-        "zh-Hans" : { "stringUnit" : { "state" : "translated", "value" : "水平分割（上/下）" } }
-      }
-    },
-    "menu.splitVertical" : {
-      "extractionState" : "manual",
-      "localizations" : {
-        "en" : { "stringUnit" : { "state" : "translated", "value" : "Split Vertically (Left/Right)" } },
-        "zh-Hans" : { "stringUnit" : { "state" : "translated", "value" : "垂直分割（左/右）" } }
-      }
-    },
-    "menu.terminal" : {
-      "extractionState" : "manual",
-      "localizations" : {
-        "en" : { "stringUnit" : { "state" : "translated", "value" : "Terminal" } },
-        "zh-Hans" : { "stringUnit" : { "state" : "translated", "value" : "终端" } }
-      }
-    },
-    "quickActions.builtin.claude" : {
-      "extractionState" : "manual",
-      "localizations" : {
-        "en" : { "stringUnit" : { "state" : "translated", "value" : "Claude Code" } },
-        "zh-Hans" : { "stringUnit" : { "state" : "translated", "value" : "Claude Code" } }
-      }
-    },
-    "quickActions.builtin.codex" : {
-      "extractionState" : "manual",
-      "localizations" : {
-        "en" : { "stringUnit" : { "state" : "translated", "value" : "Codex" } },
-        "zh-Hans" : { "stringUnit" : { "state" : "translated", "value" : "Codex" } }
-      }
-    },
-    "quickActions.builtin.gitui" : {
-      "extractionState" : "manual",
-      "localizations" : {
-        "en" : { "stringUnit" : { "state" : "translated", "value" : "Git" } },
-        "zh-Hans" : { "stringUnit" : { "state" : "translated", "value" : "Git" } }
-      }
-    },
-    "quickActions.builtin.opencode" : {
-      "extractionState" : "manual",
-      "localizations" : {
-        "en" : { "stringUnit" : { "state" : "translated", "value" : "OpenCode" } },
-        "zh-Hans" : { "stringUnit" : { "state" : "translated", "value" : "OpenCode" } }
-      }
-    },
-    "settings.appearance.backgroundBlur" : {
-      "extractionState" : "manual",
-      "localizations" : {
-        "en" : { "stringUnit" : { "state" : "translated", "value" : "Background Blur" } },
-        "zh-Hans" : { "stringUnit" : { "state" : "translated", "value" : "背景模糊" } }
-      }
-    },
-    "settings.appearance.backgroundOpacity" : {
-      "extractionState" : "manual",
-      "localizations" : {
-        "en" : { "stringUnit" : { "state" : "translated", "value" : "Background Opacity" } },
-        "zh-Hans" : { "stringUnit" : { "state" : "translated", "value" : "背景不透明度" } }
-      }
-    },
-    "settings.appearance.contentOpacity" : {
-      "extractionState" : "manual",
-      "localizations" : {
-        "en" : { "stringUnit" : { "state" : "translated", "value" : "Content Opacity" } },
-        "zh-Hans" : { "stringUnit" : { "state" : "translated", "value" : "内容不透明度" } }
-      }
-    },
-    "settings.appearance.contentShadow" : {
-      "extractionState" : "manual",
-      "localizations" : {
-        "en" : { "stringUnit" : { "state" : "translated", "value" : "Content Shadow" } },
-        "zh-Hans" : { "stringUnit" : { "state" : "translated", "value" : "内容阴影" } }
-      }
-    },
-    "settings.appearance.cursorBlink" : {
-      "extractionState" : "manual",
-      "localizations" : {
-        "en" : { "stringUnit" : { "state" : "translated", "value" : "Cursor Blink" } },
-        "zh-Hans" : { "stringUnit" : { "state" : "translated", "value" : "光标闪烁" } }
-      }
-    },
-    "settings.appearance.cursorStyle" : {
-      "extractionState" : "manual",
-      "localizations" : {
-        "en" : { "stringUnit" : { "state" : "translated", "value" : "Cursor Style" } },
-        "zh-Hans" : { "stringUnit" : { "state" : "translated", "value" : "光标样式" } }
-      }
-    },
-    "settings.appearance.language" : {
-      "extractionState" : "manual",
-      "localizations" : {
-        "en" : { "stringUnit" : { "state" : "translated", "value" : "Language" } },
-        "zh-Hans" : { "stringUnit" : { "state" : "translated", "value" : "语言" } }
-      }
-    },
-    "settings.appearance.theme" : {
-      "extractionState" : "manual",
-      "localizations" : {
-        "en" : { "stringUnit" : { "state" : "translated", "value" : "Theme" } },
-        "zh-Hans" : { "stringUnit" : { "state" : "translated", "value" : "主题" } }
-      }
-    },
-    "settings.appearance.unfocusedPaneOpacity" : {
-      "extractionState" : "manual",
-      "localizations" : {
-        "en" : { "stringUnit" : { "state" : "translated", "value" : "Unfocused Pane Opacity" } },
-        "zh-Hans" : { "stringUnit" : { "state" : "translated", "value" : "非聚焦窗格不透明度" } }
-      }
-    },
-    "settings.appearance.windowPaddingX" : {
-      "extractionState" : "manual",
-      "localizations" : {
-        "en" : { "stringUnit" : { "state" : "translated", "value" : "Window Padding X" } },
-        "zh-Hans" : { "stringUnit" : { "state" : "translated", "value" : "窗口内边距 X" } }
-      }
-    },
-    "settings.appearance.windowPaddingY" : {
-      "extractionState" : "manual",
-      "localizations" : {
-        "en" : { "stringUnit" : { "state" : "translated", "value" : "Window Padding Y" } },
-        "zh-Hans" : { "stringUnit" : { "state" : "translated", "value" : "窗口内边距 Y" } }
-      }
-    },
-    "settings.close" : {
-      "extractionState" : "manual",
-      "localizations" : {
-        "en" : { "stringUnit" : { "state" : "translated", "value" : "Close settings" } },
-        "zh-Hans" : { "stringUnit" : { "state" : "translated", "value" : "关闭设置" } }
-      }
-    },
-    "settings.font.custom" : {
-      "extractionState" : "manual",
-      "localizations" : {
-        "en" : { "stringUnit" : { "state" : "translated", "value" : "Custom…" } },
-        "zh-Hans" : { "stringUnit" : { "state" : "translated", "value" : "自定义…" } }
-      }
-    },
-    "settings.font.customPlaceholder" : {
-      "extractionState" : "manual",
-      "localizations" : {
-        "en" : { "stringUnit" : { "state" : "translated", "value" : "Font name" } },
-        "zh-Hans" : { "stringUnit" : { "state" : "translated", "value" : "字体名称" } }
-      }
-    },
-    "settings.font.default" : {
-      "extractionState" : "manual",
-      "localizations" : {
-        "en" : { "stringUnit" : { "state" : "translated", "value" : "(default)" } },
-        "zh-Hans" : { "stringUnit" : { "state" : "translated", "value" : "（默认）" } }
-      }
-    },
-    "settings.font.family" : {
-      "extractionState" : "manual",
-      "localizations" : {
-        "en" : { "stringUnit" : { "state" : "translated", "value" : "Font Family" } },
-        "zh-Hans" : { "stringUnit" : { "state" : "translated", "value" : "字体" } }
-      }
-    },
-    "settings.font.listButton" : {
-      "extractionState" : "manual",
-      "localizations" : {
-        "en" : { "stringUnit" : { "state" : "translated", "value" : "List" } },
-        "zh-Hans" : { "stringUnit" : { "state" : "translated", "value" : "列表" } }
-      }
-    },
-    "settings.font.size" : {
-      "extractionState" : "manual",
-      "localizations" : {
-        "en" : { "stringUnit" : { "state" : "translated", "value" : "Font Size" } },
-        "zh-Hans" : { "stringUnit" : { "state" : "translated", "value" : "字号" } }
-      }
-    },
-    "settings.font.thicken" : {
-      "extractionState" : "manual",
-      "localizations" : {
-        "en" : { "stringUnit" : { "state" : "translated", "value" : "Font Thicken" } },
-        "zh-Hans" : { "stringUnit" : { "state" : "translated", "value" : "加粗字体" } }
-      }
-    },
-    "settings.footer.edit" : {
-      "extractionState" : "manual",
-      "localizations" : {
-        "en" : { "stringUnit" : { "state" : "translated", "value" : "Edit Config File…" } },
-        "zh-Hans" : { "stringUnit" : { "state" : "translated", "value" : "编辑配置文件…" } }
-      }
-    },
-    "settings.footer.live" : {
-      "extractionState" : "manual",
-      "localizations" : {
-        "en" : { "stringUnit" : { "state" : "translated", "value" : "Changes apply live." } },
-        "zh-Hans" : { "stringUnit" : { "state" : "translated", "value" : "修改即时生效。" } }
-      }
-    },
-    "settings.language.system" : {
-      "extractionState" : "manual",
-      "localizations" : {
-        "en" : { "stringUnit" : { "state" : "translated", "value" : "System" } },
-        "zh-Hans" : { "stringUnit" : { "state" : "translated", "value" : "跟随系统" } }
-      }
-    },
-    "settings.quickActions.addCustomButton" : {
-      "extractionState" : "manual",
-      "localizations" : {
-        "en" : { "stringUnit" : { "state" : "translated", "value" : "Add Custom Action" } },
-        "zh-Hans" : { "stringUnit" : { "state" : "translated", "value" : "新建自定义快捷操作" } }
-      }
-    },
-    "settings.quickActions.customCommandPlaceholder" : {
-      "extractionState" : "manual",
-      "localizations" : {
-        "en" : { "stringUnit" : { "state" : "translated", "value" : "Command" } },
-        "zh-Hans" : { "stringUnit" : { "state" : "translated", "value" : "命令" } }
-      }
-    },
-    "settings.quickActions.customNamePlaceholder" : {
-      "extractionState" : "manual",
-      "localizations" : {
-        "en" : { "stringUnit" : { "state" : "translated", "value" : "Name" } },
-        "zh-Hans" : { "stringUnit" : { "state" : "translated", "value" : "名称" } }
-      }
-    },
-    "settings.quickActions.deleteCustom.tooltip" : {
-      "extractionState" : "manual",
-      "localizations" : {
-        "en" : { "stringUnit" : { "state" : "translated", "value" : "Delete custom action" } },
-        "zh-Hans" : { "stringUnit" : { "state" : "translated", "value" : "删除自定义快捷操作" } }
-      }
-    },
-    "settings.quickActions.heading" : {
-      "extractionState" : "manual",
-      "localizations" : {
-        "en" : { "stringUnit" : { "state" : "translated", "value" : "Enabled & Order" } },
-        "zh-Hans" : { "stringUnit" : { "state" : "translated", "value" : "启用与排序" } }
-      }
-    },
-    "settings.quickActions.headingFooter" : {
-      "extractionState" : "manual",
-      "localizations" : {
-        "en" : { "stringUnit" : { "state" : "translated", "value" : "Enabled buttons appear in the top-right corner of the window. Drag to reorder." } },
-        "zh-Hans" : { "stringUnit" : { "state" : "translated", "value" : "启用的按钮会按下方顺序出现在窗口右上角，可拖拽排序。" } }
-      }
-    },
-    "settings.reset.alertTitle" : {
-      "extractionState" : "manual",
-      "localizations" : {
-        "en" : { "stringUnit" : { "state" : "translated", "value" : "Reset these settings?" } },
-        "zh-Hans" : { "stringUnit" : { "state" : "translated", "value" : "重置这些设置？" } }
-      }
-    },
-    "settings.reset.button" : {
-      "extractionState" : "manual",
-      "localizations" : {
-        "en" : { "stringUnit" : { "state" : "translated", "value" : "Reset" } },
-        "zh-Hans" : { "stringUnit" : { "state" : "translated", "value" : "重置" } }
-      }
-    },
-    "settings.reset.cancel" : {
-      "extractionState" : "manual",
-      "localizations" : {
-        "en" : { "stringUnit" : { "state" : "translated", "value" : "Cancel" } },
-        "zh-Hans" : { "stringUnit" : { "state" : "translated", "value" : "取消" } }
-      }
-    },
-    "settings.reset.message" : {
-      "extractionState" : "manual",
-      "localizations" : {
-        "en" : { "stringUnit" : { "state" : "translated", "value" : "All settings in this section will revert to their defaults. You can still change them afterwards." } },
-        "zh-Hans" : { "stringUnit" : { "state" : "translated", "value" : "本分类下的所有设置将恢复为默认值，之后你仍可以修改。" } }
-      }
-    },
-    "settings.reset.rowLabel" : {
-      "extractionState" : "manual",
-      "localizations" : {
-        "en" : { "stringUnit" : { "state" : "translated", "value" : "Restore Defaults" } },
-        "zh-Hans" : { "stringUnit" : { "state" : "translated", "value" : "恢复默认" } }
-      }
-    },
-    "settings.agents.betaBadge" : {
-      "extractionState" : "manual",
-      "localizations" : {
-        "en" : { "stringUnit" : { "state" : "translated", "value" : "BETA" } },
-        "zh-Hans" : { "stringUnit" : { "state" : "translated", "value" : "BETA" } }
-      }
-    },
-    "settings.agents.codexAlertTitle" : {
-      "extractionState" : "manual",
-      "localizations" : {
-        "en" : { "stringUnit" : { "state" : "translated", "value" : "Enable Codex Experimental Hooks" } },
-        "zh-Hans" : { "stringUnit" : { "state" : "translated", "value" : "需要开启 Codex 实验性 Hook" } }
-      }
-    },
-    "settings.agents.codexAlertMessage" : {
-      "extractionState" : "manual",
-      "localizations" : {
-        "en" : { "stringUnit" : { "state" : "translated", "value" : "Codex hooks are gated behind an experimental flag. Add the following to ~/.codex/config.toml, then restart Codex:\n\n[features]\ncodex_hooks = true\n\nWithout this flag, Codex turn status will stay idle during running." } },
-        "zh-Hans" : { "stringUnit" : { "state" : "translated", "value" : "Codex 的 hooks 是实验特性，默认关闭。请在 ~/.codex/config.toml 中加入下面内容，然后重启 Codex：\n\n[features]\ncodex_hooks = true\n\n未开启时 Codex 运行中状态会一直停留在 idle。" } }
-      }
-    },
-    "settings.agents.codexAlertOK" : {
-      "extractionState" : "manual",
-      "localizations" : {
-        "en" : { "stringUnit" : { "state" : "translated", "value" : "Got it" } },
-        "zh-Hans" : { "stringUnit" : { "state" : "translated", "value" : "我知道了" } }
-      }
-    },
-    "settings.agents.claude" : {
-      "extractionState" : "manual",
-      "localizations" : {
-        "en" : { "stringUnit" : { "state" : "translated", "value" : "Claude Code" } },
-        "zh-Hans" : { "stringUnit" : { "state" : "translated", "value" : "Claude Code" } }
-      }
-    },
-    "settings.agents.codex" : {
-      "extractionState" : "manual",
-      "localizations" : {
-        "en" : { "stringUnit" : { "state" : "translated", "value" : "Codex" } },
-        "zh-Hans" : { "stringUnit" : { "state" : "translated", "value" : "Codex" } }
-      }
-    },
-    "settings.agents.opencode" : {
-      "extractionState" : "manual",
-      "localizations" : {
-        "en" : { "stringUnit" : { "state" : "translated", "value" : "OpenCode" } },
-        "zh-Hans" : { "stringUnit" : { "state" : "translated", "value" : "OpenCode" } }
-      }
-    },
-    "settings.agents.notificationsTitle" : {
-      "extractionState" : "manual",
-      "localizations" : {
-        "en" : { "stringUnit" : { "state" : "translated", "value" : "Notifications" } },
-        "zh-Hans" : { "stringUnit" : { "state" : "translated", "value" : "通知" } }
-      }
-    },
-    "settings.agents.notificationsFooter" : {
-      "extractionState" : "manual",
-      "localizations" : {
-        "en" : { "stringUnit" : { "state" : "translated", "value" : "Show running / idle / finished status icons next to tabs that run the selected agents." } },
-        "zh-Hans" : { "stringUnit" : { "state" : "translated", "value" : "在跑这些 agent 的 tab 旁显示运行 / 闲置 / 完成的状态图标。" } }
-      }
-    },
-    "settings.agents.resumeTitle" : {
-      "extractionState" : "manual",
-      "localizations" : {
-        "en" : { "stringUnit" : { "state" : "translated", "value" : "Resume on Launch" } },
-        "zh-Hans" : { "stringUnit" : { "state" : "translated", "value" : "启动时恢复会话" } }
-      }
-    },
-    "settings.agents.resumeFooter" : {
-      "extractionState" : "manual",
-      "localizations" : {
-        "en" : { "stringUnit" : { "state" : "translated", "value" : "On next launch, auto-run `claude --resume <id>` / `codex resume <id>` to land back in the most recent session. Off by default. Turning a row off also drops any saved session id." } },
-        "zh-Hans" : { "stringUnit" : { "state" : "translated", "value" : "下次启动时自动执行 `claude --resume <id>` / `codex resume <id>`，回到最近一次的会话。默认关闭。关闭某一行同时会清除已保存的会话 id。" } }
-      }
-    },
-    "settings.section.agents" : {
-      "extractionState" : "manual",
-      "localizations" : {
-        "en" : { "stringUnit" : { "state" : "translated", "value" : "Agents" } },
-        "zh-Hans" : { "stringUnit" : { "state" : "translated", "value" : "Agents" } }
-      }
-    },
-    "settings.section.appearance" : {
-      "extractionState" : "manual",
-      "localizations" : {
-        "en" : { "stringUnit" : { "state" : "translated", "value" : "Appearance" } },
-        "zh-Hans" : { "stringUnit" : { "state" : "translated", "value" : "外观" } }
-      }
-    },
-    "settings.section.font" : {
-      "extractionState" : "manual",
-      "localizations" : {
-        "en" : { "stringUnit" : { "state" : "translated", "value" : "Font" } },
-        "zh-Hans" : { "stringUnit" : { "state" : "translated", "value" : "字体" } }
-      }
-    },
-    "settings.section.quickActions" : {
-      "extractionState" : "manual",
-      "localizations" : {
-        "en" : { "stringUnit" : { "state" : "translated", "value" : "Quick Actions" } },
-        "zh-Hans" : { "stringUnit" : { "state" : "translated", "value" : "快捷操作" } }
-      }
-    },
-    "settings.section.shell" : {
-      "extractionState" : "manual",
-      "localizations" : {
-        "en" : { "stringUnit" : { "state" : "translated", "value" : "Shell" } },
-        "zh-Hans" : { "stringUnit" : { "state" : "translated", "value" : "Shell" } }
-      }
-    },
-    "settings.section.terminal" : {
-      "extractionState" : "manual",
-      "localizations" : {
-        "en" : { "stringUnit" : { "state" : "translated", "value" : "Terminal" } },
-        "zh-Hans" : { "stringUnit" : { "state" : "translated", "value" : "终端" } }
-      }
-    },
-    "settings.shell.customCommand" : {
-      "extractionState" : "manual",
-      "localizations" : {
-        "en" : { "stringUnit" : { "state" : "translated", "value" : "Custom Command" } },
-        "zh-Hans" : { "stringUnit" : { "state" : "translated", "value" : "自定义命令" } }
-      }
-    },
-    "settings.shell.defaultPlaceholder" : {
-      "extractionState" : "manual",
-      "localizations" : {
-        "en" : { "stringUnit" : { "state" : "translated", "value" : "(default shell)" } },
-        "zh-Hans" : { "stringUnit" : { "state" : "translated", "value" : "（默认 shell）" } }
-      }
-    },
-    "settings.shell.features" : {
-      "extractionState" : "manual",
-      "localizations" : {
-        "en" : { "stringUnit" : { "state" : "translated", "value" : "Integration Features" } },
-        "zh-Hans" : { "stringUnit" : { "state" : "translated", "value" : "集成特性" } }
-      }
-    },
-    "settings.shell.integration" : {
-      "extractionState" : "manual",
-      "localizations" : {
-        "en" : { "stringUnit" : { "state" : "translated", "value" : "Shell Integration" } },
-        "zh-Hans" : { "stringUnit" : { "state" : "translated", "value" : "Shell 集成" } }
-      }
-    },
-    "settings.terminal.confirmClose" : {
-      "extractionState" : "manual",
-      "localizations" : {
-        "en" : { "stringUnit" : { "state" : "translated", "value" : "Confirm Close" } },
-        "zh-Hans" : { "stringUnit" : { "state" : "translated", "value" : "关闭确认" } }
-      }
-    },
-    "settings.terminal.copyOnSelect" : {
-      "extractionState" : "manual",
-      "localizations" : {
-        "en" : { "stringUnit" : { "state" : "translated", "value" : "Copy On Select" } },
-        "zh-Hans" : { "stringUnit" : { "state" : "translated", "value" : "选中即复制" } }
-      }
-    },
-    "settings.terminal.hideMouseWhileTyping" : {
-      "extractionState" : "manual",
-      "localizations" : {
-        "en" : { "stringUnit" : { "state" : "translated", "value" : "Hide Mouse While Typing" } },
-        "zh-Hans" : { "stringUnit" : { "state" : "translated", "value" : "键入时隐藏鼠标" } }
-      }
-    },
-    "settings.terminal.scrollbackLimit" : {
-      "extractionState" : "manual",
-      "localizations" : {
-        "en" : { "stringUnit" : { "state" : "translated", "value" : "Scrollback Limit" } },
-        "zh-Hans" : { "stringUnit" : { "state" : "translated", "value" : "回滚缓冲大小" } }
-      }
-    },
-    "settings.theme.dark" : {
-      "extractionState" : "manual",
-      "localizations" : {
-        "en" : { "stringUnit" : { "state" : "translated", "value" : "Dark" } },
-        "zh-Hans" : { "stringUnit" : { "state" : "translated", "value" : "深色" } }
-      }
-    },
-    "settings.theme.followSystem" : {
-      "extractionState" : "manual",
-      "localizations" : {
-        "en" : { "stringUnit" : { "state" : "translated", "value" : "Follow system" } },
-        "zh-Hans" : { "stringUnit" : { "state" : "translated", "value" : "跟随系统" } }
-      }
-    },
-    "settings.theme.light" : {
-      "extractionState" : "manual",
-      "localizations" : {
-        "en" : { "stringUnit" : { "state" : "translated", "value" : "Light" } },
-        "zh-Hans" : { "stringUnit" : { "state" : "translated", "value" : "浅色" } }
-      }
-    },
-    "settings.theme.name" : {
-      "extractionState" : "manual",
-      "localizations" : {
-        "en" : { "stringUnit" : { "state" : "translated", "value" : "Theme Name" } },
-        "zh-Hans" : { "stringUnit" : { "state" : "translated", "value" : "主题名称" } }
-      }
-    },
-    "settings.theme.searchPlaceholder" : {
-      "extractionState" : "manual",
-      "localizations" : {
-        "en" : { "stringUnit" : { "state" : "translated", "value" : "Search themes" } },
-        "zh-Hans" : { "stringUnit" : { "state" : "translated", "value" : "搜索主题" } }
-      }
-    },
-    "settings.theme.inherit" : {
-      "extractionState" : "manual",
-      "localizations" : {
-        "en" : { "stringUnit" : { "state" : "translated", "value" : "Inherit from Ghostty" } },
-        "zh-Hans" : { "stringUnit" : { "state" : "translated", "value" : "继承 Ghostty（默认）" } }
-      }
-    },
-    "settings.theme.single" : {
-      "extractionState" : "manual",
-      "localizations" : {
-        "en" : { "stringUnit" : { "state" : "translated", "value" : "Single" } },
-        "zh-Hans" : { "stringUnit" : { "state" : "translated", "value" : "单主题" } }
-      }
-    },
-    "sidebar.deleteAlert.cancel" : {
-      "extractionState" : "manual",
-      "localizations" : {
-        "en" : { "stringUnit" : { "state" : "translated", "value" : "Cancel" } },
-        "zh-Hans" : { "stringUnit" : { "state" : "translated", "value" : "取消" } }
-      }
-    },
-    "sidebar.deleteAlert.confirm" : {
-      "extractionState" : "manual",
-      "localizations" : {
-        "en" : { "stringUnit" : { "state" : "translated", "value" : "Delete" } },
-        "zh-Hans" : { "stringUnit" : { "state" : "translated", "value" : "删除" } }
-      }
-    },
-    "sidebar.deleteAlert.message %@" : {
-      "extractionState" : "manual",
-      "localizations" : {
-        "en" : { "stringUnit" : { "state" : "translated", "value" : "\"%@\" will be deleted with all its tabs. This action cannot be undone." } },
-        "zh-Hans" : { "stringUnit" : { "state" : "translated", "value" : "「%@」及其所有 tab 将被删除，此操作不可撤销。" } }
-      }
-    },
-    "sidebar.deleteAlert.title" : {
-      "extractionState" : "manual",
-      "localizations" : {
-        "en" : { "stringUnit" : { "state" : "translated", "value" : "Delete workspace?" } },
-        "zh-Hans" : { "stringUnit" : { "state" : "translated", "value" : "删除 workspace？" } }
-      }
-    },
-    "sidebar.hide" : {
-      "extractionState" : "manual",
-      "localizations" : {
-        "en" : { "stringUnit" : { "state" : "translated", "value" : "Hide sidebar" } },
-        "zh-Hans" : { "stringUnit" : { "state" : "translated", "value" : "收起侧栏" } }
-      }
-    },
-    "sidebar.newWorkspace" : {
-      "extractionState" : "manual",
-      "localizations" : {
-        "en" : { "stringUnit" : { "state" : "translated", "value" : "New workspace" } },
-        "zh-Hans" : { "stringUnit" : { "state" : "translated", "value" : "新建 workspace" } }
-      }
-    },
-    "sidebar.row.delete" : {
-      "extractionState" : "manual",
-      "localizations" : {
-        "en" : { "stringUnit" : { "state" : "translated", "value" : "Delete" } },
-        "zh-Hans" : { "stringUnit" : { "state" : "translated", "value" : "删除" } }
-      }
-    },
-    "sidebar.row.commandPanel.editTitle" : {
-      "extractionState" : "manual",
-      "localizations" : {
-        "en" : { "stringUnit" : { "state" : "translated", "value" : "Edit Default Command" } },
-        "zh-Hans" : { "stringUnit" : { "state" : "translated", "value" : "编辑默认命令" } }
-      }
-    },
-    "sidebar.row.commandPanel.cancel" : {
-      "extractionState" : "manual",
-      "localizations" : {
-        "en" : { "stringUnit" : { "state" : "translated", "value" : "Cancel" } },
-        "zh-Hans" : { "stringUnit" : { "state" : "translated", "value" : "取消" } }
-      }
-    },
-    "sidebar.row.commandPanel.placeholder" : {
-      "extractionState" : "manual",
-      "localizations" : {
-        "en" : { "stringUnit" : { "state" : "translated", "value" : "e.g. ssh user@server" } },
-        "zh-Hans" : { "stringUnit" : { "state" : "translated", "value" : "例如 ssh user@server" } }
-      }
-    },
-    "sidebar.row.commandPanel.save" : {
-      "extractionState" : "manual",
-      "localizations" : {
-        "en" : { "stringUnit" : { "state" : "translated", "value" : "Save" } },
-        "zh-Hans" : { "stringUnit" : { "state" : "translated", "value" : "保存" } }
-      }
-    },
-    "sidebar.row.rename" : {
-      "extractionState" : "manual",
-      "localizations" : {
-        "en" : { "stringUnit" : { "state" : "translated", "value" : "Rename" } },
-        "zh-Hans" : { "stringUnit" : { "state" : "translated", "value" : "重命名" } }
-      }
-    },
-    "sidebar.settings" : {
-      "extractionState" : "manual",
-      "localizations" : {
-        "en" : { "stringUnit" : { "state" : "translated", "value" : "Settings" } },
-        "zh-Hans" : { "stringUnit" : { "state" : "translated", "value" : "设置" } }
-      }
-    },
-    "sidebar.show" : {
-      "extractionState" : "manual",
-      "localizations" : {
-        "en" : { "stringUnit" : { "state" : "translated", "value" : "Show sidebar" } },
-        "zh-Hans" : { "stringUnit" : { "state" : "translated", "value" : "展开侧栏" } }
-      }
-    },
-    "sidebar.title" : {
-      "extractionState" : "manual",
-      "localizations" : {
-        "en" : { "stringUnit" : { "state" : "translated", "value" : "Mux0" } },
-        "zh-Hans" : { "stringUnit" : { "state" : "translated", "value" : "Mux0" } }
-      }
-    },
-    "tab.close.alert.cancel" : {
-      "extractionState" : "manual",
-      "localizations" : {
-        "en" : { "stringUnit" : { "state" : "translated", "value" : "Cancel" } },
-        "zh-Hans" : { "stringUnit" : { "state" : "translated", "value" : "取消" } }
-      }
-    },
-    "tab.close.alert.confirm" : {
-      "extractionState" : "manual",
-      "localizations" : {
-        "en" : { "stringUnit" : { "state" : "translated", "value" : "Close" } },
-        "zh-Hans" : { "stringUnit" : { "state" : "translated", "value" : "关闭" } }
-      }
-    },
-    "tab.close.alert.message %@" : {
-      "extractionState" : "manual",
-      "localizations" : {
-        "en" : { "stringUnit" : { "state" : "translated", "value" : "All terminal processes in \"%@\" will be terminated." } },
-        "zh-Hans" : { "stringUnit" : { "state" : "translated", "value" : "「%@」中的所有终端进程将被终止。" } }
-      }
-    },
-    "tab.close.alert.title" : {
-      "extractionState" : "manual",
-      "localizations" : {
-        "en" : { "stringUnit" : { "state" : "translated", "value" : "Close tab?" } },
-        "zh-Hans" : { "stringUnit" : { "state" : "translated", "value" : "关闭 tab？" } }
-      }
-    },
-    "tab.newTab" : {
-      "extractionState" : "manual",
-      "localizations" : {
-        "en" : { "stringUnit" : { "state" : "translated", "value" : "New tab" } },
-        "zh-Hans" : { "stringUnit" : { "state" : "translated", "value" : "新建 tab" } }
-      }
-    },
-    "tab.row.close" : {
-      "extractionState" : "manual",
-      "localizations" : {
-        "en" : { "stringUnit" : { "state" : "translated", "value" : "Close" } },
-        "zh-Hans" : { "stringUnit" : { "state" : "translated", "value" : "关闭" } }
-      }
-    },
-    "tab.row.rename" : {
-      "extractionState" : "manual",
-      "localizations" : {
-        "en" : { "stringUnit" : { "state" : "translated", "value" : "Rename" } },
-        "zh-Hans" : { "stringUnit" : { "state" : "translated", "value" : "重命名" } }
-      }
-    },
-    "settings.section.update" : {
-      "extractionState" : "manual",
-      "localizations" : {
-        "en" : { "stringUnit" : { "state" : "translated", "value" : "Update" } },
-        "zh-Hans" : { "stringUnit" : { "state" : "translated", "value" : "更新" } }
-      }
-    },
-    "settings.update.action" : {
-      "extractionState" : "manual",
-      "localizations" : {
-        "en" : { "stringUnit" : { "state" : "translated", "value" : "Action" } },
-        "zh-Hans" : { "stringUnit" : { "state" : "translated", "value" : "操作" } }
-      }
-    },
-    "settings.update.availableUpdate" : {
-      "extractionState" : "manual",
-      "localizations" : {
-        "en" : { "stringUnit" : { "state" : "translated", "value" : "Available Update" } },
-        "zh-Hans" : { "stringUnit" : { "state" : "translated", "value" : "可用更新" } }
-      }
-    },
-    "settings.update.checkForUpdates" : {
-      "extractionState" : "manual",
-      "localizations" : {
-        "en" : { "stringUnit" : { "state" : "translated", "value" : "Check for Updates" } },
-        "zh-Hans" : { "stringUnit" : { "state" : "translated", "value" : "检查更新" } }
-      }
-    },
-    "settings.update.checking" : {
-      "extractionState" : "manual",
-      "localizations" : {
-        "en" : { "stringUnit" : { "state" : "translated", "value" : "Checking…" } },
-        "zh-Hans" : { "stringUnit" : { "state" : "translated", "value" : "检查中…" } }
-      }
-    },
-    "settings.update.currentVersion" : {
-      "extractionState" : "manual",
-      "localizations" : {
-        "en" : { "stringUnit" : { "state" : "translated", "value" : "Current Version" } },
-        "zh-Hans" : { "stringUnit" : { "state" : "translated", "value" : "当前版本" } }
-      }
-    },
-    "settings.update.debugBuild" : {
-      "extractionState" : "manual",
-      "localizations" : {
-        "en" : { "stringUnit" : { "state" : "translated", "value" : "Debug Build" } },
-        "zh-Hans" : { "stringUnit" : { "state" : "translated", "value" : "Debug 构建" } }
-      }
-    },
-    "settings.update.debugDisabled" : {
-      "extractionState" : "manual",
-      "localizations" : {
-        "en" : { "stringUnit" : { "state" : "translated", "value" : "Auto-update disabled" } },
-        "zh-Hans" : { "stringUnit" : { "state" : "translated", "value" : "已禁用自动更新" } }
-      }
-    },
-    "settings.update.dismiss" : {
-      "extractionState" : "manual",
-      "localizations" : {
-        "en" : { "stringUnit" : { "state" : "translated", "value" : "Dismiss" } },
-        "zh-Hans" : { "stringUnit" : { "state" : "translated", "value" : "稍后再说" } }
-      }
-    },
-    "settings.update.downloadInstall" : {
-      "extractionState" : "manual",
-      "localizations" : {
-        "en" : { "stringUnit" : { "state" : "translated", "value" : "Download & Install" } },
-        "zh-Hans" : { "stringUnit" : { "state" : "translated", "value" : "下载并安装" } }
-      }
-    },
-    "settings.update.downloading" : {
-      "extractionState" : "manual",
-      "localizations" : {
-        "en" : { "stringUnit" : { "state" : "translated", "value" : "Downloading" } },
-        "zh-Hans" : { "stringUnit" : { "state" : "translated", "value" : "下载中" } }
-      }
-    },
-    "settings.update.error" : {
-      "extractionState" : "manual",
-      "localizations" : {
-        "en" : { "stringUnit" : { "state" : "translated", "value" : "Error" } },
-        "zh-Hans" : { "stringUnit" : { "state" : "translated", "value" : "错误" } }
-      }
-    },
-    "settings.update.installing" : {
-      "extractionState" : "manual",
-      "localizations" : {
-        "en" : { "stringUnit" : { "state" : "translated", "value" : "Installing & relaunching…" } },
-        "zh-Hans" : { "stringUnit" : { "state" : "translated", "value" : "安装并重启中…" } }
-      }
-    },
-    "settings.update.releaseNotes" : {
-      "extractionState" : "manual",
-      "localizations" : {
-        "en" : { "stringUnit" : { "state" : "translated", "value" : "Release Notes" } },
-        "zh-Hans" : { "stringUnit" : { "state" : "translated", "value" : "更新说明" } }
-      }
-    },
-    "settings.update.retry" : {
-      "extractionState" : "manual",
-      "localizations" : {
-        "en" : { "stringUnit" : { "state" : "translated", "value" : "Retry" } },
-        "zh-Hans" : { "stringUnit" : { "state" : "translated", "value" : "重试" } }
-      }
-    },
-    "settings.update.skipThisVersion" : {
-      "extractionState" : "manual",
-      "localizations" : {
-        "en" : { "stringUnit" : { "state" : "translated", "value" : "Skip This Version" } },
-        "zh-Hans" : { "stringUnit" : { "state" : "translated", "value" : "跳过此版本" } }
-      }
-    },
-    "settings.update.status" : {
-      "extractionState" : "manual",
-      "localizations" : {
-        "en" : { "stringUnit" : { "state" : "translated", "value" : "Status" } },
-        "zh-Hans" : { "stringUnit" : { "state" : "translated", "value" : "状态" } }
-      }
-    },
-    "settings.update.upToDate" : {
-      "extractionState" : "manual",
-      "localizations" : {
-        "en" : { "stringUnit" : { "state" : "translated", "value" : "You're on the latest version." } },
-        "zh-Hans" : { "stringUnit" : { "state" : "translated", "value" : "已是最新版本。" } }
-      }
-    },
-    "settings.update.version %@" : {
-      "extractionState" : "manual",
-      "localizations" : {
-        "en" : { "stringUnit" : { "state" : "translated", "value" : "Version %@" } },
-        "zh-Hans" : { "stringUnit" : { "state" : "translated", "value" : "版本 %@" } }
-      }
-    },
-    "sidebar.checkForUpdates" : {
-      "extractionState" : "manual",
-      "localizations" : {
-        "en" : { "stringUnit" : { "state" : "translated", "value" : "Check for updates" } },
-        "zh-Hans" : { "stringUnit" : { "state" : "translated", "value" : "检查更新" } }
-      }
-    },
-    "sidebar.updateAvailable" : {
-      "extractionState" : "manual",
-      "localizations" : {
-        "en" : { "stringUnit" : { "state" : "translated", "value" : "Update available" } },
-        "zh-Hans" : { "stringUnit" : { "state" : "translated", "value" : "有可用更新" } }
+  "sourceLanguage": "en",
+  "strings": {
+    "app.ghostty.notFound.detail": {
+      "extractionState": "manual",
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Mux0 requires Ghostty to be installed.\nRun scripts/build-vendor.sh first, then relaunch."
+          }
+        },
+        "zh-Hans": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Mux0 需要安装 Ghostty。请先运行 scripts/build-vendor.sh，然后重新启动。"
+          }
+        }
+      }
+    },
+    "app.ghostty.notFound.title": {
+      "extractionState": "manual",
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Ghostty not found"
+          }
+        },
+        "zh-Hans": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "未找到 Ghostty"
+          }
+        }
+      }
+    },
+    "menu.closePane": {
+      "extractionState": "manual",
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Close Pane"
+          }
+        },
+        "zh-Hans": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "关闭窗格"
+          }
+        }
+      }
+    },
+    "menu.copy": {
+      "extractionState": "manual",
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Copy"
+          }
+        },
+        "zh-Hans": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "拷贝"
+          }
+        }
+      }
+    },
+    "menu.editConfig": {
+      "extractionState": "manual",
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Edit Config File…"
+          }
+        },
+        "zh-Hans": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "编辑配置文件…"
+          }
+        }
+      }
+    },
+    "menu.focusNextPane": {
+      "extractionState": "manual",
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Focus Next Pane"
+          }
+        },
+        "zh-Hans": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "聚焦下一窗格"
+          }
+        }
+      }
+    },
+    "menu.focusPrevPane": {
+      "extractionState": "manual",
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Focus Previous Pane"
+          }
+        },
+        "zh-Hans": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "聚焦上一窗格"
+          }
+        }
+      }
+    },
+    "menu.help": {
+      "extractionState": "manual",
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Mux0 Help"
+          }
+        },
+        "zh-Hans": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Mux0 帮助"
+          }
+        }
+      }
+    },
+    "menu.newTab": {
+      "extractionState": "manual",
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "New Tab"
+          }
+        },
+        "zh-Hans": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "新建 Tab"
+          }
+        }
+      }
+    },
+    "menu.newWorkspace": {
+      "extractionState": "manual",
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "New Workspace"
+          }
+        },
+        "zh-Hans": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "新建 Workspace"
+          }
+        }
+      }
+    },
+    "menu.paste": {
+      "extractionState": "manual",
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Paste"
+          }
+        },
+        "zh-Hans": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "粘贴"
+          }
+        }
+      }
+    },
+    "menu.selectAll": {
+      "extractionState": "manual",
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Select All"
+          }
+        },
+        "zh-Hans": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "全选"
+          }
+        }
+      }
+    },
+    "menu.selectNextTab": {
+      "extractionState": "manual",
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Select Next Tab"
+          }
+        },
+        "zh-Hans": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "下一个 Tab"
+          }
+        }
+      }
+    },
+    "menu.selectPrevTab": {
+      "extractionState": "manual",
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Select Previous Tab"
+          }
+        },
+        "zh-Hans": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "上一个 Tab"
+          }
+        }
+      }
+    },
+    "menu.selectTab %lld": {
+      "extractionState": "manual",
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Select Tab %lld"
+          }
+        },
+        "zh-Hans": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "切换到第 %lld 个 Tab"
+          }
+        }
+      }
+    },
+    "menu.selectWorkspace %lld": {
+      "extractionState": "manual",
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Select Workspace %lld"
+          }
+        },
+        "zh-Hans": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "切换到第 %lld 个工作区"
+          }
+        }
+      }
+    },
+    "menu.settings": {
+      "extractionState": "manual",
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Settings…"
+          }
+        },
+        "zh-Hans": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "设置…"
+          }
+        }
+      }
+    },
+    "menu.splitHorizontal": {
+      "extractionState": "manual",
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Split Horizontally (Top/Bottom)"
+          }
+        },
+        "zh-Hans": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "水平分割（上/下）"
+          }
+        }
+      }
+    },
+    "menu.splitVertical": {
+      "extractionState": "manual",
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Split Vertically (Left/Right)"
+          }
+        },
+        "zh-Hans": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "垂直分割（左/右）"
+          }
+        }
+      }
+    },
+    "menu.terminal": {
+      "extractionState": "manual",
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Terminal"
+          }
+        },
+        "zh-Hans": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "终端"
+          }
+        }
+      }
+    },
+    "quickActions.builtin.claude": {
+      "extractionState": "manual",
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Claude Code"
+          }
+        },
+        "zh-Hans": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Claude Code"
+          }
+        }
+      }
+    },
+    "quickActions.builtin.codex": {
+      "extractionState": "manual",
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Codex"
+          }
+        },
+        "zh-Hans": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Codex"
+          }
+        }
+      }
+    },
+    "quickActions.builtin.gitui": {
+      "extractionState": "manual",
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Git"
+          }
+        },
+        "zh-Hans": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Git"
+          }
+        }
+      }
+    },
+    "quickActions.builtin.opencode": {
+      "extractionState": "manual",
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "OpenCode"
+          }
+        },
+        "zh-Hans": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "OpenCode"
+          }
+        }
+      }
+    },
+    "settings.appearance.backgroundBlur": {
+      "extractionState": "manual",
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Background Blur"
+          }
+        },
+        "zh-Hans": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "背景模糊"
+          }
+        }
+      }
+    },
+    "settings.appearance.backgroundOpacity": {
+      "extractionState": "manual",
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Background Opacity"
+          }
+        },
+        "zh-Hans": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "背景不透明度"
+          }
+        }
+      }
+    },
+    "settings.appearance.contentOpacity": {
+      "extractionState": "manual",
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Content Opacity"
+          }
+        },
+        "zh-Hans": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "内容不透明度"
+          }
+        }
+      }
+    },
+    "settings.appearance.contentShadow": {
+      "extractionState": "manual",
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Content Shadow"
+          }
+        },
+        "zh-Hans": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "内容阴影"
+          }
+        }
+      }
+    },
+    "settings.appearance.cursorBlink": {
+      "extractionState": "manual",
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Cursor Blink"
+          }
+        },
+        "zh-Hans": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "光标闪烁"
+          }
+        }
+      }
+    },
+    "settings.appearance.cursorStyle": {
+      "extractionState": "manual",
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Cursor Style"
+          }
+        },
+        "zh-Hans": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "光标样式"
+          }
+        }
+      }
+    },
+    "settings.appearance.language": {
+      "extractionState": "manual",
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Language"
+          }
+        },
+        "zh-Hans": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "语言"
+          }
+        }
+      }
+    },
+    "settings.appearance.theme": {
+      "extractionState": "manual",
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Theme"
+          }
+        },
+        "zh-Hans": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "主题"
+          }
+        }
+      }
+    },
+    "settings.appearance.unfocusedPaneOpacity": {
+      "extractionState": "manual",
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Unfocused Pane Opacity"
+          }
+        },
+        "zh-Hans": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "非聚焦窗格不透明度"
+          }
+        }
+      }
+    },
+    "settings.appearance.windowPaddingX": {
+      "extractionState": "manual",
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Window Padding X"
+          }
+        },
+        "zh-Hans": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "窗口内边距 X"
+          }
+        }
+      }
+    },
+    "settings.appearance.windowPaddingY": {
+      "extractionState": "manual",
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Window Padding Y"
+          }
+        },
+        "zh-Hans": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "窗口内边距 Y"
+          }
+        }
+      }
+    },
+    "settings.close": {
+      "extractionState": "manual",
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Close settings"
+          }
+        },
+        "zh-Hans": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "关闭设置"
+          }
+        }
+      }
+    },
+    "settings.font.custom": {
+      "extractionState": "manual",
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Custom…"
+          }
+        },
+        "zh-Hans": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "自定义…"
+          }
+        }
+      }
+    },
+    "settings.font.customPlaceholder": {
+      "extractionState": "manual",
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Font name"
+          }
+        },
+        "zh-Hans": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "字体名称"
+          }
+        }
+      }
+    },
+    "settings.font.default": {
+      "extractionState": "manual",
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "(default)"
+          }
+        },
+        "zh-Hans": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "（默认）"
+          }
+        }
+      }
+    },
+    "settings.font.family": {
+      "extractionState": "manual",
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Font Family"
+          }
+        },
+        "zh-Hans": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "字体"
+          }
+        }
+      }
+    },
+    "settings.font.listButton": {
+      "extractionState": "manual",
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "List"
+          }
+        },
+        "zh-Hans": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "列表"
+          }
+        }
+      }
+    },
+    "settings.font.size": {
+      "extractionState": "manual",
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Font Size"
+          }
+        },
+        "zh-Hans": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "字号"
+          }
+        }
+      }
+    },
+    "settings.font.thicken": {
+      "extractionState": "manual",
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Font Thicken"
+          }
+        },
+        "zh-Hans": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "加粗字体"
+          }
+        }
+      }
+    },
+    "settings.footer.edit": {
+      "extractionState": "manual",
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Edit Config File…"
+          }
+        },
+        "zh-Hans": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "编辑配置文件…"
+          }
+        }
+      }
+    },
+    "settings.footer.live": {
+      "extractionState": "manual",
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Changes apply live."
+          }
+        },
+        "zh-Hans": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "修改即时生效。"
+          }
+        }
+      }
+    },
+    "settings.language.system": {
+      "extractionState": "manual",
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "System"
+          }
+        },
+        "zh-Hans": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "跟随系统"
+          }
+        }
+      }
+    },
+    "settings.quickActions.addCustomButton": {
+      "extractionState": "manual",
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Add Custom Action"
+          }
+        },
+        "zh-Hans": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "新建自定义快捷操作"
+          }
+        }
+      }
+    },
+    "settings.quickActions.customCommandPlaceholder": {
+      "extractionState": "manual",
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Command"
+          }
+        },
+        "zh-Hans": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "命令"
+          }
+        }
+      }
+    },
+    "settings.quickActions.customNamePlaceholder": {
+      "extractionState": "manual",
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Name"
+          }
+        },
+        "zh-Hans": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "名称"
+          }
+        }
+      }
+    },
+    "settings.quickActions.deleteCustom.tooltip": {
+      "extractionState": "manual",
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Delete custom action"
+          }
+        },
+        "zh-Hans": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "删除自定义快捷操作"
+          }
+        }
+      }
+    },
+    "settings.quickActions.heading": {
+      "extractionState": "manual",
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Enabled & Order"
+          }
+        },
+        "zh-Hans": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "启用与排序"
+          }
+        }
+      }
+    },
+    "settings.quickActions.headingFooter": {
+      "extractionState": "manual",
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Enabled buttons appear in the top-right corner of the window. Drag to reorder."
+          }
+        },
+        "zh-Hans": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "启用的按钮会按下方顺序出现在窗口右上角，可拖拽排序。"
+          }
+        }
+      }
+    },
+    "settings.reset.alertTitle": {
+      "extractionState": "manual",
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Reset these settings?"
+          }
+        },
+        "zh-Hans": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "重置这些设置？"
+          }
+        }
+      }
+    },
+    "settings.reset.button": {
+      "extractionState": "manual",
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Reset"
+          }
+        },
+        "zh-Hans": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "重置"
+          }
+        }
+      }
+    },
+    "settings.reset.cancel": {
+      "extractionState": "manual",
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Cancel"
+          }
+        },
+        "zh-Hans": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "取消"
+          }
+        }
+      }
+    },
+    "settings.reset.message": {
+      "extractionState": "manual",
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "All settings in this section will revert to their defaults. You can still change them afterwards."
+          }
+        },
+        "zh-Hans": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "本分类下的所有设置将恢复为默认值，之后你仍可以修改。"
+          }
+        }
+      }
+    },
+    "settings.reset.rowLabel": {
+      "extractionState": "manual",
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Restore Defaults"
+          }
+        },
+        "zh-Hans": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "恢复默认"
+          }
+        }
+      }
+    },
+    "settings.agents.betaBadge": {
+      "extractionState": "manual",
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "BETA"
+          }
+        },
+        "zh-Hans": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "BETA"
+          }
+        }
+      }
+    },
+    "settings.agents.codexAlertTitle": {
+      "extractionState": "manual",
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Enable Codex Experimental Hooks"
+          }
+        },
+        "zh-Hans": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "需要开启 Codex 实验性 Hook"
+          }
+        }
+      }
+    },
+    "settings.agents.codexAlertMessage": {
+      "extractionState": "manual",
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Codex hooks are gated behind an experimental flag. Add the following to ~/.codex/config.toml, then restart Codex:\n\n[features]\ncodex_hooks = true\n\nWithout this flag, Codex turn status will stay idle during running."
+          }
+        },
+        "zh-Hans": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Codex 的 hooks 是实验特性，默认关闭。请在 ~/.codex/config.toml 中加入下面内容，然后重启 Codex：\n\n[features]\ncodex_hooks = true\n\n未开启时 Codex 运行中状态会一直停留在 idle。"
+          }
+        }
+      }
+    },
+    "settings.agents.codexAlertOK": {
+      "extractionState": "manual",
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Got it"
+          }
+        },
+        "zh-Hans": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "我知道了"
+          }
+        }
+      }
+    },
+    "settings.agents.claude": {
+      "extractionState": "manual",
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Claude Code"
+          }
+        },
+        "zh-Hans": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Claude Code"
+          }
+        }
+      }
+    },
+    "settings.agents.codex": {
+      "extractionState": "manual",
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Codex"
+          }
+        },
+        "zh-Hans": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Codex"
+          }
+        }
+      }
+    },
+    "settings.agents.opencode": {
+      "extractionState": "manual",
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "OpenCode"
+          }
+        },
+        "zh-Hans": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "OpenCode"
+          }
+        }
+      }
+    },
+    "settings.agents.notificationsTitle": {
+      "extractionState": "manual",
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Notifications"
+          }
+        },
+        "zh-Hans": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "通知"
+          }
+        }
+      }
+    },
+    "settings.agents.notificationsFooter": {
+      "extractionState": "manual",
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Show running / idle / finished status icons next to tabs that run the selected agents."
+          }
+        },
+        "zh-Hans": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "在跑这些 agent 的 tab 旁显示运行 / 闲置 / 完成的状态图标。"
+          }
+        }
+      }
+    },
+    "settings.agents.resumeTitle": {
+      "extractionState": "manual",
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Resume on Launch"
+          }
+        },
+        "zh-Hans": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "启动时恢复会话"
+          }
+        }
+      }
+    },
+    "settings.agents.resumeFooter": {
+      "extractionState": "manual",
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "On next launch, auto-run `claude --resume <id>` / `codex resume <id>` to land back in the most recent session. Off by default. Turning a row off also drops any saved session id."
+          }
+        },
+        "zh-Hans": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "下次启动时自动执行 `claude --resume <id>` / `codex resume <id>`，回到最近一次的会话。默认关闭。关闭某一行同时会清除已保存的会话 id。"
+          }
+        }
+      }
+    },
+    "settings.section.agents": {
+      "extractionState": "manual",
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Agents"
+          }
+        },
+        "zh-Hans": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Agents"
+          }
+        }
+      }
+    },
+    "settings.section.appearance": {
+      "extractionState": "manual",
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Appearance"
+          }
+        },
+        "zh-Hans": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "外观"
+          }
+        }
+      }
+    },
+    "settings.section.font": {
+      "extractionState": "manual",
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Font"
+          }
+        },
+        "zh-Hans": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "字体"
+          }
+        }
+      }
+    },
+    "settings.section.quickActions": {
+      "extractionState": "manual",
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Quick Actions"
+          }
+        },
+        "zh-Hans": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "快捷操作"
+          }
+        }
+      }
+    },
+    "settings.section.shell": {
+      "extractionState": "manual",
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Shell"
+          }
+        },
+        "zh-Hans": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Shell"
+          }
+        }
+      }
+    },
+    "settings.section.terminal": {
+      "extractionState": "manual",
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Terminal"
+          }
+        },
+        "zh-Hans": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "终端"
+          }
+        }
+      }
+    },
+    "settings.shell.customCommand": {
+      "extractionState": "manual",
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Custom Command"
+          }
+        },
+        "zh-Hans": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "自定义命令"
+          }
+        }
+      }
+    },
+    "settings.shell.defaultPlaceholder": {
+      "extractionState": "manual",
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "(default shell)"
+          }
+        },
+        "zh-Hans": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "（默认 shell）"
+          }
+        }
+      }
+    },
+    "settings.shell.features": {
+      "extractionState": "manual",
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Integration Features"
+          }
+        },
+        "zh-Hans": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "集成特性"
+          }
+        }
+      }
+    },
+    "settings.shell.integration": {
+      "extractionState": "manual",
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Shell Integration"
+          }
+        },
+        "zh-Hans": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Shell 集成"
+          }
+        }
+      }
+    },
+    "settings.terminal.confirmClose": {
+      "extractionState": "manual",
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Confirm Close"
+          }
+        },
+        "zh-Hans": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "关闭确认"
+          }
+        }
+      }
+    },
+    "settings.terminal.copyOnSelect": {
+      "extractionState": "manual",
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Copy On Select"
+          }
+        },
+        "zh-Hans": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "选中即复制"
+          }
+        }
+      }
+    },
+    "settings.terminal.hideMouseWhileTyping": {
+      "extractionState": "manual",
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Hide Mouse While Typing"
+          }
+        },
+        "zh-Hans": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "键入时隐藏鼠标"
+          }
+        }
+      }
+    },
+    "settings.terminal.scrollbackLimit": {
+      "extractionState": "manual",
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Scrollback Limit"
+          }
+        },
+        "zh-Hans": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "回滚缓冲大小"
+          }
+        }
+      }
+    },
+    "settings.theme.dark": {
+      "extractionState": "manual",
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Dark"
+          }
+        },
+        "zh-Hans": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "深色"
+          }
+        }
+      }
+    },
+    "settings.theme.followSystem": {
+      "extractionState": "manual",
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Follow system"
+          }
+        },
+        "zh-Hans": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "跟随系统"
+          }
+        }
+      }
+    },
+    "settings.theme.light": {
+      "extractionState": "manual",
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Light"
+          }
+        },
+        "zh-Hans": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "浅色"
+          }
+        }
+      }
+    },
+    "settings.theme.name": {
+      "extractionState": "manual",
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Theme Name"
+          }
+        },
+        "zh-Hans": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "主题名称"
+          }
+        }
+      }
+    },
+    "settings.theme.searchPlaceholder": {
+      "extractionState": "manual",
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Search themes"
+          }
+        },
+        "zh-Hans": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "搜索主题"
+          }
+        }
+      }
+    },
+    "settings.theme.inherit": {
+      "extractionState": "manual",
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Inherit from Ghostty"
+          }
+        },
+        "zh-Hans": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "继承 Ghostty（默认）"
+          }
+        }
+      }
+    },
+    "settings.theme.single": {
+      "extractionState": "manual",
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Single"
+          }
+        },
+        "zh-Hans": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "单主题"
+          }
+        }
+      }
+    },
+    "sidebar.deleteAlert.cancel": {
+      "extractionState": "manual",
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Cancel"
+          }
+        },
+        "zh-Hans": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "取消"
+          }
+        }
+      }
+    },
+    "sidebar.deleteAlert.confirm": {
+      "extractionState": "manual",
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Delete"
+          }
+        },
+        "zh-Hans": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "删除"
+          }
+        }
+      }
+    },
+    "sidebar.deleteAlert.message %@": {
+      "extractionState": "manual",
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "\"%@\" will be deleted with all its tabs. This action cannot be undone."
+          }
+        },
+        "zh-Hans": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "「%@」及其所有 tab 将被删除，此操作不可撤销。"
+          }
+        }
+      }
+    },
+    "sidebar.deleteAlert.title": {
+      "extractionState": "manual",
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Delete workspace?"
+          }
+        },
+        "zh-Hans": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "删除 workspace？"
+          }
+        }
+      }
+    },
+    "sidebar.hide": {
+      "extractionState": "manual",
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Hide sidebar"
+          }
+        },
+        "zh-Hans": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "收起侧栏"
+          }
+        }
+      }
+    },
+    "sidebar.newWorkspace": {
+      "extractionState": "manual",
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "New workspace"
+          }
+        },
+        "zh-Hans": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "新建 workspace"
+          }
+        }
+      }
+    },
+    "sidebar.row.delete": {
+      "extractionState": "manual",
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Delete"
+          }
+        },
+        "zh-Hans": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "删除"
+          }
+        }
+      }
+    },
+    "sidebar.row.commandPanel.editTitle": {
+      "extractionState": "manual",
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Edit Default Command"
+          }
+        },
+        "zh-Hans": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "编辑默认命令"
+          }
+        }
+      }
+    },
+    "sidebar.row.commandPanel.cancel": {
+      "extractionState": "manual",
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Cancel"
+          }
+        },
+        "zh-Hans": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "取消"
+          }
+        }
+      }
+    },
+    "sidebar.row.commandPanel.placeholder": {
+      "extractionState": "manual",
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "e.g. ssh user@server"
+          }
+        },
+        "zh-Hans": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "例如 ssh user@server"
+          }
+        }
+      }
+    },
+    "sidebar.row.commandPanel.save": {
+      "extractionState": "manual",
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Save"
+          }
+        },
+        "zh-Hans": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "保存"
+          }
+        }
+      }
+    },
+    "sidebar.row.rename": {
+      "extractionState": "manual",
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Rename"
+          }
+        },
+        "zh-Hans": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "重命名"
+          }
+        }
+      }
+    },
+    "sidebar.settings": {
+      "extractionState": "manual",
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Settings"
+          }
+        },
+        "zh-Hans": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "设置"
+          }
+        }
+      }
+    },
+    "sidebar.show": {
+      "extractionState": "manual",
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Show sidebar"
+          }
+        },
+        "zh-Hans": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "展开侧栏"
+          }
+        }
+      }
+    },
+    "sidebar.title": {
+      "extractionState": "manual",
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Mux0"
+          }
+        },
+        "zh-Hans": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Mux0"
+          }
+        }
+      }
+    },
+    "tab.close.alert.cancel": {
+      "extractionState": "manual",
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Cancel"
+          }
+        },
+        "zh-Hans": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "取消"
+          }
+        }
+      }
+    },
+    "tab.close.alert.confirm": {
+      "extractionState": "manual",
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Close"
+          }
+        },
+        "zh-Hans": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "关闭"
+          }
+        }
+      }
+    },
+    "tab.close.alert.message %@": {
+      "extractionState": "manual",
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "All terminal processes in \"%@\" will be terminated."
+          }
+        },
+        "zh-Hans": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "「%@」中的所有终端进程将被终止。"
+          }
+        }
+      }
+    },
+    "tab.close.alert.title": {
+      "extractionState": "manual",
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Close tab?"
+          }
+        },
+        "zh-Hans": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "关闭 tab？"
+          }
+        }
+      }
+    },
+    "tab.newTab": {
+      "extractionState": "manual",
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "New tab"
+          }
+        },
+        "zh-Hans": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "新建 tab"
+          }
+        }
+      }
+    },
+    "tab.row.close": {
+      "extractionState": "manual",
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Close"
+          }
+        },
+        "zh-Hans": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "关闭"
+          }
+        }
+      }
+    },
+    "tab.row.rename": {
+      "extractionState": "manual",
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Rename"
+          }
+        },
+        "zh-Hans": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "重命名"
+          }
+        }
+      }
+    },
+    "settings.section.update": {
+      "extractionState": "manual",
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Update"
+          }
+        },
+        "zh-Hans": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "更新"
+          }
+        }
+      }
+    },
+    "settings.update.action": {
+      "extractionState": "manual",
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Action"
+          }
+        },
+        "zh-Hans": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "操作"
+          }
+        }
+      }
+    },
+    "settings.update.availableUpdate": {
+      "extractionState": "manual",
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Available Update"
+          }
+        },
+        "zh-Hans": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "可用更新"
+          }
+        }
+      }
+    },
+    "settings.update.checkForUpdates": {
+      "extractionState": "manual",
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Check for Updates"
+          }
+        },
+        "zh-Hans": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "检查更新"
+          }
+        }
+      }
+    },
+    "settings.update.checking": {
+      "extractionState": "manual",
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Checking…"
+          }
+        },
+        "zh-Hans": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "检查中…"
+          }
+        }
+      }
+    },
+    "settings.update.currentVersion": {
+      "extractionState": "manual",
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Current Version"
+          }
+        },
+        "zh-Hans": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "当前版本"
+          }
+        }
+      }
+    },
+    "settings.update.debugBuild": {
+      "extractionState": "manual",
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Debug Build"
+          }
+        },
+        "zh-Hans": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Debug 构建"
+          }
+        }
+      }
+    },
+    "settings.update.debugDisabled": {
+      "extractionState": "manual",
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Auto-update disabled"
+          }
+        },
+        "zh-Hans": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "已禁用自动更新"
+          }
+        }
+      }
+    },
+    "settings.update.dismiss": {
+      "extractionState": "manual",
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Dismiss"
+          }
+        },
+        "zh-Hans": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "稍后再说"
+          }
+        }
+      }
+    },
+    "settings.update.downloadInstall": {
+      "extractionState": "manual",
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Download & Install"
+          }
+        },
+        "zh-Hans": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "下载并安装"
+          }
+        }
+      }
+    },
+    "settings.update.downloading": {
+      "extractionState": "manual",
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Downloading"
+          }
+        },
+        "zh-Hans": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "下载中"
+          }
+        }
+      }
+    },
+    "settings.update.error": {
+      "extractionState": "manual",
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Error"
+          }
+        },
+        "zh-Hans": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "错误"
+          }
+        }
+      }
+    },
+    "settings.update.installing": {
+      "extractionState": "manual",
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Installing & relaunching…"
+          }
+        },
+        "zh-Hans": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "安装并重启中…"
+          }
+        }
+      }
+    },
+    "settings.update.releaseNotes": {
+      "extractionState": "manual",
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Release Notes"
+          }
+        },
+        "zh-Hans": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "更新说明"
+          }
+        }
+      }
+    },
+    "settings.update.retry": {
+      "extractionState": "manual",
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Retry"
+          }
+        },
+        "zh-Hans": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "重试"
+          }
+        }
+      }
+    },
+    "settings.update.skipThisVersion": {
+      "extractionState": "manual",
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Skip This Version"
+          }
+        },
+        "zh-Hans": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "跳过此版本"
+          }
+        }
+      }
+    },
+    "settings.update.status": {
+      "extractionState": "manual",
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Status"
+          }
+        },
+        "zh-Hans": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "状态"
+          }
+        }
+      }
+    },
+    "settings.update.upToDate": {
+      "extractionState": "manual",
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "You're on the latest version."
+          }
+        },
+        "zh-Hans": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "已是最新版本。"
+          }
+        }
+      }
+    },
+    "settings.update.version %@": {
+      "extractionState": "manual",
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Version %@"
+          }
+        },
+        "zh-Hans": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "版本 %@"
+          }
+        }
+      }
+    },
+    "sidebar.checkForUpdates": {
+      "extractionState": "manual",
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Check for updates"
+          }
+        },
+        "zh-Hans": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "检查更新"
+          }
+        }
+      }
+    },
+    "sidebar.updateAvailable": {
+      "extractionState": "manual",
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Update available"
+          }
+        },
+        "zh-Hans": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "有可用更新"
+          }
+        }
+      }
+    },
+    "tab.row.resetAutoTitle": {
+      "extractionState": "manual",
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Reset to auto title"
+          }
+        },
+        "zh-Hans": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "重置为自动标题"
+          }
+        }
       }
     }
   },
-  "version" : "1.0"
+  "version": "1.0"
 }

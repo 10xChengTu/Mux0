@@ -12,6 +12,7 @@ final class TabBarView: NSView {
     /// (fromIndex, toIndex) 采用 insertion-index 语义（0…count），
     /// 与 `WorkspaceStore.moveTab(fromIndex:toIndex:in:)` 对齐
     var onReorderTab: ((Int, Int) -> Void)?
+    var onResetAutoTitle: ((UUID) -> Void)?
     /// 若 tab 总数 ≤ 1，TabItemView 禁用 × 按钮与菜单 Close 项
     private var canClose: Bool { tabs.count > 1 }
 
@@ -34,6 +35,7 @@ final class TabBarView: NSView {
     private var tabs: [TerminalTab] = []
     private var selectedTabId: UUID?
     private var statuses: [UUID: TerminalStatus] = [:]
+    private var sessionTitles: [UUID: String] = [:]
     private var showStatusIndicators: Bool = false
     /// Source for tab pill icon rendering (Quick Action ids → SF Symbol /
     /// asset / letter). TabContentView wires this in via setter; TabItemView
@@ -108,16 +110,29 @@ final class TabBarView: NSView {
                 selectedTabId: UUID?,
                 theme: AppTheme,
                 statuses: [UUID: TerminalStatus] = [:],
+                sessionTitles: [UUID: String] = [:],
                 backgroundOpacity: CGFloat = 1.0,
                 showStatusIndicators: Bool = false) {
         self.tabs = tabs
         self.selectedTabId = selectedTabId
         self.theme = theme
         self.statuses = statuses
+        self.sessionTitles = sessionTitles
         self.backgroundOpacity = backgroundOpacity
         self.showStatusIndicators = showStatusIndicators
         rebuildTabItems()   // tab items are already initialised with correct theme
         applyTheme(theme, backgroundOpacity: backgroundOpacity)   // re-apply theme to non-tab elements (layer bg, addButton tint)
+    }
+
+    /// Display title with same 3-step priority as `TerminalTab.displayTitle(store:)`,
+    /// but reads from the snapshot dictionary we receive in `update`. Kept inline
+    /// so the AppKit view doesn't need to hold a store reference.
+    private func displayTitle(for tab: TerminalTab) -> String {
+        if tab.userRenamed { return tab.title }
+        if let auto = sessionTitles[tab.focusedTerminalId], !auto.isEmpty {
+            return auto
+        }
+        return tab.title
     }
 
     /// 复用现有 TabItemView——仅在 tabs 的 id 序列变化时才完整重建。
@@ -140,7 +155,10 @@ final class TabBarView: NSView {
                     let tabStatus = TerminalStatus.aggregate(
                         tab.layout.allTerminalIds().map { statuses[$0] ?? .neverRan }
                     )
-                    item.refresh(tab: tab, isSelected: isSel, theme: theme, canClose: canCloseNow, status: tabStatus, backgroundOpacity: backgroundOpacity, showStatusIndicators: showStatusIndicators)
+                    item.refresh(tab: tab, isSelected: isSel, theme: theme, canClose: canCloseNow,
+                                 status: tabStatus, backgroundOpacity: backgroundOpacity,
+                                 showStatusIndicators: showStatusIndicators,
+                                 displayTitle: displayTitle(for: tab))
                 }
             }
             return
@@ -152,11 +170,16 @@ final class TabBarView: NSView {
             let tabStatus = TerminalStatus.aggregate(
                 tab.layout.allTerminalIds().map { statuses[$0] ?? .neverRan }
             )
-            let item = TabItemView(tab: tab, isSelected: tab.id == selectedTabId, theme: theme, status: tabStatus, backgroundOpacity: backgroundOpacity, showStatusIndicators: showStatusIndicators, quickActionsStore: quickActionsStore)
+            let item = TabItemView(tab: tab, isSelected: tab.id == selectedTabId, theme: theme,
+                                   status: tabStatus, backgroundOpacity: backgroundOpacity,
+                                   showStatusIndicators: showStatusIndicators,
+                                   quickActionsStore: quickActionsStore,
+                                   displayTitle: displayTitle(for: tab))
             item.canClose = canCloseNow
             item.onSelect = { [weak self] in self?.onSelectTab?(tab.id) }
             item.onClose  = { [weak self] in self?.onCloseTab?(tab.id) }
             item.onRename = { [weak self] newTitle in self?.onRenameTab?(tab.id, newTitle) }
+            item.onResetAutoTitle = { [weak self] in self?.onResetAutoTitle?(tab.id) }
             // drop 失败（拖到 TabBarView 外）时，source 端 sessionEnded 会触发——清理 preview state
             item.onDragEnded = { [weak self] in self?.cleanupAfterDrag() }
             tabsContainer.addSubview(item)
@@ -341,9 +364,11 @@ private final class TabItemView: NSView, NSTextFieldDelegate, NSDraggingSource {
     var onSelect: (() -> Void)?
     var onClose:  (() -> Void)?
     var onRename: ((String) -> Void)?
+    var onResetAutoTitle: (() -> Void)?
     /// 在 drag session 结束时（无论是否成功 drop）调用——用来让 TabBarView 清除 preview 状态。
     var onDragEnded: (() -> Void)?
     var canClose: Bool = true
+    private var userRenamed: Bool = false
 
     /// 拖拽 preview 中被拖 item 的 "占位" 显示——淡化 alpha 暗示它会被移走。
     var isDragGhost: Bool = false {
@@ -378,7 +403,9 @@ private final class TabItemView: NSView, NSTextFieldDelegate, NSDraggingSource {
         didSet { applyQuickActionImage(displayedQuickActionId) }
     }
 
-    init(tab: TerminalTab, isSelected: Bool, theme: AppTheme, status: TerminalStatus = .neverRan, backgroundOpacity: CGFloat = 1.0, showStatusIndicators: Bool = false, quickActionsStore: QuickActionsStore? = nil) {
+    init(tab: TerminalTab, isSelected: Bool, theme: AppTheme, status: TerminalStatus = .neverRan,
+         backgroundOpacity: CGFloat = 1.0, showStatusIndicators: Bool = false,
+         quickActionsStore: QuickActionsStore? = nil, displayTitle: String) {
         self.tabId = tab.id
         self.isSelected = isSelected
         self.theme = theme
@@ -388,7 +415,8 @@ private final class TabItemView: NSView, NSTextFieldDelegate, NSDraggingSource {
         self.quickActionsStore = quickActionsStore
         super.init(frame: .zero)
         self.showStatusIndicators = showStatusIndicators
-        titleLabel.stringValue = tab.title
+        self.userRenamed = tab.userRenamed
+        titleLabel.stringValue = displayTitle
         setup()
         applyQuickActionImage(tab.quickActionId)
         updateStyle()
@@ -542,14 +570,16 @@ private final class TabItemView: NSView, NSTextFieldDelegate, NSDraggingSource {
     func refresh(tab: TerminalTab, isSelected: Bool, theme: AppTheme,
                  canClose: Bool, status: TerminalStatus = .neverRan,
                  backgroundOpacity: CGFloat = 1.0,
-                 showStatusIndicators: Bool = false) {
+                 showStatusIndicators: Bool = false,
+                 displayTitle: String) {
         self.theme = theme
         self.backgroundOpacity = backgroundOpacity
         self.isSelected = isSelected
         self.canClose = canClose
         self.status = status
-        if titleLabel.stringValue != tab.title && !isRenaming {
-            titleLabel.stringValue = tab.title
+        self.userRenamed = tab.userRenamed
+        if titleLabel.stringValue != displayTitle && !isRenaming {
+            titleLabel.stringValue = displayTitle
         }
         if displayedQuickActionId != tab.quickActionId {
             displayedQuickActionId = tab.quickActionId
@@ -753,8 +783,18 @@ private final class TabItemView: NSView, NSTextFieldDelegate, NSDraggingSource {
         closeItem.isEnabled = canClose
         menu.addItem(closeItem)
 
+        if userRenamed {
+            menu.addItem(.separator())
+            let resetItem = NSMenuItem(title: L10n.string("tab.row.resetAutoTitle"),
+                                       action: #selector(resetAutoTitleTapped),
+                                       keyEquivalent: "")
+            resetItem.target = self
+            menu.addItem(resetItem)
+        }
+
         NSMenu.popUpContextMenu(menu, with: event, for: self)
     }
 
     @objc private func closeTapped() { onClose?() }
+    @objc private func resetAutoTitleTapped() { onResetAutoTitle?() }
 }
