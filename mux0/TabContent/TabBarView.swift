@@ -774,6 +774,15 @@ private final class TabItemView: NSView, NSTextFieldDelegate, NSDraggingSource {
         renameItem.target = self
         menu.addItem(renameItem)
 
+        // Reset belongs visually next to Rename — it's the undo for it.
+        if userRenamed {
+            let resetItem = NSMenuItem(title: L10n.string("tab.row.resetAutoTitle"),
+                                       action: #selector(resetAutoTitleTapped),
+                                       keyEquivalent: "")
+            resetItem.target = self
+            menu.addItem(resetItem)
+        }
+
         menu.addItem(.separator())
 
         let closeItem = NSMenuItem(title: L10n.string("tab.row.close"),
@@ -782,15 +791,6 @@ private final class TabItemView: NSView, NSTextFieldDelegate, NSDraggingSource {
         closeItem.target = self
         closeItem.isEnabled = canClose
         menu.addItem(closeItem)
-
-        if userRenamed {
-            menu.addItem(.separator())
-            let resetItem = NSMenuItem(title: L10n.string("tab.row.resetAutoTitle"),
-                                       action: #selector(resetAutoTitleTapped),
-                                       keyEquivalent: "")
-            resetItem.target = self
-            menu.addItem(resetItem)
-        }
 
         NSMenu.popUpContextMenu(menu, with: event, for: self)
     }
