@@ -68,6 +68,7 @@ mux0/
 │   ├── TerminalStatus.swift       — 单终端运行状态枚举（running / idle / needsInput）
 │   ├── TerminalStatusStore.swift  — @Observable，终端状态聚合（供 sidebar / tab 图标读取）
 │   ├── TerminalPwdStore.swift     — @Observable，terminalId → pwd 映射（ghostty PWD action 喂入，sidebar git 分支读取）
+│   ├── TerminalSessionTitleStore.swift  — @Observable，terminalId → agent session title（hook 喂入，tab 标题读取）
 │   ├── HookDispatcher.swift       — 按 agent toggle 过滤 hook 事件 + 派生 status icon UI 主开关
 │   ├── HookMessage.swift          — agent/shell hook 的 JSON wire format
 │   └── HookSocketListener.swift   — Unix domain socket 监听，解析 HookMessage → statusStore
@@ -144,6 +145,7 @@ mux0/
 | 重新生成 Xcode 工程 | `xcodegen generate`（修改 `project.yml` 后执行）|
 | 检查文档漂移 | `./scripts/check-doc-drift.sh`（对比 Directory Structure 与真实 `mux0/` 目录；同时校验 landing 版本号与 `project.yml` 一致） |
 | 新增文案 / 支持新语言 | `mux0/Localization/Localizable.xcstrings`, `mux0/Localization/L10n.swift`, `mux0Tests/L10nSmokeTests.swift`, `docs/i18n.md` |
+| 修改 tab 自动命名行为（auto title 来源 / 锁定语义） | `Models/TerminalSessionTitleStore.swift`, `Models/Workspace.swift`（displayTitle）, `Models/HookDispatcher.swift`（路由）, `Resources/agent-hooks/agent-hook.py`（claude/codex 来源）, `Resources/agent-hooks/opencode-plugin/mux0-status.js`（opencode 来源） |
 
 ## Agent Permissions
 
