@@ -103,8 +103,10 @@ export const Mux0StatusPlugin = async (_input) => ({
     "chat.message": async (input, _output) => {
         if (!turn.startedAt) turn.startedAt = Date.now() / 1000;
         const resumeCommand = resumeCommandFor(input?.sessionID);
+        const sessionTitle = input?.session?.title || "";
         const payload = { event: "running" };
         if (resumeCommand) payload.resumeCommand = resumeCommand;
+        if (sessionTitle) payload.sessionTitle = sessionTitle;
         emit(payload);
     },
 
@@ -117,9 +119,11 @@ export const Mux0StatusPlugin = async (_input) => ({
         if (!turn.startedAt) turn.startedAt = Date.now() / 1000;
         const detail = describeOpencodeTool(input?.tool, output?.args);
         const resumeCommand = resumeCommandFor(input?.sessionID);
+        const sessionTitle = input?.session?.title || "";
         const payload = { event: "running" };
         if (detail) payload.toolDetail = detail;
         if (resumeCommand) payload.resumeCommand = resumeCommand;
+        if (sessionTitle) payload.sessionTitle = sessionTitle;
         emit(payload);
     },
 
