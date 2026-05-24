@@ -50,8 +50,12 @@ final class TerminalTabDisplayTitleTests: XCTestCase {
 
     func testCodableDefaultsUserRenamedToFalse() throws {
         // Legacy tab data without `userRenamed` key must decode with default false.
+        // focusedTerminalId must reference the layout's terminalId — they're
+        // not independent in valid data; use the same UUID for both.
+        let tabId = UUID()
+        let termId = UUID()
         let json = #"""
-        {"id":"\#(UUID().uuidString)","title":"old","layout":{"type":"terminal","terminalId":"\#(UUID().uuidString)"},"focusedTerminalId":"\#(UUID().uuidString)"}
+        {"id":"\#(tabId.uuidString)","title":"old","layout":{"type":"terminal","terminalId":"\#(termId.uuidString)"},"focusedTerminalId":"\#(termId.uuidString)"}
         """#
         let tab = try JSONDecoder().decode(TerminalTab.self, from: Data(json.utf8))
         XCTAssertFalse(tab.userRenamed)
