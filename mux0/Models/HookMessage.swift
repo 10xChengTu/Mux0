@@ -59,6 +59,13 @@ struct HookMessage: Decodable, Equatable {
     /// triggered by `UserPromptSubmit`; mux0 records the most-recent value
     /// per terminal and replays it as the next-launch shell input.
     let resumeCommand: String?
+    /// Optional human-readable session title — e.g. Claude's `ai-title`
+    /// transcript entry, Codex's `threads.title` SQLite column, or
+    /// OpenCode's `session.title`. Emitted alongside `running` / `stop`
+    /// events. mux0 routes it into `TerminalSessionTitleStore`; empty
+    /// strings are dropped to avoid clobbering an already-known title with
+    /// a transient "title not yet generated" state.
+    let sessionTitle: String?
 
     var timestamp: Date { Date(timeIntervalSince1970: at) }
 }
