@@ -386,6 +386,33 @@ def test_read_ai_title_skips_malformed_lines(tmp_path):
     assert agent_hook.read_ai_title(str(p)) == "Good"
 
 
+def test_read_ai_title_custom_title_wins_over_ai(tmp_path):
+    # User's /rename writes a custom-title row. That intent must beat the
+    # LLM-generated ai-title even if ai-title appears later in the file.
+    p = tmp_path / "t.jsonl"
+    p.write_text(
+        json.dumps({"type": "custom-title", "customTitle": "user named"}) + "\n" +
+        json.dumps({"type": "ai-title", "aiTitle": "LLM guessed"}) + "\n"
+    )
+    assert agent_hook.read_ai_title(str(p)) == "user named"
+
+
+def test_read_ai_title_falls_back_to_ai_when_no_custom(tmp_path):
+    p = tmp_path / "t.jsonl"
+    p.write_text(json.dumps({"type": "ai-title", "aiTitle": "LLM only"}) + "\n")
+    assert agent_hook.read_ai_title(str(p)) == "LLM only"
+
+
+def test_read_ai_title_picks_latest_custom_title(tmp_path):
+    # Multiple /rename calls write multiple custom-title rows; take the last.
+    p = tmp_path / "t.jsonl"
+    p.write_text(
+        json.dumps({"type": "custom-title", "customTitle": "first"}) + "\n" +
+        json.dumps({"type": "custom-title", "customTitle": "second"}) + "\n"
+    )
+    assert agent_hook.read_ai_title(str(p)) == "second"
+
+
 # ---------- read_codex_title ----------
 
 def test_read_codex_title_reads_from_db(tmp_path, monkeypatch):

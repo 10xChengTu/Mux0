@@ -111,13 +111,17 @@ def read_transcript_summary(path: str) -> str:
 
 
 def read_ai_title(path: str) -> str:
-    """Read Claude transcript JSONL, return last `{"type":"ai-title","aiTitle":"..."}`
-    entry's title, truncated to SUMMARY_MAXLEN. Empty string on any error.
+    """Read Claude's session title from the transcript JSONL.
 
-    Claude Code persists an LLM-generated session title as repeated `ai-title`
-    rows throughout the transcript (typically same value each time once
-    generated). We reverse-scan and return the most recent one to pick up
-    title rewrites if any.
+    Claude persists two kinds of title rows:
+      - `{"type":"custom-title","customTitle":"..."}` — written by `/rename`
+        when the user explicitly names the session. User intent wins.
+      - `{"type":"ai-title","aiTitle":"..."}` — written asynchronously by
+        the LLM once a session has enough context. Fallback.
+
+    We single-pass forward-scan and remember the latest of each kind, then
+    return custom-title if any exists, otherwise ai-title. Truncated to
+    SUMMARY_MAXLEN. Empty string on any error.
     """
     if not path:
         return ""
@@ -126,16 +130,26 @@ def read_ai_title(path: str) -> str:
             lines = f.readlines()
     except (FileNotFoundError, IsADirectoryError, PermissionError, OSError):
         return ""
-    for line in reversed(lines):
+    custom = ""
+    ai = ""
+    for line in lines:
         try:
             d = json.loads(line)
         except json.JSONDecodeError:
             continue
-        if isinstance(d, dict) and d.get("type") == "ai-title":
-            title = d.get("aiTitle") or ""
-            if isinstance(title, str) and title:
-                return title[:SUMMARY_MAXLEN]
-    return ""
+        if not isinstance(d, dict):
+            continue
+        t = d.get("type")
+        if t == "custom-title":
+            val = d.get("customTitle") or ""
+            if isinstance(val, str) and val:
+                custom = val
+        elif t == "ai-title":
+            val = d.get("aiTitle") or ""
+            if isinstance(val, str) and val:
+                ai = val
+    chosen = custom or ai
+    return chosen[:SUMMARY_MAXLEN]
 
 
 def read_codex_title(session_id: str) -> str:
