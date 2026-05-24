@@ -32,18 +32,44 @@ fi
 EMIT="$MUX0_AGENT_HOOKS_DIR/hook-emit.sh"
 AGENT_HOOK="$MUX0_AGENT_HOOKS_DIR/agent-hook.sh"
 
-# Create an overlay CODEX_HOME so we don't mutate the user's real config.
-OVERLAY=$(mktemp -d -t mux0-codex.XXXXXX)
-
-# Symlink user's real CODEX_HOME contents into the overlay so reads see the
-# user's data. Note: Codex persists config.toml via `tempfile + rename(2)`,
-# which atomically REPLACES the directory entry — symlinks get clobbered
-# instead of followed. So a symlink alone isn't enough to make writes persist;
-# the cleanup trap below detects when the symlink got replaced by a regular
-# file (= codex rewrote it) and copies it back to the real CODEX_HOME.
-# Notify is injected per-process via codex's `-c key=value` CLI override
-# (see exec line below) so we never need to touch config.toml ourselves.
+# Overlay CODEX_HOME path is STABLE per-user (not per-launch, not per-tab) so
+# codex's `/hooks` trust state — keyed by `<hooks.json absolute path>:event:i:j`
+# in ~/.codex/config.toml — survives mux0 restarts and is shared across every
+# codex tab. This aligns with native codex semantics (trust ~/.codex/hooks.json
+# once per user). We can't reuse the user's real CODEX_HOME directly because
+# we'd clobber any user-authored hooks.json (and leave it behind on SIGKILL).
 USER_HOME="${CODEX_HOME:-$HOME/.codex}"
+OVERLAY="$HOME/Library/Caches/mux0/codex-overlay"
+mkdir -p "$OVERLAY"
+
+# Sync any regular files left in OVERLAY back to USER_HOME before re-symlinking.
+# These come from either: (a) a previous codex session whose EXIT trap didn't
+# run (SIGKILL), or (b) another mux0-launched codex still running that wrote
+# config.toml via `tempfile + rename(2)` since starting. Doing this BEFORE the
+# `ln -sfn` below means we don't lose those writes when we force-replace the
+# regular file with a symlink. (Tiny residual race: a write that lands between
+# our cp and our ln gets clobbered, but that writer's own EXIT trap will cp it
+# back when it eventually exits.)
+if [ -d "$OVERLAY" ]; then
+    for item in "$OVERLAY"/*; do
+        [ -f "$item" ] || continue
+        [ -L "$item" ] && continue
+        name=$(basename "$item")
+        case "$name" in
+            hooks.json) continue ;;
+        esac
+        mkdir -p "$USER_HOME"
+        cp -f "$item" "$USER_HOME/$name" 2>/dev/null || true
+    done
+fi
+
+# (Re)build symlinks so reads see the user's data. `ln -sfn` atomically replaces
+# any existing entry (symlink or regular file) — safe because we just synced
+# regular files back above. Codex persists config.toml via `tempfile + rename(2)`,
+# which atomically REPLACES the directory entry; the cleanup trap below detects
+# symlink→regular promotion and copies the result back to USER_HOME. Notify is
+# injected per-process via codex's `-c key=value` CLI override (see exec line
+# below) so we never need to touch config.toml ourselves.
 if [ -d "$USER_HOME" ]; then
     for item in "$USER_HOME"/*; do
         [ -e "$item" ] || continue
@@ -88,17 +114,23 @@ export CODEX_HOME="$OVERLAY"
 # Also mark the terminal idle on exit — otherwise the precmd hook has to fire
 # before the icon updates, which can lag if the user closes the window.
 cleanup() {
-    # Codex persists state files (config.toml, hooks.state, possibly others)
-    # via `tempfile + rename(2)`, which atomically REPLACES the symlink we
-    # placed in the overlay with a regular file. Any top-level entry that's
-    # now a regular file (not a symlink) is something codex wrote during this
-    # session; copy it back to the user's real CODEX_HOME so it survives the
-    # `rm -rf` below. This is what lets `codex features enable`, `codex
-    # login`, and — most importantly — hook trust approvals from `/hooks`
-    # persist across mux0-launched codex sessions.
+    # Codex persists state files (config.toml, possibly others) via
+    # `tempfile + rename(2)`, which atomically REPLACES the symlink we placed
+    # in the overlay with a regular file. Any top-level entry that's now a
+    # regular file (not a symlink) is something codex wrote during this
+    # session; copy it back to the user's real CODEX_HOME. This is what lets
+    # `codex features enable`, `codex login`, and (notably) hook trust
+    # approvals from `/hooks` persist — though with the stable OVERLAY path,
+    # trust approvals also persist by virtue of the path itself not changing.
     #
     # hooks.json is excluded because we wrote it ourselves into the overlay
     # and the user's real CODEX_HOME shouldn't grow a mux0-managed file.
+    #
+    # The overlay directory itself is NOT deleted: it's shared across every
+    # mux0-launched codex process (so trust keys stay stable). Regular files
+    # are left in place too — the next launch's pre-symlink sync (above) will
+    # cp them back to USER_HOME and then `ln -sfn` will atomically replace
+    # them with symlinks.
     if [ -d "$OVERLAY" ]; then
         for item in "$OVERLAY"/*; do
             [ -f "$item" ] || continue
@@ -111,7 +143,6 @@ cleanup() {
             cp -f "$item" "$USER_HOME/$name" 2>/dev/null || true
         done
     fi
-    rm -rf "$OVERLAY" 2>/dev/null || true
     "$EMIT" idle codex 2>/dev/null || true
 }
 trap cleanup EXIT INT TERM

@@ -83,21 +83,29 @@ Claude Code 的 `Notification` hook 本身是一个双重信号：**真实的权
 trusted_hash = "sha256:..."
 ```
 
-**mux0 overlay 模式下的关键约束**：每个 codex tab，wrapper 都 `mktemp -d` 出一个独立 OVERLAY (`/var/folders/.../T/mux0-codex.XXXXXX.<8 字符随机>`)，把 `hooks.json` 写进去，把 `~/.codex` 下其它文件 symlink 进去。trust state 的 key 因此包含每次都会变的随机 OVERLAY 路径——**所以每次新开 codex tab 都需要再 `/hooks` approve 一次**。这是 codex 0.130 trust 模型跟 mux0 隔离方案的根本冲突，单靠 wrapper 改 cleanup 解决不了。等价的真修复方向是让 OVERLAY 路径稳定（例如按 `MUX0_TERMINAL_ID` 派生）或者引入 `bypass_hook_trust`，后续可以补，但 trust 一次性手动这个 UX 本身已经够轻，目前选择接受。
+**mux0 overlay 路径稳定化**：早期 wrapper 用 `mktemp -d -t mux0-codex.XXXXXX` 生成 OVERLAY，每次启动路径里 8 字符随机串都不同，trust state key 永远命不中——用户**每次新开 codex tab 都要再 `/hooks` approve 一次**，并且 `~/.codex/config.toml` 末尾会累积一堆死 entry。
 
-**Cleanup 的实际作用**：早期想用 cleanup 解决 trust 持久化（误以为 trust 在独立 `hooks.state` 文件里），实际**不是这条主路**。cleanup 真正修的是另两件事：
+现在 OVERLAY 改成**全局稳定路径** `$HOME/Library/Caches/mux0/codex-overlay`（不再 per-launch、不再 per-tab），所有 mux0 codex 进程共用同一个目录。这跟原生 codex「`~/.codex/hooks.json` trust 一次 per-user 永久生效」的语义对齐：第一次启动 mux0 codex 后用户 `/hooks` approve 一次，之后所有 tab、所有 mux0 重启都直接命中。之所以不直接复用 `~/.codex/hooks.json`，是因为会污染用户自己写的 hooks，且 SIGKILL 残留的 hooks.json 会让用户在原生 Terminal 里跑 codex 时执行陌生命令。
 
-1. **OVERLAY 不再泄露在 `/tmp` 里**——wrapper 退出时 `rm -rf` 自己 mktemp 出来的目录
-2. **`codex login` / `codex features enable` 这类会改 `config.toml` 的子命令的写入**——codex 用 `tempfile + rename(2)` 把 overlay 里的 `config.toml` symlink 替换成 regular file，cleanup 把它 cp 回 `~/.codex/config.toml`（顺带也把每个 OVERLAY 的 trust state 条目持久化到用户家目录，但因为 key 里包含 OVERLAY 路径，长期会在 `config.toml` 末尾累积一堆死 entry，定期手工清理一次即可——影响微乎其微）
+**并发约束**：多个 codex 进程共用同一 OVERLAY 时，进程 A 通过 `tempfile + rename(2)` 把 OVERLAY 内的 symlink 替换成 regular file（如 `codex features enable` 写 `config.toml`）后，进程 B 启动若直接 `ln -sfn` 强制覆盖，会丢失 A 的写入。wrapper 因此在每次启动**进入 symlink 重建之前**先扫描 OVERLAY，把所有非 symlink 的 regular file `cp` 回 `$USER_HOME`，再让 `ln -sfn` 原子替换为 symlink——一致性等价于 codex 在多个原生 Terminal 共用 `~/.codex` 的行为。
 
-cleanup 现在的策略：**任何 overlay 顶层从 symlink 变成 regular file 的条目都 cp 回 `$USER_HOME`**（除我们自己写的 `hooks.json`），细节见 `codex-wrapper.sh:88-118` 注释。能跑成是因为 wrapper 末尾改成 subprocess + wait 模式而不是 `exec`——bash 的 EXIT trap 在 `exec` 后不触发，旧版 wrapper 这段 cleanup 是死代码。
+**Cleanup 的实际作用**：
+
+1. **`codex login` / `codex features enable` 这类会改 `config.toml` 的子命令的写入**——codex 用 `tempfile + rename(2)` 把 overlay 里的 `config.toml` symlink 替换成 regular file，cleanup 把它 cp 回 `~/.codex/config.toml`
+2. **trust 写入持久化**——`/hooks` approve 触发 codex 写 `config.toml`，cleanup 把它 cp 回。但因为 OVERLAY 路径现在稳定，即便 cleanup 在某次启动里没跑成（SIGKILL），下次启动时的 pre-symlink 同步也会把残留 regular file 拷回去，trust 不丢
+
+cleanup **不再 `rm -rf $OVERLAY`**——OVERLAY 是共享目录，删了会踢掉同时运行的其他 codex tab。regular file 留在 OVERLAY 里也无害，下一次启动会被同步并替换成 symlink。
+
+能跑成是因为 wrapper 末尾改成 subprocess + wait 模式而不是 `exec`——bash 的 EXIT trap 在 `exec` 后不触发，旧版 wrapper 这段 cleanup 是死代码。
+
+**迁移备注**：旧版本 `mktemp` 出来的 OVERLAY 路径条目（`[hooks.state."/private/var/folders/.../T/mux0-codex.XXXXXX.<random>/hooks.json:..."]`）会一直留在 `~/.codex/config.toml` 末尾。它们无害（路径已永不存在），但累积多了视觉上脏。用户可以一次性手工删掉所有 `mktemp` 时代的 entry。
 
 ### 调试入口
 
 用户反馈 "codex 状态不对" 时按这条顺序查：
 
-1. 在 mux0 里启动 codex tab，进入 codex TUI 后输入 `/hooks`——若三条 hook 显示 `untrusted` 或 `needs review`，approve 一遍就好（**每个新 codex tab 都要做一次**，见上文 trust 一节）
-2. 看 `~/.codex/config.toml` 末尾有没有 `[hooks.state]` 段，里面 entry 是不是包含**当前** OVERLAY 的路径（OVERLAY 路径从 codex 进程的 `CODEX_HOME` env 看，或者 `ls -dt /var/folders/*/T/mux0-codex.XXXXXX.* | head -1`）
+1. 在 mux0 里启动 codex tab，进入 codex TUI 后输入 `/hooks`——若 hook 显示 `untrusted` 或 `needs review`，approve 一遍就好（**全局只需一次**，approve 后路径稳定，所有 mux0 tab 和后续重启都命中；见上文 trust 一节）
+2. 看 `~/.codex/config.toml` 末尾有没有 `[hooks.state]` 段，entry 是不是指向 `~/Library/Caches/mux0/codex-overlay/hooks.json`（稳定路径）。若仍然只看到 `/private/var/folders/.../T/mux0-codex.XXXXXX.*/hooks.json` 这种 mktemp 残留，说明跑的还是老 wrapper
 3. 看 `~/Library/Caches/mux0/hook-emit.log` 里 `agent=codex` 的事件类型——`grep 'agent=codex' ~/Library/Caches/mux0/hook-emit.log | awk '{print $2}' | sort -u`。如果只有 `event=idle`，说明 hook 根本没在 turn 进行中触发，回去查 trust
 4. 最后再看 `codex features list` 确认 `hooks` 是 `stable=true`，以及 `codex-wrapper.sh` 自己的逻辑（subprocess 形态 + cleanup 真的执行）
 
