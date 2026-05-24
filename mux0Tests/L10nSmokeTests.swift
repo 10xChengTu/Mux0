@@ -153,6 +153,7 @@ final class L10nSmokeTests: XCTestCase {
         "tab.newTab",
         "tab.row.close",
         "tab.row.rename",
+        "tab.row.resetAutoTitle",
     ]
 
     override func tearDown() {
