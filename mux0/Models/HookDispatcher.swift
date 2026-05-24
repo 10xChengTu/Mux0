@@ -16,7 +16,16 @@ enum HookDispatcher {
     static func dispatch(_ msg: HookMessage,
                          settings: SettingsConfigStore,
                          store: TerminalStatusStore,
-                         workspaceStore: WorkspaceStore? = nil) {
+                         workspaceStore: WorkspaceStore? = nil,
+                         sessionTitleStore: TerminalSessionTitleStore? = nil) {
+        // Session title is independent of status / resume gating — once any
+        // agent hook emits it, the tab name follows. Title-only tabs (user
+        // disabled notifications but still wants auto-naming) are a real use
+        // case; we don't second-guess.
+        if let title = msg.sessionTitle, let titleStore = sessionTitleStore {
+            titleStore.update(terminalId: msg.terminalId, title: title)
+        }
+
         // Resume is gated independently from the status (notifications)
         // toggle: a user who only wants auto-resume but doesn't want the
         // running/idle icons should still get their session id persisted.
