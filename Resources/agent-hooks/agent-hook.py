@@ -17,6 +17,7 @@ Subcommands:
 import json
 import os
 import re
+import sqlite3
 import time
 import fcntl
 import socket
@@ -159,8 +160,9 @@ def read_codex_title(session_id: str) -> str:
         return ""
     db = candidates[-1]
     try:
-        import sqlite3
         # mode=ro + small timeout so we never block on Codex's write lock.
+        # sqlite3.OperationalError covers missing/inaccessible db files too,
+        # so the single sqlite3.Error catch below handles all failure modes.
         con = sqlite3.connect(f"file:{db}?mode=ro", uri=True, timeout=0.5)
         try:
             row = con.execute(
