@@ -16,11 +16,11 @@ mux0 通过注入到各 AI CLI 的生命周期钩子，把 `running` / `idle` / 
 
 | Agent | 来源 | 时机 |
 |-------|------|------|
-| Claude | transcript JSONL 第一条非 slash-command、非 meta 的 user message（typed-content-block 也展开） | `prompt` / `stop` |
-| Codex | `~/.codex/sessions/**/rollout-*-<session_id>.jsonl` 内第一条 `event_msg`/`user_message` | `prompt` / `stop` |
-| OpenCode | plugin 进程内缓存的"该 session 首条 chat.message 文本"（typed parts 展开） | `chat.message` / `tool.execute.before` |
+| Claude | `custom-title`（`/rename`）→ `ai-title`（LLM 异步生成）→ 第一条非 slash-command、非 meta 的 user message（typed-content-block 展开） | `prompt` / `stop` |
+| Codex | `event_msg.thread_name_updated` 的 `thread_name`（LLM 生成）→ 第一条 `event_msg.user_message`。两者都从 `~/.codex/sessions/**/rollout-*-<session_id>.jsonl` 单次扫描 | `prompt` / `stop` |
+| OpenCode | plugin `input.session?.title`（LLM 生成）→ plugin 进程内缓存的"该 session 首条 chat.message 文本"（typed parts 展开） | `chat.message` / `tool.execute.before` |
 
-三个 agent **统一以"第一条 user message"为标题**，刻意不读 Claude 的 `ai-title` / `custom-title` / Codex 的 `threads.title` SQLite 列 / OpenCode 的 LLM 生成 `session.title` —— 与 cmux 同款策略。理由：LLM 自动标题生成时机不可控（短对话不生成、首 turn 通常没拿到），用户首条 prompt 是即时、稳定、可预测的标识。每条 emit 都重读，文件还没 flush 时返回空字符串，Swift 端 `TerminalSessionTitleStore.update` 丢弃空字符串避免覆盖已知值。
+策略一致：**LLM-generated title 优先于 first user message fallback**，与各 agent 自己 `--resume` picker 的显示语义对齐。LLM title 生成是异步的——短对话或新 session 第一次 emit 可能没有，fallback 到首条 user prompt 保证 tab 仍有可辨识标签。Codex 的 thread_name 与 SQLite `threads.title` 是同一份 LLM 输出，我们走 JSONL 路径（与 thread_name_updated 事件来自同一文件，零额外 IO）。Claude 的 `/rename` 写入的 `custom-title` 是即时的，永远胜过稍后写出的 `ai-title`。Swift 端 `TerminalSessionTitleStore.update` 丢弃空字符串，避免文件还没 flush 时覆盖已知值。
 
 用户在 mux0 内 inline rename tab 后，`TerminalTab.userRenamed = true`，`displayTitle` 锁定不再吃 `sessionTitle`。右键菜单「Reset to auto title」清除锁定。
 

@@ -134,7 +134,11 @@ export const Mux0StatusPlugin = async (_input) => ({
         if (!turn.startedAt) turn.startedAt = Date.now() / 1000;
         captureFirstPrompt(input?.sessionID, input?.message?.parts ?? input?.parts);
         const resumeCommand = resumeCommandFor(input?.sessionID);
-        const sessionTitle = firstPromptBySession.get(input?.sessionID) || "";
+        // Priority: opencode's LLM-generated session.title → cached first
+        // prompt. Mirrors the claude/codex hook tiers.
+        const sessionTitle = input?.session?.title
+            || firstPromptBySession.get(input?.sessionID)
+            || "";
         const payload = { event: "running" };
         if (resumeCommand) payload.resumeCommand = resumeCommand;
         if (sessionTitle) payload.sessionTitle = sessionTitle;
@@ -150,7 +154,9 @@ export const Mux0StatusPlugin = async (_input) => ({
         if (!turn.startedAt) turn.startedAt = Date.now() / 1000;
         const detail = describeOpencodeTool(input?.tool, output?.args);
         const resumeCommand = resumeCommandFor(input?.sessionID);
-        const sessionTitle = firstPromptBySession.get(input?.sessionID) || "";
+        const sessionTitle = input?.session?.title
+            || firstPromptBySession.get(input?.sessionID)
+            || "";
         const payload = { event: "running" };
         if (detail) payload.toolDetail = detail;
         if (resumeCommand) payload.resumeCommand = resumeCommand;
