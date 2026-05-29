@@ -13,6 +13,13 @@ import Observation
 @Observable
 final class TerminalSessionTitleStore {
     private var storage: [String: String] = [:]
+    /// Last accepted update timestamp per terminal (epoch seconds). NOT
+    /// persisted — on relaunch it starts empty so the first live hook always
+    /// wins over whatever title was restored from disk. Used to reject
+    /// out-of-order hook deliveries (e.g. a rotated session's trailing `stop`
+    /// landing after the next session's `prompt`), mirroring
+    /// `TerminalStatusStore`'s staleness guard.
+    private var lastAt: [String: TimeInterval] = [:]
     private let persistenceKey: String
     private var saveWorkItem: DispatchWorkItem?
 
@@ -28,16 +35,22 @@ final class TerminalSessionTitleStore {
     /// Write `title` for `terminalId`. Empty or whitespace-only inputs are
     /// dropped — agents emit empty strings before the LLM-generated title is
     /// materialized, and we don't want a transient empty state to wipe out
-    /// the previously known title.
-    func update(terminalId: UUID, title: String) {
+    /// the previously known title. `at` (the hook event timestamp) gates
+    /// out-of-order deliveries: an update older than the last accepted one
+    /// for the same terminal is ignored.
+    func update(terminalId: UUID, title: String, at: TimeInterval) {
         let trimmed = title.trimmingCharacters(in: .whitespacesAndNewlines)
         guard !trimmed.isEmpty else { return }
-        guard storage[terminalId.uuidString] != trimmed else { return }
-        storage[terminalId.uuidString] = trimmed
+        let key = terminalId.uuidString
+        if let prev = lastAt[key], at < prev { return }
+        lastAt[key] = at
+        guard storage[key] != trimmed else { return }
+        storage[key] = trimmed
         scheduleSave()
     }
 
     func clear(terminalId: UUID) {
+        lastAt.removeValue(forKey: terminalId.uuidString)
         guard storage.removeValue(forKey: terminalId.uuidString) != nil else { return }
         scheduleSave()
     }
@@ -45,6 +58,7 @@ final class TerminalSessionTitleStore {
     func clear(terminalIds: [UUID]) {
         var changed = false
         for id in terminalIds {
+            lastAt.removeValue(forKey: id.uuidString)
             if storage.removeValue(forKey: id.uuidString) != nil { changed = true }
         }
         if changed { scheduleSave() }

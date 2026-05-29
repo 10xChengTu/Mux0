@@ -52,7 +52,7 @@ final class HookDispatcherSessionTitleTests: XCTestCase {
     func testSkipsWhenSessionTitleNil() {
         settings.set(HookMessage.Agent.claude.settingsKey, "true")
         settings.save()
-        titleStore.update(terminalId: tid, title: "Previous")
+        titleStore.update(terminalId: tid, title: "Previous", at: 1)
         HookDispatcher.dispatch(makeMsg(sessionTitle: nil),
                                 settings: settings, store: statusStore,
                                 sessionTitleStore: titleStore)

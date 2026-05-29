@@ -30,7 +30,11 @@ SUMMARY_MAXLEN = 200
 # into the persisted `initial_input`.
 SESSION_ID_RE = re.compile(r"\A[A-Za-z0-9_-]+\Z")
 
-CODEX_HOME = pathlib.Path("~/.codex").expanduser()
+# Honor the active CODEX_HOME (the mux0 codex wrapper exports an overlay path;
+# users may also set a custom one). The overlay symlinks `sessions/` back to
+# the user's real ~/.codex/sessions, so globbing through it still finds the
+# rollout. Falling back to ~/.codex covers native (non-wrapped) invocations.
+CODEX_HOME = pathlib.Path(os.environ.get("CODEX_HOME") or "~/.codex").expanduser()
 
 
 def parse_payload() -> dict:

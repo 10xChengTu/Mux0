@@ -849,8 +849,8 @@ final class WorkspaceStoreRenameLockTests: XCTestCase {
         // Split so close doesn't auto-remove the tab.
         let newTermId = ws.splitTerminal(id: termId, in: wsId, tabId: tabId,
                                          direction: .vertical)!
-        titleStore.update(terminalId: termId, title: "Left")
-        titleStore.update(terminalId: newTermId, title: "Right")
+        titleStore.update(terminalId: termId, title: "Left", at: 1)
+        titleStore.update(terminalId: newTermId, title: "Right", at: 1)
         ws.closeTerminal(id: termId, in: wsId, tabId: tabId)
         XCTAssertNil(titleStore.title(for: termId))
         XCTAssertEqual(titleStore.title(for: newTermId), "Right")
@@ -864,8 +864,8 @@ final class WorkspaceStoreRenameLockTests: XCTestCase {
         let (tabId, termId) = ws.addTab(to: wsId)!
         let split2 = ws.splitTerminal(id: termId, in: wsId, tabId: tabId,
                                        direction: .horizontal)!
-        titleStore.update(terminalId: termId, title: "A")
-        titleStore.update(terminalId: split2, title: "B")
+        titleStore.update(terminalId: termId, title: "A", at: 1)
+        titleStore.update(terminalId: split2, title: "B", at: 1)
         ws.removeTab(id: tabId, from: wsId)
         XCTAssertNil(titleStore.title(for: termId))
         XCTAssertNil(titleStore.title(for: split2))

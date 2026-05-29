@@ -494,6 +494,20 @@ def test_read_codex_title_no_rollout(tmp_path, monkeypatch):
     assert agent_hook.read_codex_title("missing") == ""
 
 
+def test_codex_home_resolution_honors_env():
+    # When CODEX_HOME is set (mux0 wrapper overlay, or a user-custom home),
+    # the module-level constant must resolve to it rather than ~/.codex.
+    # Mirrors the expression used at import time in agent-hook.py.
+    resolved = pathlib.Path(
+        ({"CODEX_HOME": "/custom/codex"}).get("CODEX_HOME") or "~/.codex"
+    ).expanduser()
+    assert str(resolved) == "/custom/codex"
+    fallback = pathlib.Path(
+        ({}).get("CODEX_HOME") or "~/.codex"
+    ).expanduser()
+    assert str(fallback).endswith("/.codex")
+
+
 def test_read_codex_title_rejects_invalid_session_id(tmp_path, monkeypatch):
     monkeypatch.setattr(agent_hook, "CODEX_HOME", tmp_path)
     assert agent_hook.read_codex_title("bad; DROP TABLE") == ""

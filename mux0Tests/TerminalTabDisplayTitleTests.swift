@@ -20,7 +20,7 @@ final class TerminalTabDisplayTitleTests: XCTestCase {
         var tab = TerminalTab(title: "claude", terminalId: termId)
         tab.focusedTerminalId = termId
         let store = makeStore()
-        store.update(terminalId: termId, title: "Implement feature X")
+        store.update(terminalId: termId, title: "Implement feature X", at: 1)
         XCTAssertEqual(tab.displayTitle(sessionTitleStore: store), "Implement feature X")
     }
 
@@ -30,7 +30,7 @@ final class TerminalTabDisplayTitleTests: XCTestCase {
         tab.focusedTerminalId = termId
         tab.userRenamed = true
         let store = makeStore()
-        store.update(terminalId: termId, title: "Should not show")
+        store.update(terminalId: termId, title: "Should not show", at: 1)
         XCTAssertEqual(tab.displayTitle(sessionTitleStore: store), "My Tab")
     }
 
@@ -43,8 +43,8 @@ final class TerminalTabDisplayTitleTests: XCTestCase {
                             .terminal(leftId), .terminal(rightId))
         tab.focusedTerminalId = rightId
         let store = makeStore()
-        store.update(terminalId: leftId, title: "Left pane session")
-        store.update(terminalId: rightId, title: "Right pane session")
+        store.update(terminalId: leftId, title: "Left pane session", at: 1)
+        store.update(terminalId: rightId, title: "Right pane session", at: 1)
         XCTAssertEqual(tab.displayTitle(sessionTitleStore: store), "Right pane session")
     }
 

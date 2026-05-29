@@ -23,7 +23,7 @@ enum HookDispatcher {
         // disabled notifications but still wants auto-naming) are a real use
         // case; we don't second-guess.
         if let title = msg.sessionTitle, let titleStore = sessionTitleStore {
-            titleStore.update(terminalId: msg.terminalId, title: title)
+            titleStore.update(terminalId: msg.terminalId, title: title, at: msg.at)
         }
 
         // Resume is gated independently from the status (notifications)
