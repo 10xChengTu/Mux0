@@ -377,6 +377,7 @@ final class GhosttyTerminalView: NSView, NSTextInputClient {
     // MARK: - Layout
 
     override func setFrameSize(_ newSize: NSSize) {
+        let oldSize = frame.size
         super.setFrameSize(newSize)
         // Ignore transient zero-sized frames. These happen when the enclosing
         // SplitPaneView is being swapped out and briefly leaves subviews at .zero
@@ -384,6 +385,22 @@ final class GhosttyTerminalView: NSView, NSTextInputClient {
         // ghostty tears down its Metal renderer and the surface comes back blank
         // (black screen) even after the real size arrives on the next pass.
         syncSurfaceGeometry(to: newSize)
+        // Non-frontmost surfaces never enter the displayLink draw branch (the
+        // CVDisplayLink callback's `currentFrontmost === self` guard rejects
+        // them), so a real size change here would otherwise leave ghostty's
+        // Metal layer presenting its pre-resize frame until the user clicks
+        // to refocus the pane. Typical trigger: ⌘D split moves focus to the
+        // new pane, leaving the original pane non-frontmost with a fresh
+        // surface size but a stale on-screen frame. Push a one-shot draw so
+        // the layer flips to a matching frame in the same runloop pass.
+        // Safe vs. the mouseLocation-polling concern that motivated the
+        // frontmost-only gate: makeFrontmost has already released every mouse
+        // button and parked the cursor at (-1, -1) for non-frontmost surfaces,
+        // so a single draw cannot accumulate a phantom selection.
+        if oldSize != newSize, newSize.width > 0, newSize.height > 0,
+           let s = surface, Self.currentFrontmost !== self {
+            ghostty_surface_draw(s)
+        }
     }
 
     override func viewDidChangeBackingProperties() {
