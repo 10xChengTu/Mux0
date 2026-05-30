@@ -418,6 +418,7 @@ private final class TabItemView: NSView, NSTextFieldDelegate, NSDraggingSource {
         self.userRenamed = tab.userRenamed
         titleLabel.stringValue = displayTitle
         setup()
+        applyToolTip(displayTitle)
         applyQuickActionImage(tab.quickActionId)
         updateStyle()
         statusIcon.isHidden = !showStatusIndicators
@@ -456,6 +457,17 @@ private final class TabItemView: NSView, NSTextFieldDelegate, NSDraggingSource {
         renameField.delegate = self
         renameField.isHidden = true
         addSubview(renameField)
+    }
+
+    /// AppKit tooltips don't bubble from child to parent — the tooltip shown is the
+    /// one owned by the topmost view under the cursor. Mirror the full title onto every
+    /// subview that covers the pill so hovering anywhere on the tab reveals the title.
+    private func applyToolTip(_ title: String) {
+        self.toolTip = title
+        pillView.toolTip = title
+        titleLabel.toolTip = title
+        kindIcon.toolTip = title
+        statusIcon.toolTip = title
     }
 
     override func updateTrackingAreas() {
@@ -581,6 +593,7 @@ private final class TabItemView: NSView, NSTextFieldDelegate, NSDraggingSource {
         if titleLabel.stringValue != displayTitle && !isRenaming {
             titleLabel.stringValue = displayTitle
         }
+        applyToolTip(displayTitle)
         if displayedQuickActionId != tab.quickActionId {
             displayedQuickActionId = tab.quickActionId
             applyQuickActionImage(tab.quickActionId)
