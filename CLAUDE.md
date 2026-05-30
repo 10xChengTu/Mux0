@@ -123,6 +123,7 @@ mux0/
 | 设置面板字段参考 | `docs/settings-reference.md` |
 | 设计决策记录 | `docs/decisions/` |
 | 国际化 (i18n) | `docs/i18n.md` |
+| macOS 权限继承（TCC / 麦克风 / 摄像头 / 屏幕录制） | `docs/macos-permissions.md` |
 
 ## Common Tasks
 

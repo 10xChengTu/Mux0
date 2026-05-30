@@ -49,6 +49,15 @@ targets:
         NSDownloadsFolderUsageDescription: "Mux0 needs access so terminal sessions can read and write files in your Downloads folder."
         NSRemovableVolumesUsageDescription: "Mux0 needs access so terminal sessions can read and write files on removable volumes."
         NSNetworkVolumesUsageDescription: "Mux0 needs access so terminal sessions can read and write files on mounted network volumes."
+        # TCC device access — Mux0 hosts shells/dev-mode apps that may request the
+        # mic or camera. macOS attributes the child's request to Mux0 (the
+        # "responsible process"), so the consent prompt is shown on Mux0's behalf
+        # and the grant persists against Mux0. Screen Recording needs no key here;
+        # Mux0 just has to be enabled under System Settings › Privacy.
+        NSMicrophoneUsageDescription: "Mux0 lets terminal sessions and the apps they launch use the microphone."
+        NSCameraUsageDescription: "Mux0 lets terminal sessions and the apps they launch use the camera."
+        NSAudioCaptureUsageDescription: "Mux0 lets terminal sessions and the apps they launch capture system audio."
+        NSAppleEventsUsageDescription: "Mux0 lets terminal sessions and the apps they launch send automation events to other apps."
     postBuildScripts:
       - name: Copy ghostty resources
         script: |
@@ -118,7 +127,7 @@ targets:
         CODE_SIGN_STYLE: Automatic
         CODE_SIGN_ENTITLEMENTS: mux0/mux0.entitlements
         ENABLE_HARDENED_RUNTIME: YES
-        MARKETING_VERSION: "0.6.1"
+        MARKETING_VERSION: "0.6.2"
         CURRENT_PROJECT_VERSION: "3"
       configs:
         # Debug 构建用独立 bundle id + display name，让 TCC / LaunchServices /
