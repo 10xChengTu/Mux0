@@ -256,7 +256,8 @@ final class HookDispatcherTests: XCTestCase {
         let term = wsStore.workspaces[0].tabs[0].layout.allTerminalIds()[0]
         let msg = HookMessage(terminalId: term, event: .running, agent: .claude,
                               at: 1, exitCode: nil, toolDetail: nil,
-                              summary: nil, resumeCommand: "claude --resume abc")
+                              summary: nil, resumeCommand: "claude --resume abc",
+                              sessionTitle: nil)
 
         HookDispatcher.dispatch(msg, settings: settings, store: store,
                                 workspaceStore: wsStore)
@@ -276,7 +277,8 @@ final class HookDispatcherTests: XCTestCase {
         let term = wsStore.workspaces[0].tabs[0].layout.allTerminalIds()[0]
         let msg = HookMessage(terminalId: term, event: .running, agent: .claude,
                               at: 1, exitCode: nil, toolDetail: nil,
-                              summary: nil, resumeCommand: "claude --resume abc")
+                              summary: nil, resumeCommand: "claude --resume abc",
+                              sessionTitle: nil)
 
         HookDispatcher.dispatch(msg, settings: settings, store: store,
                                 workspaceStore: wsStore)
@@ -296,7 +298,8 @@ final class HookDispatcherTests: XCTestCase {
         let term = wsStore.workspaces[0].tabs[0].layout.allTerminalIds()[0]
         let msg = HookMessage(terminalId: term, event: .running, agent: .claude,
                               at: 1, exitCode: nil, toolDetail: nil,
-                              summary: nil, resumeCommand: "claude --resume abc")
+                              summary: nil, resumeCommand: "claude --resume abc",
+                              sessionTitle: nil)
 
         HookDispatcher.dispatch(msg, settings: settings, store: store,
                                 workspaceStore: wsStore)

@@ -37,6 +37,10 @@ final class TabContentView: NSView {
     var quickActionsStore: QuickActionsStore? {
         didSet { tabBar.quickActionsStore = quickActionsStore }
     }
+    /// Agent session titles keyed by terminal UUID. Snapshot is forwarded to
+    /// `TabBarView.update` on every `loadWorkspace` call so the tab strip shows
+    /// agent-generated titles without requiring Observable tracking on the AppKit side.
+    var sessionTitleStore: TerminalSessionTitleStore?
 
     private var theme: AppTheme = .systemFallback(isDark: true)
     /// Mirror of ghostty `background-opacity`. Applied to paneContainer's layer so
@@ -107,6 +111,11 @@ final class TabContentView: NSView {
             self.store?.moveTab(fromIndex: fromIndex, toIndex: toIndex, in: wsId)
             self.reloadFromStore()
         }
+        tabBar.onResetAutoTitle = { [weak self] tabId in
+            guard let self, let ws = self.store?.selectedWorkspace else { return }
+            self.store?.resetTabToAutoTitle(tabId: tabId, in: ws.id)
+            self.reloadFromStore()
+        }
 
         subscribeNotifications()
         installKeyMonitor()
@@ -159,6 +168,7 @@ final class TabContentView: NSView {
                       selectedTabId: workspace.selectedTabId,
                       theme: theme,
                       statuses: self.lastStatuses,
+                      sessionTitles: sessionTitleStore?.titlesSnapshot() ?? [:],
                       backgroundOpacity: backgroundOpacity,
                       showStatusIndicators: self.lastShowStatusIndicators)
 

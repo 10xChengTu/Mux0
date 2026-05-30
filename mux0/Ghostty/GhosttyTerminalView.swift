@@ -7,6 +7,16 @@ final class GhosttyTerminalView: NSView, NSTextInputClient {
     private var displayLink: CVDisplayLink?
     private var backingObserver: NSObjectProtocol?
 
+    /// While set and in the future, this (otherwise non-frontmost) surface is
+    /// drawn by the displayLink so it can repaint after a size change — ghostty
+    /// needs several frames to reflow, which a single manual draw can't provide.
+    /// Cleared (and the surface re-occluded) by the displayLink once it lapses.
+    /// See `setFrameSize`. Touched only on the main queue.
+    private var redrawBurstDeadline: Date?
+    /// How long a post-resize redraw burst lasts. Generous enough to cover
+    /// ghostty's grid reflow; a one-time cost paid only on actual size changes.
+    private static let burstSeconds: TimeInterval = 0.4
+
     // MARK: NSTextInputClient state
     /// 本轮 keyDown 中由 `insertText` 收集到的已提交文本。随 keyDown 开始清空、结束读取。
     private var keyTextAccumulator: String = ""
@@ -356,11 +366,27 @@ final class GhosttyTerminalView: NSView, NSTextInputClient {
             let retained = Unmanaged.passRetained(view)
             DispatchQueue.main.async {
                 let v = retained.takeRetainedValue()
-                // 关键：只有当前前台 surface 才 draw。
+                guard let s = v.surface else { return }
+                let isFront = GhosttyTerminalView.currentFrontmost === v
+                // A non-frontmost pane draws only during its post-resize redraw
+                // burst (see setFrameSize). When the burst window closes, re-occlude
+                // it so we go back to the steady state of "only the frontmost pane
+                // renders" — the gate that kills ghostty's mouseLocation-driven
+                // "selection follows the mouse" loop for background panes.
+                var burst = false
+                if let deadline = v.redrawBurstDeadline {
+                    if Date() < deadline {
+                        burst = true
+                    } else {
+                        v.redrawBurstDeadline = nil
+                        if !isFront { ghostty_surface_set_occlusion(s, false) }
+                    }
+                }
+                // 关键：稳态下只有当前前台 surface 才 draw。
                 // libghostty 在 draw 内部会 +[NSEvent mouseLocation] 主动读全局光标，
                 // 不让它 draw 就不让它读，从根源切断"鼠标飘到哪选到哪"的循环。
-                guard GhosttyTerminalView.currentFrontmost === v else { return }
-                if let s = v.surface { ghostty_surface_draw(s) }
+                guard isFront || burst else { return }
+                ghostty_surface_draw(s)
             }
             return kCVReturnSuccess
         }, Unmanaged.passUnretained(self).toOpaque())
@@ -377,6 +403,7 @@ final class GhosttyTerminalView: NSView, NSTextInputClient {
     // MARK: - Layout
 
     override func setFrameSize(_ newSize: NSSize) {
+        let oldSize = frame.size
         super.setFrameSize(newSize)
         // Ignore transient zero-sized frames. These happen when the enclosing
         // SplitPaneView is being swapped out and briefly leaves subviews at .zero
@@ -384,6 +411,28 @@ final class GhosttyTerminalView: NSView, NSTextInputClient {
         // ghostty tears down its Metal renderer and the surface comes back blank
         // (black screen) even after the real size arrives on the next pass.
         syncSurfaceGeometry(to: newSize)
+        // A non-frontmost surface is excluded from the displayLink draw branch
+        // (the callback's `currentFrontmost === self` guard) AND was told
+        // set_occlusion(false) by makeFrontmost, so ghostty stops rendering it.
+        // After a real size change it would therefore keep presenting its
+        // pre-resize frame until the user clicks to refocus the pane. Typical
+        // trigger: ⌘D split shifts focus to the new pane, leaving the original
+        // non-frontmost with a fresh surface size but a stale on-screen frame.
+        //
+        // A single manual draw is NOT enough: ghostty's renderer needs several
+        // frames after a resize to reflow the grid and settle, so one frame
+        // paints a half-finished result. Instead we open a short "redraw burst":
+        // mark the surface visible again and let the already-running displayLink
+        // feed it frames for `burstSeconds`, exactly like a frontmost pane, then
+        // re-occlude. Safe vs. the mouseLocation-polling concern behind the
+        // frontmost-only gate — makeFrontmost has released every mouse button
+        // and parked the cursor at (-1, -1) for non-frontmost surfaces, so the
+        // burst can only ever render a transient hover, never a selection.
+        if oldSize != newSize, newSize.width > 0, newSize.height > 0,
+           let s = surface, Self.currentFrontmost !== self {
+            ghostty_surface_set_occlusion(s, true)
+            redrawBurstDeadline = Date().addingTimeInterval(Self.burstSeconds)
+        }
     }
 
     override func viewDidChangeBackingProperties() {

@@ -86,4 +86,20 @@ final class HookMessageTests: XCTestCase {
         XCTAssertEqual(HookMessage.Agent.codex.settingsKey,    "mux0-agent-status-codex")
         XCTAssertEqual(HookMessage.Agent.opencode.settingsKey, "mux0-agent-status-opencode")
     }
+
+    func testDecodesSessionTitle() throws {
+        let json = #"""
+        {"terminalId":"\#(UUID().uuidString)","event":"running","agent":"claude","at":1.0,"sessionTitle":"Implement auto-naming"}
+        """#
+        let msg = try JSONDecoder().decode(HookMessage.self, from: Data(json.utf8))
+        XCTAssertEqual(msg.sessionTitle, "Implement auto-naming")
+    }
+
+    func testSessionTitleMissingIsNil() throws {
+        let json = #"""
+        {"terminalId":"\#(UUID().uuidString)","event":"running","agent":"claude","at":1.0}
+        """#
+        let msg = try JSONDecoder().decode(HookMessage.self, from: Data(json.utf8))
+        XCTAssertNil(msg.sessionTitle)
+    }
 }

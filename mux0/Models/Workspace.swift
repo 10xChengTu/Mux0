@@ -137,14 +137,63 @@ struct TerminalTab: Codable, Identifiable, Equatable {
     /// this id via `QuickActionsStore.command(for:)` and injects the result
     /// as the surface's initial_input.
     var quickActionId: String? = nil
+    /// True once the user has manually renamed this tab (inline rename UI).
+    /// When true, `displayTitle` returns `title` unconditionally — auto
+    /// session titles from `TerminalSessionTitleStore` are ignored. Reset
+    /// via `WorkspaceStore.resetTabToAutoTitle` (right-click → "Reset to
+    /// auto title"). Defaults to false; old persisted data without this
+    /// field decodes as false (legacy tabs re-enter auto mode).
+    var userRenamed: Bool = false
 
     init(id: UUID = UUID(), title: String, terminalId: UUID = UUID(),
-         quickActionId: String? = nil) {
+         quickActionId: String? = nil, userRenamed: Bool = false) {
         self.id = id
         self.title = title
         self.layout = .terminal(terminalId)
         self.focusedTerminalId = terminalId
         self.quickActionId = quickActionId
+        self.userRenamed = userRenamed
+    }
+
+    private enum CodingKeys: String, CodingKey {
+        case id, title, layout, focusedTerminalId, quickActionId, userRenamed
+    }
+
+    init(from decoder: Decoder) throws {
+        let c = try decoder.container(keyedBy: CodingKeys.self)
+        self.id = try c.decode(UUID.self, forKey: .id)
+        self.title = try c.decode(String.self, forKey: .title)
+        self.layout = try c.decode(SplitNode.self, forKey: .layout)
+        self.focusedTerminalId = try c.decode(UUID.self, forKey: .focusedTerminalId)
+        self.quickActionId = try c.decodeIfPresent(String.self, forKey: .quickActionId)
+        self.userRenamed = try c.decodeIfPresent(Bool.self, forKey: .userRenamed) ?? false
+    }
+
+    func encode(to encoder: Encoder) throws {
+        var c = encoder.container(keyedBy: CodingKeys.self)
+        try c.encode(id, forKey: .id)
+        try c.encode(title, forKey: .title)
+        try c.encode(layout, forKey: .layout)
+        try c.encode(focusedTerminalId, forKey: .focusedTerminalId)
+        try c.encodeIfPresent(quickActionId, forKey: .quickActionId)
+        try c.encode(userRenamed, forKey: .userRenamed)
+    }
+
+    /// Resolve the title shown in the tab bar. Priority:
+    /// 1. User manually renamed → `title` (hard lock, ignores store)
+    /// 2. `sessionTitleStore[focusedTerminalId]` is non-nil → that
+    /// 3. Fallback → `title` (creation-time default like "Terminal 1" /
+    ///    quick action displayName)
+    ///
+    /// Tracks the focused pane, so split tabs switch label as the user
+    /// moves focus between panes. Shell pane (no agent session) falls
+    /// through to step 3 rather than retaining the previous agent pane's title.
+    func displayTitle(sessionTitleStore: TerminalSessionTitleStore) -> String {
+        if userRenamed { return title }
+        if let auto = sessionTitleStore.title(for: focusedTerminalId), !auto.isEmpty {
+            return auto
+        }
+        return title
     }
 }
 

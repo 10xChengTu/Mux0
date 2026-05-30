@@ -346,3 +346,228 @@ def test_dispatch_pretool_does_not_emit_resume_command(tmp_path):
                                  "tool_input": {"command": "ls"}},
                                 "t9", sf, 6_000_001.0)
     assert "resumeCommand" not in emit
+
+
+# ---------- read_claude_title (first user prompt) ----------
+
+def test_read_claude_title_picks_first_user_prompt(tmp_path):
+    p = tmp_path / "t.jsonl"
+    p.write_text(
+        json.dumps({"type": "user", "message": {"content": "How do I sort an array in Swift?"}}) + "\n" +
+        json.dumps({"type": "assistant", "message": {"content": "..."}}) + "\n" +
+        json.dumps({"type": "user", "message": {"content": "ignored later prompt"}}) + "\n"
+    )
+    assert agent_hook.read_claude_title(str(p)) == "How do I sort an array in Swift?"
+
+
+def test_read_claude_title_truncates_to_200(tmp_path):
+    p = tmp_path / "t.jsonl"
+    long = "x" * 500
+    p.write_text(json.dumps({"type": "user", "message": {"content": long}}) + "\n")
+    assert len(agent_hook.read_claude_title(str(p))) == 200
+
+
+def test_read_claude_title_missing_file():
+    assert agent_hook.read_claude_title("/nonexistent/path.jsonl") == ""
+
+
+def test_read_claude_title_no_user_row(tmp_path):
+    p = tmp_path / "t.jsonl"
+    p.write_text(json.dumps({"type": "assistant", "message": {"content": "only assistant"}}) + "\n")
+    assert agent_hook.read_claude_title(str(p)) == ""
+
+
+def test_read_claude_title_skips_malformed_lines(tmp_path):
+    p = tmp_path / "t.jsonl"
+    p.write_text(
+        "not json\n" +
+        json.dumps({"type": "user", "message": {"content": "Good"}}) + "\n"
+    )
+    assert agent_hook.read_claude_title(str(p)) == "Good"
+
+
+def test_read_claude_title_skips_slash_commands(tmp_path):
+    # /clear and /rename rows are recorded as user rows with <command-...> content.
+    p = tmp_path / "t.jsonl"
+    p.write_text(
+        json.dumps({"type": "user", "message": {"content": "<command-name>/clear</command-name>"}}) + "\n" +
+        json.dumps({"type": "user", "message": {"content": "real question"}}) + "\n"
+    )
+    assert agent_hook.read_claude_title(str(p)) == "real question"
+
+
+def test_read_claude_title_skips_meta(tmp_path):
+    p = tmp_path / "t.jsonl"
+    p.write_text(
+        json.dumps({"type": "user", "isMeta": True, "message": {"content": "meta payload"}}) + "\n" +
+        json.dumps({"type": "user", "message": {"content": "first real"}}) + "\n"
+    )
+    assert agent_hook.read_claude_title(str(p)) == "first real"
+
+
+def test_read_claude_title_extracts_text_from_list_content(tmp_path):
+    # Claude sometimes stores content as [{type: text, text: ...}, ...].
+    p = tmp_path / "t.jsonl"
+    p.write_text(
+        json.dumps({
+            "type": "user",
+            "message": {"content": [
+                {"type": "text", "text": "list-form content"},
+                {"type": "image"},
+            ]},
+        }) + "\n"
+    )
+    assert agent_hook.read_claude_title(str(p)) == "list-form content"
+
+
+def test_read_claude_title_custom_title_wins(tmp_path):
+    # /rename writes a custom-title row; it must beat both ai-title and the
+    # first user prompt fallback.
+    p = tmp_path / "t.jsonl"
+    p.write_text(
+        json.dumps({"type": "user", "message": {"content": "first prompt"}}) + "\n" +
+        json.dumps({"type": "ai-title", "aiTitle": "LLM derived"}) + "\n" +
+        json.dumps({"type": "custom-title", "customTitle": "user named"}) + "\n"
+    )
+    assert agent_hook.read_claude_title(str(p)) == "user named"
+
+
+def test_read_claude_title_ai_title_beats_first_prompt(tmp_path):
+    # No /rename → ai-title wins over user prompt.
+    p = tmp_path / "t.jsonl"
+    p.write_text(
+        json.dumps({"type": "user", "message": {"content": "first prompt"}}) + "\n" +
+        json.dumps({"type": "ai-title", "aiTitle": "LLM derived"}) + "\n"
+    )
+    assert agent_hook.read_claude_title(str(p)) == "LLM derived"
+
+
+def test_read_claude_title_picks_latest_custom_title(tmp_path):
+    p = tmp_path / "t.jsonl"
+    p.write_text(
+        json.dumps({"type": "custom-title", "customTitle": "first"}) + "\n" +
+        json.dumps({"type": "custom-title", "customTitle": "second"}) + "\n"
+    )
+    assert agent_hook.read_claude_title(str(p)) == "second"
+
+
+# ---------- read_codex_title (first user_message from rollout) ----------
+
+def _write_codex_rollout(tmp_path, session_id, events):
+    """Helper: build a CODEX_HOME-shaped rollout file for session_id.
+    `events` is a list of dicts already shaped as `payload`."""
+    sessions_dir = tmp_path / "sessions" / "2026" / "05" / "24"
+    sessions_dir.mkdir(parents=True, exist_ok=True)
+    f = sessions_dir / f"rollout-2026-05-24T00-00-00-{session_id}.jsonl"
+    lines = [json.dumps({"type": "session_meta", "payload": {"id": session_id}})]
+    for ev in events:
+        lines.append(json.dumps({"type": "event_msg", "payload": ev}))
+    f.write_text("\n".join(lines) + "\n")
+    return f
+
+
+def _user_msg(text):
+    return {"type": "user_message", "message": text}
+
+
+def _thread_name(name):
+    return {"type": "thread_name_updated", "thread_name": name}
+
+
+def test_read_codex_title_thread_name_beats_user_message(tmp_path, monkeypatch):
+    _write_codex_rollout(tmp_path, "abc-123",
+                          [_user_msg("first prompt"), _thread_name("Codex LLM name")])
+    monkeypatch.setattr(agent_hook, "CODEX_HOME", tmp_path)
+    assert agent_hook.read_codex_title("abc-123") == "Codex LLM name"
+
+
+def test_read_codex_title_falls_back_to_first_user_message(tmp_path, monkeypatch):
+    # No thread_name_updated → use the user's own first prompt.
+    _write_codex_rollout(tmp_path, "abc-123",
+                          [_user_msg("first prompt"), _user_msg("second prompt")])
+    monkeypatch.setattr(agent_hook, "CODEX_HOME", tmp_path)
+    assert agent_hook.read_codex_title("abc-123") == "first prompt"
+
+
+def test_read_codex_title_no_rollout(tmp_path, monkeypatch):
+    monkeypatch.setattr(agent_hook, "CODEX_HOME", tmp_path)
+    assert agent_hook.read_codex_title("missing") == ""
+
+
+def test_codex_home_resolution_honors_env():
+    # When CODEX_HOME is set (mux0 wrapper overlay, or a user-custom home),
+    # the module-level constant must resolve to it rather than ~/.codex.
+    # Mirrors the expression used at import time in agent-hook.py.
+    resolved = pathlib.Path(
+        ({"CODEX_HOME": "/custom/codex"}).get("CODEX_HOME") or "~/.codex"
+    ).expanduser()
+    assert str(resolved) == "/custom/codex"
+    fallback = pathlib.Path(
+        ({}).get("CODEX_HOME") or "~/.codex"
+    ).expanduser()
+    assert str(fallback).endswith("/.codex")
+
+
+def test_read_codex_title_rejects_invalid_session_id(tmp_path, monkeypatch):
+    monkeypatch.setattr(agent_hook, "CODEX_HOME", tmp_path)
+    assert agent_hook.read_codex_title("bad; DROP TABLE") == ""
+
+
+def test_read_codex_title_truncates_to_200(tmp_path, monkeypatch):
+    _write_codex_rollout(tmp_path, "abc-123", [_thread_name("x" * 500)])
+    monkeypatch.setattr(agent_hook, "CODEX_HOME", tmp_path)
+    assert len(agent_hook.read_codex_title("abc-123")) == 200
+
+
+def test_read_codex_title_ignores_non_matching_event_msg(tmp_path, monkeypatch):
+    sessions_dir = tmp_path / "sessions" / "2026" / "05" / "24"
+    sessions_dir.mkdir(parents=True, exist_ok=True)
+    f = sessions_dir / "rollout-2026-05-24T00-00-00-sid.jsonl"
+    f.write_text(
+        json.dumps({"type": "event_msg", "payload": {"type": "task_started"}}) + "\n" +
+        json.dumps({"type": "event_msg", "payload": {"type": "user_message", "message": "real"}}) + "\n"
+    )
+    monkeypatch.setattr(agent_hook, "CODEX_HOME", tmp_path)
+    assert agent_hook.read_codex_title("sid") == "real"
+
+
+def test_read_codex_title_picks_latest_thread_name(tmp_path, monkeypatch):
+    # Codex may rewrite thread_name later in the session; take the latest.
+    _write_codex_rollout(tmp_path, "abc-123",
+                          [_thread_name("First name"), _thread_name("Second name")])
+    monkeypatch.setattr(agent_hook, "CODEX_HOME", tmp_path)
+    assert agent_hook.read_codex_title("abc-123") == "Second name"
+
+
+# ---------- dispatch sessionTitle attachment ----------
+
+def test_dispatch_claude_prompt_attaches_session_title(tmp_path):
+    sf = tmp_path / "sessions.json"
+    transcript = tmp_path / "t.jsonl"
+    transcript.write_text(
+        json.dumps({"type": "ai-title", "aiTitle": "My session"}) + "\n"
+    )
+    emit = agent_hook.dispatch("prompt", "claude",
+                                {"session_id": "s1",
+                                 "transcript_path": str(transcript)},
+                                "term1", sf, 1.0)
+    assert emit.get("sessionTitle") == "My session"
+
+
+def test_dispatch_codex_prompt_attaches_session_title(tmp_path, monkeypatch):
+    _write_codex_rollout(tmp_path, "cdx-1", [_thread_name("Codex LLM name")])
+    monkeypatch.setattr(agent_hook, "CODEX_HOME", tmp_path)
+    sf = tmp_path / "sessions.json"
+    emit = agent_hook.dispatch("prompt", "codex",
+                                {"session_id": "cdx-1"},
+                                "term-c", sf, 1.0)
+    assert emit.get("sessionTitle") == "Codex LLM name"
+
+
+def test_dispatch_no_session_title_when_empty(tmp_path):
+    sf = tmp_path / "sessions.json"
+    # No transcript_path → read_claude_title returns ""
+    emit = agent_hook.dispatch("prompt", "claude",
+                                {"session_id": "s1"},
+                                "term1", sf, 1.0)
+    assert "sessionTitle" not in emit

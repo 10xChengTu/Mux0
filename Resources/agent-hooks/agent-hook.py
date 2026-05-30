@@ -30,6 +30,12 @@ SUMMARY_MAXLEN = 200
 # into the persisted `initial_input`.
 SESSION_ID_RE = re.compile(r"\A[A-Za-z0-9_-]+\Z")
 
+# Honor the active CODEX_HOME (the mux0 codex wrapper exports an overlay path;
+# users may also set a custom one). The overlay symlinks `sessions/` back to
+# the user's real ~/.codex/sessions, so globbing through it still finds the
+# rollout. Falling back to ~/.codex covers native (non-wrapped) invocations.
+CODEX_HOME = pathlib.Path(os.environ.get("CODEX_HOME") or "~/.codex").expanduser()
+
 
 def parse_payload() -> dict:
     """Parse _MUX0_PAYLOAD env var as JSON. Returns {} on any error."""
@@ -104,6 +110,154 @@ def read_transcript_summary(path: str) -> str:
         content = " ".join(content.split())
         if content:
             return content[:SUMMARY_MAXLEN]
+    return ""
+
+
+def _extract_user_text_from_claude(d: dict) -> str:
+    """Plain-text content from a Claude transcript user row. Skips slash
+    commands and meta injections, handles both string and typed-content-block
+    (`[{type:"text",text:"..."}, ...]`) shapes."""
+    if d.get("type") != "user" or d.get("isMeta"):
+        return ""
+    msg = d.get("message", {})
+    content = msg.get("content", "") if isinstance(msg, dict) else ""
+    if isinstance(content, list):
+        for block in content:
+            if isinstance(block, dict) and block.get("type") == "text":
+                content = block.get("text", "")
+                break
+    if not isinstance(content, str):
+        return ""
+    text = content.strip()
+    if not text or text.startswith("<command-") or text.startswith("<local-command-"):
+        return ""
+    return " ".join(text.split())
+
+
+def read_claude_title(path: str) -> str:
+    """Read Claude's session title from the transcript JSONL with three-tier
+    priority (matches `claude --resume` picker semantics):
+
+      1. `{"type":"custom-title","customTitle":"..."}` — written by `/rename`,
+         explicit user intent.
+      2. `{"type":"ai-title","aiTitle":"..."}` — LLM-generated, async. Claude
+         only emits these once the session has enough content; short
+         exchanges never trigger one.
+      3. First non-meta, non-slash-command user message — universal fallback
+         so short sessions also get a meaningful label.
+
+    Single forward pass keeps the latest of each kind. Truncated to
+    SUMMARY_MAXLEN. Empty string on IO error.
+    """
+    if not path:
+        return ""
+    try:
+        with open(path) as f:
+            lines = f.readlines()
+    except (FileNotFoundError, IsADirectoryError, PermissionError, OSError):
+        return ""
+    custom = ""
+    ai = ""
+    first_prompt = ""
+    for line in lines:
+        try:
+            d = json.loads(line)
+        except json.JSONDecodeError:
+            continue
+        if not isinstance(d, dict):
+            continue
+        t = d.get("type")
+        if t == "custom-title":
+            val = d.get("customTitle") or ""
+            if isinstance(val, str) and val:
+                custom = val
+        elif t == "ai-title":
+            val = d.get("aiTitle") or ""
+            if isinstance(val, str) and val:
+                ai = val
+        elif not first_prompt:
+            text = _extract_user_text_from_claude(d)
+            if text:
+                first_prompt = text
+    chosen = custom or ai or first_prompt
+    return chosen[:SUMMARY_MAXLEN]
+
+
+def _find_codex_rollout(session_id: str) -> str:
+    """Locate the rollout JSONL for `session_id` under `CODEX_HOME / sessions`.
+
+    Codex names rollouts `rollout-<timestamp>-<session_id>.jsonl` under a
+    nested `<year>/<month>/<day>/` tree. We glob the session_id suffix and
+    take the most recent match. Empty string on malformed id / no match.
+    """
+    if not session_id or not SESSION_ID_RE.match(session_id):
+        return ""
+    sessions_dir = CODEX_HOME / "sessions"
+    matches = sorted(sessions_dir.glob(f"**/rollout-*-{session_id}.jsonl"))
+    if not matches:
+        return ""
+    return str(matches[-1])
+
+
+def read_codex_title(session_id: str) -> str:
+    """Read Codex's session title from the rollout JSONL with two-tier
+    priority:
+
+      1. `event_msg.thread_name_updated` `thread_name` — Codex LLM-generated
+         session title (same value Codex's own `resume` picker shows).
+      2. First `event_msg.user_message` — fallback when the LLM title hasn't
+         been written yet.
+
+    Both signals live in the same rollout file; reading it once gets both.
+    Truncated to SUMMARY_MAXLEN. Empty on IO/missing-rollout.
+    """
+    path = _find_codex_rollout(session_id)
+    if not path:
+        return ""
+    try:
+        with open(path) as f:
+            lines = f.readlines()
+    except (FileNotFoundError, IsADirectoryError, PermissionError, OSError):
+        return ""
+    thread_name = ""
+    first_prompt = ""
+    for line in lines:
+        try:
+            d = json.loads(line)
+        except json.JSONDecodeError:
+            continue
+        if not isinstance(d, dict) or d.get("type") != "event_msg":
+            continue
+        payload = d.get("payload", {})
+        if not isinstance(payload, dict):
+            continue
+        ptype = payload.get("type")
+        if ptype == "thread_name_updated":
+            name = payload.get("thread_name") or ""
+            if isinstance(name, str) and name:
+                thread_name = name
+        elif ptype == "user_message" and not first_prompt:
+            msg = payload.get("message") or ""
+            if isinstance(msg, str):
+                text = " ".join(msg.split())
+                if text:
+                    first_prompt = text
+    chosen = thread_name or first_prompt
+    return chosen[:SUMMARY_MAXLEN]
+
+
+def _session_title_for(agent: str, transcript_path: str, session_id: str) -> str:
+    """Read the first-user-prompt session title for `agent`. Returns "" when
+    the source file isn't readable yet.
+
+    OpenCode flows through its own JS plugin (mux0-status.js) which fills in
+    sessionTitle on the wire; this branch is unreachable for opencode in
+    practice but kept for parity.
+    """
+    if agent == "claude":
+        return read_claude_title(transcript_path or "")
+    if agent == "codex":
+        return read_codex_title(session_id)
     return ""
 
 
@@ -223,6 +377,9 @@ def dispatch(subcmd: str, agent: str, payload: dict,
         resume = resume_command_for(agent, str(session_id))
         if resume:
             emit["resumeCommand"] = resume
+        title = _session_title_for(agent, entry.get("transcriptPath"), str(session_id))
+        if title:
+            emit["sessionTitle"] = title
 
     elif subcmd == "pretool":
         tool = payload.get("tool_name", "") or ""
@@ -249,6 +406,9 @@ def dispatch(subcmd: str, agent: str, payload: dict,
         emit = {"event": "finished", "at": now, "exitCode": exit_code}
         if summary:
             emit["summary"] = summary
+        title = _session_title_for(agent, entry.get("transcriptPath"), str(session_id))
+        if title:
+            emit["sessionTitle"] = title
         entries.pop(session_id, None)
 
     sessions_doc = gc_stale(sessions_doc, now)

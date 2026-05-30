@@ -5,6 +5,7 @@ struct TabBridge: NSViewRepresentable {
     @Bindable var store: WorkspaceStore
     @Bindable var statusStore: TerminalStatusStore
     @Bindable var pwdStore: TerminalPwdStore
+    @Bindable var sessionTitleStore: TerminalSessionTitleStore
     @Bindable var settings: SettingsConfigStore
     @Bindable var quickActionsStore: QuickActionsStore
     var theme: AppTheme
@@ -25,6 +26,7 @@ struct TabBridge: NSViewRepresentable {
         view.store = store
         view.statusStore = statusStore
         view.pwdStore = pwdStore
+        view.sessionTitleStore = sessionTitleStore
         view.settingsStore = settings
         view.quickActionsStore = quickActionsStore
         view.applyTheme(theme, backgroundOpacity: backgroundOpacity, locale: locale)
@@ -41,6 +43,7 @@ struct TabBridge: NSViewRepresentable {
         nsView.store = store
         nsView.statusStore = statusStore
         nsView.pwdStore = pwdStore
+        nsView.sessionTitleStore = sessionTitleStore
         nsView.settingsStore = settings
         nsView.quickActionsStore = quickActionsStore
         nsView.applyTheme(theme, backgroundOpacity: backgroundOpacity, locale: locale)

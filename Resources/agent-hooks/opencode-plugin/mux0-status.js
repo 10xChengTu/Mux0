@@ -17,6 +17,36 @@ const TID  = process.env.MUX0_TERMINAL_ID;
 // outlives the turn naturally (opencode keeps it alive across turns).
 let turn = { hadError: false, tool: null, startedAt: null };
 
+// First user prompt per opencode session, captured once on chat.message and
+// reused as the sessionTitle for every subsequent emit. Matches cmux's
+// "first user message as title" strategy across all three agents — we don't
+// trust the optional LLM-generated session.title field.
+const firstPromptBySession = new Map();
+
+function captureFirstPrompt(sessionID, parts) {
+    if (!sessionID || firstPromptBySession.has(sessionID)) return;
+    const text = extractUserText(parts);
+    if (text) firstPromptBySession.set(sessionID, text);
+}
+
+function extractUserText(parts) {
+    // chat.message input.parts is an array of typed content blocks.
+    // We only care about the text ones; the first non-empty text is the
+    // user's prompt.
+    if (!Array.isArray(parts)) {
+        if (typeof parts === "string") return parts.trim().slice(0, 200);
+        return "";
+    }
+    for (const p of parts) {
+        if (!p || typeof p !== "object") continue;
+        if (p.type === "text" && typeof p.text === "string") {
+            const t = p.text.trim();
+            if (t) return t.slice(0, 200);
+        }
+    }
+    return "";
+}
+
 function emit(msg) {
     if (!SOCK || !TID) return;
     const payload = JSON.stringify({
@@ -102,9 +132,16 @@ export const Mux0StatusPlugin = async (_input) => ({
     // calls (e.g. a quick chat answer with no Edit/Bash/Read).
     "chat.message": async (input, _output) => {
         if (!turn.startedAt) turn.startedAt = Date.now() / 1000;
+        captureFirstPrompt(input?.sessionID, input?.message?.parts ?? input?.parts);
         const resumeCommand = resumeCommandFor(input?.sessionID);
+        // Priority: opencode's LLM-generated session.title → cached first
+        // prompt. Mirrors the claude/codex hook tiers.
+        const sessionTitle = input?.session?.title
+            || firstPromptBySession.get(input?.sessionID)
+            || "";
         const payload = { event: "running" };
         if (resumeCommand) payload.resumeCommand = resumeCommand;
+        if (sessionTitle) payload.sessionTitle = sessionTitle;
         emit(payload);
     },
 
@@ -117,9 +154,13 @@ export const Mux0StatusPlugin = async (_input) => ({
         if (!turn.startedAt) turn.startedAt = Date.now() / 1000;
         const detail = describeOpencodeTool(input?.tool, output?.args);
         const resumeCommand = resumeCommandFor(input?.sessionID);
+        const sessionTitle = input?.session?.title
+            || firstPromptBySession.get(input?.sessionID)
+            || "";
         const payload = { event: "running" };
         if (detail) payload.toolDetail = detail;
         if (resumeCommand) payload.resumeCommand = resumeCommand;
+        if (sessionTitle) payload.sessionTitle = sessionTitle;
         emit(payload);
     },
 

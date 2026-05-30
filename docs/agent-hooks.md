@@ -10,6 +10,22 @@ mux0 通过注入到各 AI CLI 的生命周期钩子，把 `running` / `idle` / 
 - 消息格式：每行一个 JSON，`{"terminalId": "...", "event": "running|idle|needsInput|finished", "agent": "claude|opencode|codex", "at": <epoch>, "exitCode": <int>?, "toolDetail": <string>?, "summary": <string>?, "resumeCommand": <string>?}`。`exitCode` 仅在 `event=finished` 时携带（shell = 真实 `$?`；agent = 0/1 哨兵）；`toolDetail` 仅在 agent 的 `event=running` 时携带（如 "Edit Models/Foo.swift"）；`summary` 仅在 agent 的 `event=finished` 时携带（transcript 最后一条 assistant 消息，≤200 chars）；`resumeCommand` 仅在 Claude/Codex 的 prompt 触发的 `event=running` 时携带（恢复当前 session 的 CLI，如 `claude --resume <session_id>` / `codex resume <session_id>`，OpenCode 暂未支持）。
 - 监听端：`HookSocketListener`（DispatchSourceRead，accept 循环）
 
+## Session title
+
+每条 socket 消息可携带 `sessionTitle` —— 当前 agent 会话的人类可读名字，用于驱动 mux0 的 tab 自动命名（`TerminalSessionTitleStore`）。三个 agent 各自的来源：
+
+| Agent | 来源 | 时机 |
+|-------|------|------|
+| Claude | `custom-title`（`/rename`）→ `ai-title`（LLM 异步生成）→ 第一条非 slash-command、非 meta 的 user message（typed-content-block 展开） | `prompt` / `stop` |
+| Codex | `event_msg.thread_name_updated` 的 `thread_name`（LLM 生成）→ 第一条 `event_msg.user_message`。两者都从 `~/.codex/sessions/**/rollout-*-<session_id>.jsonl` 单次扫描 | `prompt` / `stop` |
+| OpenCode | plugin `input.session?.title`（LLM 生成）→ plugin 进程内缓存的"该 session 首条 chat.message 文本"（typed parts 展开） | `chat.message` / `tool.execute.before` |
+
+策略一致：**LLM-generated title 优先于 first user message fallback**，与各 agent 自己 `--resume` picker 的显示语义对齐。LLM title 生成是异步的——短对话或新 session 第一次 emit 可能没有，fallback 到首条 user prompt 保证 tab 仍有可辨识标签。Codex 的 thread_name 与 SQLite `threads.title` 是同一份 LLM 输出，我们走 JSONL 路径（与 thread_name_updated 事件来自同一文件，零额外 IO）。Claude 的 `/rename` 写入的 `custom-title` 是即时的，永远胜过稍后写出的 `ai-title`。Swift 端 `TerminalSessionTitleStore.update` 丢弃空字符串，避免文件还没 flush 时覆盖已知值。
+
+用户在 mux0 内 inline rename tab 后，`TerminalTab.userRenamed = true`，`displayTitle` 锁定不再吃 `sessionTitle`。右键菜单「Reset to auto title」清除锁定。
+
+`HookDispatcher` 路由 `sessionTitle` 时**不**走 `mux0-agent-status-<agent>` 门控 —— 只要插件 emit 了，tab 命名就跟上，与"是否显示状态图标"完全独立。
+
 ## Agent Turn 成败检测
 
 Agent turn 没有真实的 exit code，但 Claude Code / Codex 的 `PostToolUse` hook 和 OpenCode 的 `tool.execute.after` 插件事件都带结构化的 "tool 报错了吗" 字段。mux0 在每个 turn 内聚合这些 per-tool 信号到一个布尔 `turnHadError`，在 `Stop` / `session.idle` 时发 `finished` 事件，`exitCode` 设为 0（clean）或 1（had errors）。
