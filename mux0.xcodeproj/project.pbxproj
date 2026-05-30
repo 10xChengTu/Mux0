@@ -799,7 +799,7 @@
 				LD_RUNPATH_SEARCH_PATHS = "@executable_path/../Frameworks";
 				LIBRARY_SEARCH_PATHS = "$(PROJECT_DIR)/Vendor/ghostty/lib";
 				MACOSX_DEPLOYMENT_TARGET = 14.0;
-				MARKETING_VERSION = 0.5.3;
+				MARKETING_VERSION = 0.6.0;
 				MUX0_DISPLAY_NAME = Mux0;
 				OTHER_LDFLAGS = "-lghostty -lc++ -framework Carbon";
 				PRODUCT_BUNDLE_IDENTIFIER = com.mux0.app;
@@ -924,7 +924,7 @@
 				LD_RUNPATH_SEARCH_PATHS = "@executable_path/../Frameworks";
 				LIBRARY_SEARCH_PATHS = "$(PROJECT_DIR)/Vendor/ghostty/lib";
 				MACOSX_DEPLOYMENT_TARGET = 14.0;
-				MARKETING_VERSION = 0.5.3;
+				MARKETING_VERSION = 0.6.0;
 				MUX0_DISPLAY_NAME = "Mux0 Dev";
 				OTHER_LDFLAGS = "-lghostty -lc++ -framework Carbon";
 				PRODUCT_BUNDLE_IDENTIFIER = com.mux0.app.dev;
