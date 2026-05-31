@@ -703,9 +703,14 @@ final class GhosttyTerminalView: NSView, NSTextInputClient {
     }
 
     override func mouseMoved(with event: NSEvent) {
-        // 故意不转发 hover 位置：mux0 是多窗口浮动布局，
-        // ghostty 内部对未匹配 PRESS 的 mouse_pos 推进可能引发"鼠标飘到哪里就在哪里画选区"的假象。
-        // hover 仅用于 link 高亮等次要特性，宁可放弃也不要在底层 terminal 上误触发选中。
+        // 转发 hover 位置以驱动 ghostty 的链接下划线高亮与光标形状。
+        // 安全性：tracking area 为 .activeWhenFirstResponder，仅焦点 pane 触发；
+        // 再加 isCursorOverSelf 守卫。纯 hover（无按键）不会扩选区，后台 pane 的
+        // mouseLocation 轮询问题已被现有 frontmost gate 拦住。
+        guard isCursorOverSelf(event) else { return }
+        guard let s = surface else { return }
+        let pt = flippedPoint(event.locationInWindow)
+        ghostty_surface_mouse_pos(s, pt.x, pt.y, modsFromEvent(event))
     }
 
     override func mouseDragged(with event: NSEvent) {
