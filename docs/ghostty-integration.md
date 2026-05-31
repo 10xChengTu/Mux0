@@ -83,7 +83,21 @@ GhosttyBridge.shared.readPalette()     // → ghostty_config_palette_s?
 | `write_clipboard_cb` | 写入 NSPasteboard |
 | `read_clipboard_cb` | 目前 no-op，v1 不实现剪贴板读取 |
 | `close_surface_cb` | surface 请求关闭时通知 canvas |
-| `action_cb` | ghostty 内部 action 分发（目前 no-op）|
+| `action_cb` | ghostty 内部 action 分发（CONFIG_CHANGE / CELL_SIZE / SCROLLBAR / PWD / OPEN_URL / MOUSE_SHAPE）|
+
+### 链接交互相关 action
+
+终端里的 URL 由 libghostty 内部识别、Cmd 判定与下划线渲染，宿主只接三处：
+
+- `GHOSTTY_ACTION_OPEN_URL` — Cmd+点击链接时触发；宿主经 `GhosttyBridge.resolveOpenURL`
+  做 scheme 白名单（http / https / mailto / file）后用 `NSWorkspace.shared.open` 打开。
+- `GHOSTTY_ACTION_MOUSE_SHAPE` — 悬停链接等场景下 ghostty 通知期望光标；映射到
+  `NSCursor`（POINTER→pointingHand、TEXT→iBeam、其余→arrow），经
+  `GhosttyTerminalView.applyMouseShape` 应用，配合 tracking area 的 `.cursorUpdate`
+  与 `cursorUpdate(with:)` override。
+- 下划线高亮由 ghostty 渲染器自绘，依赖 `GhosttyTerminalView.mouseMoved` 把带修饰键的
+  hover 位置转发给 `ghostty_surface_mouse_pos`（仅焦点 pane）。
+  `GHOSTTY_ACTION_MOUSE_OVER_LINK` 未接入（YAGNI）。
 
 ## 升级 ghostty 版本
 
