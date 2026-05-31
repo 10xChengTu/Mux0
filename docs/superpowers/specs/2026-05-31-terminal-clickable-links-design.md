@@ -91,3 +91,50 @@ ghostty_surface_mouse_pos(s, pt.x, pt.y, modsFromEvent(event))
 - `mux0/Ghostty/GhosttyTerminalView.swift` — `currentCursor` + `cursorUpdate` + `mouseMoved` 转发
 - `mux0Tests/` — 新增 `resolveOpenURL` 测试
 - `docs/ghostty-integration.md` — 补充新接入的 action 回调
+
+---
+
+## Phase 2：普通 hover 下划线 + tooltip（VS Code 手感）
+
+日期：2026-06-01
+
+### 背景与约束
+
+实测确认：libghostty 把「链接下划线高亮 / 手型光标 / 可点击」三者绑死在「按住 Cmd」条件上，普通 hover（不按 Cmd）不画任何东西。而下划线由 ghostty 渲染器内部绘制，C API 只暴露 `MOUSE_OVER_LINK`（给 URL 字符串，不给链接的单元格范围），所以宿主**无法自行精确绘制下划线**，只能依赖 ghostty 来画。
+
+目标行为（对齐 VS Code）：
+
+| 操作 | 下划线 | 光标 | tooltip | 点击打开 |
+|------|--------|------|---------|----------|
+| 普通 hover | ✅ | iBeam（不变）| ✅「⌘ + 单击打开链接」| 否 |
+| Cmd+hover | ✅ | 🖐 手型 | 隐藏 | Cmd+单击 ✅ |
+
+### 核心机制：修饰键注入（decouple highlight from open）
+
+ghostty 的「链接高亮」由**鼠标移动事件（mouse_pos）**携带的修饰键决定，「点击打开」由**鼠标点击事件（mouse_button）**携带的修饰键决定，两者独立。利用这点：
+
+- **`mouseMoved` 转发时给 mods 注入 `GHOSTTY_MODS_SUPER`（伪造 Cmd）** → ghostty 在普通 hover 也判定链接可高亮，于是画下划线 + 发 `MOUSE_OVER_LINK`（拿到 URL 用于 tooltip）+ 发 `MOUSE_SHAPE=POINTER`。
+- **点击事件不注入**，仍传真实修饰键。且 `mouseDown` 在按下按钮前会先用真实 mods 发一次 `mouse_pos`，把伪造的 super 状态清掉，所以普通单击不会打开、只有真·Cmd+单击才打开。
+- **光标单独接管**：普通 hover 强制 iBeam，只有真按 Cmd 才手型。
+
+### 组件
+
+1. **`mouseMoved` 注入**（GhosttyTerminalView）：转发 hover 位置时 `mods |= SUPER`。
+2. **`MOUSE_OVER_LINK` 回调**（GhosttyBridge）：读 `action.action.mouse_over_link`（url + len），len>0 → 在链接上（带 URL），len==0/url==nil → 离开链接（nil）。bounce 主线程 → `view.applyHoveredLink(url?)`。
+3. **链接 affordance 集中式更新**（GhosttyTerminalView）：`hoveredLinkURL: String?` + `updateLinkAffordance()`——根据「是否在链接上」与「真实 Cmd 是否按下」决定光标（hand/iBeam）与 tooltip（显示/隐藏）。由 `applyHoveredLink` 与 `flagsChanged`（Cmd 切换）触发。
+4. **`applyMouseShape` 让位**：当 `hoveredLinkURL != nil` 时 `applyMouseShape` 直接 return（链接光标由 `updateLinkAffordance` 接管），避免注入导致的 POINTER 与链接系统打架。非链接区仍由 MOUSE_SHAPE 设 iBeam。
+5. **Tooltip 气泡**（新文件 `mux0/Ghostty/LinkHintTooltip.swift`）：无边框、不激活、`ignoresMouseEvents` 的浮层窗口，`NSVisualEffectView(.toolTip)` + `NSTextField`（系统语义色，不硬编码），显示在光标附近。仅普通 hover 链接时显示，Cmd 按下或离开链接时隐藏。
+6. **文案**：`terminal.link.openHint` → en `⌘ + click to open link`，zh-Hans `⌘ + 单击打开链接`（`Localizable.xcstrings`）。
+
+### YAGNI / 风险
+
+- tooltip 仅在链接 enter 时定位一次，不随光标在同一链接内移动而跟随（VS Code 也是锚定式），可接受。
+- 这是绕过引擎默认行为的 workaround，依赖「ghostty 按点击事件 mods 判定 open」——逻辑已推演成立，但需真机验证无副作用（普通单击误打开、选区异常、注入 super 对 motion 的副作用）。
+
+### Phase 2 影响文件
+
+- `mux0/Ghostty/GhosttyTerminalView.swift` — mouseMoved 注入、hoveredLinkURL、updateLinkAffordance、flagsChanged、applyMouseShape 让位、linkTooltip
+- `mux0/Ghostty/GhosttyBridge.swift` — 新增 `MOUSE_OVER_LINK` case
+- `mux0/Ghostty/LinkHintTooltip.swift` — 新文件（tooltip 浮层）
+- `mux0/Localization/Localizable.xcstrings` — 新文案 key
+- `CLAUDE.md` / `AGENTS.md` / `docs/architecture.md` 或 `docs/ghostty-integration.md` — 目录结构同步 + action 文档
