@@ -300,7 +300,7 @@ final class GhosttyTerminalView: NSView, NSTextInputClient {
         // 只在自己是 first responder 时接收 mouseMoved，
         // 防止非聚焦 terminal 也收到鼠标位置更新（导致下层假性选区）。
         let options: NSTrackingArea.Options = [
-            .activeWhenFirstResponder, .mouseMoved, .cursorUpdate, .inVisibleRect
+            .activeWhenFirstResponder, .mouseMoved, .cursorUpdate, .mouseEnteredAndExited, .inVisibleRect
         ]
         addTrackingArea(NSTrackingArea(rect: bounds, options: options, owner: self, userInfo: nil))
     }
@@ -498,6 +498,8 @@ final class GhosttyTerminalView: NSView, NSTextInputClient {
     }
 
     override func resignFirstResponder() -> Bool {
+        // 失焦时清掉链接 hover 提示，避免 tooltip 滞留。
+        if hoveredLinkURL != nil { applyHoveredLink(nil) }
         if let s = surface {
             // 防御性释放：清掉任何可能残留的按键/拖拽选区状态，
             // 避免下次再聚焦时出现"鼠标一动就在选"的假象。
@@ -739,6 +741,12 @@ final class GhosttyTerminalView: NSView, NSTextInputClient {
         super.flagsChanged(with: event)
         // Cmd 的按下/松开会切换链接光标与 tooltip（即便鼠标没动）。
         updateLinkAffordance()
+    }
+
+    override func mouseExited(with event: NSEvent) {
+        super.mouseExited(with: event)
+        // 鼠标移出 view 时清掉链接 hover 状态，否则浮层 tooltip 会一直留在屏幕上。
+        if hoveredLinkURL != nil { applyHoveredLink(nil) }
     }
 
     override func mouseMoved(with event: NSEvent) {
