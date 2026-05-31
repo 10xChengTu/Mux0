@@ -418,6 +418,22 @@ final class GhosttyBridge {
                 view.applyMouseShape(cursor)
             }
             return true
+        case GHOSTTY_ACTION_MOUSE_OVER_LINK:
+            guard target.tag == GHOSTTY_TARGET_SURFACE,
+                  let surface = target.target.surface
+            else { return true }
+            let mol = action.action.mouse_over_link
+            let url: String?
+            if let ptr = mol.url, mol.len > 0 {
+                url = String(data: Data(bytes: UnsafeRawPointer(ptr), count: Int(mol.len)), encoding: .utf8)
+            } else {
+                url = nil
+            }
+            DispatchQueue.main.async {
+                guard let view = GhosttyTerminalView.view(forSurface: surface) else { return }
+                view.applyHoveredLink(url)
+            }
+            return true
         default:
             return false
         }
