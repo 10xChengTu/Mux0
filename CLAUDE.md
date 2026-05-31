@@ -52,7 +52,8 @@ mux0/
 ├── Ghostty/
 │   ├── ghostty-bridging-header.h  — 桥接头文件
 │   ├── GhosttyBridge.swift        — libghostty 单例（app/config 生命周期 + window blur）
-│   └── GhosttyTerminalView.swift  — NSView，持有 ghostty_surface_t，Metal 渲染
+│   ├── GhosttyTerminalView.swift  — NSView，持有 ghostty_surface_t，Metal 渲染
+│   └── LinkHintTooltip.swift      — 链接 hover 提示气泡（无边框浮层窗口）
 ├── Localization/
 │   ├── LanguageStore.swift  — @Observable，语言偏好 + UserDefaults 持久化 + effectiveBundle + locale + tick
 │   ├── L10n.swift           — 常量命名空间（LocalizedStringResource + AppKit helper L10n.string(_:args...)）

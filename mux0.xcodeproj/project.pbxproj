@@ -34,6 +34,7 @@
 		32A7B12961D2F46AEBD0E3F0 /* MetadataRefresherTests.swift in Sources */ = {isa = PBXBuildFile; fileRef = 92650C34DB180A72B23273A0 /* MetadataRefresherTests.swift */; };
 		368CDF074D86E31677DD944E /* AppearanceSectionView.swift in Sources */ = {isa = PBXBuildFile; fileRef = F3A60150D4D181A6D9B55930 /* AppearanceSectionView.swift */; };
 		39B56550E6DE3A7BF8E95160 /* StartupCommandResolverTests.swift in Sources */ = {isa = PBXBuildFile; fileRef = 0520C77C17845C086A5E597A /* StartupCommandResolverTests.swift */; };
+		41C63A02D9C6DEDE7B5B2138 /* LinkHintTooltip.swift in Sources */ = {isa = PBXBuildFile; fileRef = 7156642613E48755F3EFC8AC /* LinkHintTooltip.swift */; };
 		4DF25EEF8F9CE22D00062158 /* SettingsTabBarView.swift in Sources */ = {isa = PBXBuildFile; fileRef = 1A1BA2A24846F1D1712469C3 /* SettingsTabBarView.swift */; };
 		4E4FED23A4504E0204D3C515 /* WorkspacePasteboardType.swift in Sources */ = {isa = PBXBuildFile; fileRef = F8F3CA90C6310DE9C99652EB /* WorkspacePasteboardType.swift */; };
 		5050C197246573A2D7174B05 /* QuickAction.swift in Sources */ = {isa = PBXBuildFile; fileRef = DB6F2650B84DBA28A06D938D /* QuickAction.swift */; };
@@ -159,6 +160,7 @@
 		6ECD49D2FB00996850D13632 /* TabBridge.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = TabBridge.swift; sourceTree = "<group>"; };
 		70BBA11237B9EA46D6D3FFD6 /* ThemeManagerTests.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = ThemeManagerTests.swift; sourceTree = "<group>"; };
 		70C36BFEC0226AFCE5094D35 /* ThemeCatalog.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = ThemeCatalog.swift; sourceTree = "<group>"; };
+		7156642613E48755F3EFC8AC /* LinkHintTooltip.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = LinkHintTooltip.swift; sourceTree = "<group>"; };
 		7B93B019349B80C08FDBBF7D /* HookDispatcher.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = HookDispatcher.swift; sourceTree = "<group>"; };
 		81CD12FFB88B2BE6DFCE9F2A /* UpdateState.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = UpdateState.swift; sourceTree = "<group>"; };
 		821BF7B943BBA8650E8769A4 /* TerminalPwdStoreTests.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = TerminalPwdStoreTests.swift; sourceTree = "<group>"; };
@@ -477,6 +479,7 @@
 				E32257D2D28E09E97C065440 /* ghostty-bridging-header.h */,
 				97BE27EB11ED1ED01C8843B7 /* GhosttyBridge.swift */,
 				F9A8823EC09C8201A18A8CCE /* GhosttyTerminalView.swift */,
+				7156642613E48755F3EFC8AC /* LinkHintTooltip.swift */,
 			);
 			path = Ghostty;
 			sourceTree = "<group>";
@@ -674,6 +677,7 @@
 				0024B118D576BFA999FC6EFB /* IconButton.swift in Sources */,
 				5AB61AD35E457A1232CDA29A /* L10n.swift in Sources */,
 				0DC0EB6267E2B74A1D86BDD6 /* LanguageStore.swift in Sources */,
+				41C63A02D9C6DEDE7B5B2138 /* LinkHintTooltip.swift in Sources */,
 				8D92A0B981408874C548B7CE /* MetadataRefresher.swift in Sources */,
 				C25EEE04D310E199A62D191C /* PasteboardTypes.swift in Sources */,
 				5050C197246573A2D7174B05 /* QuickAction.swift in Sources */,
