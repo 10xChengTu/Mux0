@@ -39,7 +39,7 @@ final class ThemeManager {
     init() {
         // 初始化时直接尝试解析 ghostty config (不需要 libghostty)
         let isDark = NSApp?.effectiveAppearance.bestMatch(from: [.darkAqua, .aqua]) == .darkAqua
-        let colors = GhosttyConfigReader.load()
+        let colors = GhosttyConfigReader.load(systemIsDark: isDark)
         let accent = colors.palette[3] ?? colors.palette[11] ?? colors.palette[6]
         self.theme = AppTheme.derive(
             background: colors.background,
@@ -65,7 +65,9 @@ final class ThemeManager {
         }
 
         // 直接从 ghostty config + theme 文件解析颜色（绕过 libghostty C API 的 key 不确定性）
-        let colors = GhosttyConfigReader.load()
+        // 将 systemIsDark 传入，避免 GhosttyConfigReader 内部再读一次
+        // effectiveAppearance（在通知回调中可能仍为旧值）。
+        let colors = GhosttyConfigReader.load(systemIsDark: systemIsDark)
         let accent = colors.palette[3]   // ANSI yellow
             ?? colors.palette[11]
             ?? colors.palette[6]
@@ -164,7 +166,13 @@ final class ThemeManager {
             queue: .main
         ) { [weak self] _ in
             guard let self, self.currentScheme == .system else { return }
-            self.applyScheme(.system)
+            // Defer by one run-loop tick: NSApp.effectiveAppearance may still
+            // reflect the *old* appearance when this notification fires.  Giving
+            // the run loop a cycle allows AppKit to update its internal state
+            // before we read it.
+            DispatchQueue.main.async {
+                self.applyScheme(.system)
+            }
         }
     }
 }
