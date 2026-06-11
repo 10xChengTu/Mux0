@@ -10,24 +10,32 @@ final class ThemeManager {
     private(set) var theme: AppTheme
     private var currentScheme: ColorSchemePreference = .system
 
-    /// ghostty `background-opacity`，值域 0…1。驱动 NSWindow 透明以及所有承载
-    /// ghostty surface 的背景层的 alpha —— libghostty 按 alpha 渲染单元背景，
-    /// 但任何一层不透明的 Swift/AppKit 背景都会把它挡住。
-    private(set) var backgroundOpacity: CGFloat = 1.0
+    /// 用户设置的 ghostty `background-opacity`，值域 0…1。
+    /// 全屏时被 `effectiveBackgroundOpacity` 覆盖为 1.0，不直接暴露给消费者。
+    private var _backgroundOpacity: CGFloat = 1.0
+
+    /// 全屏时固定返回 1.0；否则返回用户设置值。
+    /// 所有 UI 层应读此属性，而非 `_backgroundOpacity`。
+    var backgroundOpacity: CGFloat {
+        isFullScreen ? 1.0 : _backgroundOpacity
+    }
 
     /// ghostty `background-blur-radius`。仅用于让 ContentView 判断当前是否需要
     /// 在 window 上挂 blur；具体 radius 值由 libghostty 从自己的 config 里读。
     private(set) var backgroundBlurRadius: CGFloat = 0
 
-    /// mux0 自定义 `mux0-content-opacity`，值域 0…1。作用于"中间内容区"的所有
-    /// 叠加层 —— 卡片外层 canvas、paneContainer canvas、tab strip sidebar、
-    /// settings 各层背景 —— 让用户在整体 `background-opacity` 之外再统一调低
-    /// 中心卡片的累积浓度（因为它们原本是多层 canvas/sidebar 叠加，肉眼看起来
-    /// 比 sidebar 区浑厚）。sidebar 行的选中/悬停高亮不受此倍数影响。
-    private(set) var contentOpacity: CGFloat = 1.0
+    /// 用户设置的 mux0 `mux0-content-opacity`，值域 0…1。
+    /// 全屏时被 `effectiveContentOpacity` 覆盖为 1.0。
+    private var _contentOpacity: CGFloat = 1.0
+
+    /// 全屏时固定返回 1.0；否则返回用户设置值。
+    var contentOpacity: CGFloat {
+        isFullScreen ? 1.0 : _contentOpacity
+    }
 
     /// 中间内容层实际使用的不透明度 = backgroundOpacity × contentOpacity。所有
     /// 画"中间内容"底色的视图都读它，以保证两档设置的组合效果一致。
+    /// 全屏时两项都是 1.0，结果也是 1.0。
     var contentEffectiveOpacity: CGFloat { backgroundOpacity * contentOpacity }
 
     /// mux0 自定义 `mux0-content-shadow`，值域 0…1。控制中央内容卡片的浅边框
@@ -35,6 +43,11 @@ final class ThemeManager {
     /// 边框颜色取 theme.border，alpha 随该值线性缩放；阴影是黑色，opacity 与
     /// radius 也随该值缩放。
     private(set) var contentShadowIntensity: CGFloat = 0
+
+    /// 当前窗口是否处于全屏状态。由 ContentView 观察 NSWindow 全屏变化后写入。
+    /// 全屏时 macOS 提供纯黑桌面背景，任何 alpha < 1 的层都会与黑色混合，
+    /// 导致偏灰偏暗。全屏强制所有 opacity 为 1.0 以保持色彩准确。
+    private(set) var isFullScreen: Bool = false
 
     init() {
         // 初始化时直接尝试解析 ghostty config (不需要 libghostty)
@@ -95,6 +108,13 @@ final class ThemeManager {
         applyScheme(currentScheme)
     }
 
+    /// 更新全屏状态。全屏时强制所有 opacity 为 1.0，避免 alpha 与黑色桌面混合
+    /// 产生偏灰偏暗的外观。仅在值真的变化时触发 @Observable 通知。
+    func setFullScreen(_ fullScreen: Bool) {
+        if isFullScreen == fullScreen { return }
+        isFullScreen = fullScreen
+    }
+
     /// 推入最新的 window effects。clamp 后只在值真的变化时赋值，避免无谓的
     /// @Observable 通知让 SwiftUI 重建视图树。
     func applyWindowEffects(opacity: CGFloat, blurRadius: CGFloat, contentOpacity: CGFloat = 1.0, contentShadow: CGFloat = 0) {
@@ -102,9 +122,9 @@ final class ThemeManager {
         let clampedBlur = max(0, min(100, blurRadius))
         let clampedContent = max(0, min(1, contentOpacity))
         let clampedShadow = max(0, min(1, contentShadow))
-        if backgroundOpacity != clampedOpacity { backgroundOpacity = clampedOpacity }
+        if _backgroundOpacity != clampedOpacity { _backgroundOpacity = clampedOpacity }
         if backgroundBlurRadius != clampedBlur { backgroundBlurRadius = clampedBlur }
-        if self.contentOpacity != clampedContent { self.contentOpacity = clampedContent }
+        if _contentOpacity != clampedContent { _contentOpacity = clampedContent }
         if contentShadowIntensity != clampedShadow { contentShadowIntensity = clampedShadow }
     }
 

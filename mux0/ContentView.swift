@@ -247,6 +247,12 @@ struct ContentView: View {
         .onChange(of: store.selectedWorkspace?.selectedTabId) { _, _ in
             statusStore.markRead(terminalIds: visibleTerminalIds)
         }
+        .onReceive(NotificationCenter.default.publisher(for: NSWindow.willEnterFullScreenNotification)) { _ in
+            themeManager.setFullScreen(true)
+        }
+        .onReceive(NotificationCenter.default.publisher(for: NSWindow.didExitFullScreenNotification)) { _ in
+            themeManager.setFullScreen(false)
+        }
         .onReceive(NotificationCenter.default.publisher(for: .mux0OpenSettings)) { note in
             if let raw = note.userInfo?["section"] as? String,
                let section = SettingsSection(rawValue: raw) {
