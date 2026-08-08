@@ -8,6 +8,9 @@ build/
 *.d
 *.profraw
 
+# fish shell-integration shim dir must stay tracked despite the *.d rule above
+!Resources/agent-hooks/xdg-data/fish/vendor_conf.d/
+
 # Xcode derived data
 *.xcuserdata
 DerivedData/

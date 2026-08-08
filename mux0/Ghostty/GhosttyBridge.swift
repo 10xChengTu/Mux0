@@ -189,6 +189,27 @@ final class GhosttyBridge {
             }
         }
 
+        // Path C: fish has no ZDOTDIR-style hijack; instead prepend our own
+        // XDG_DATA_DIRS entry. fish auto-loads fish/vendor_conf.d/*.fish from
+        // every XDG_DATA_DIRS dir at startup, so our shim there bootstraps the
+        // agent wrappers, then removes our entry again (mirrors ghostty's own
+        // integration pattern). Independent of ghostty's shell-integration
+        // injection, so it works even when the bundled resources-dir is absent.
+        if let resourcesPath = Bundle.main.resourcePath {
+            let xdgDir = (resourcesPath as NSString)
+                .appendingPathComponent("agent-hooks/xdg-data")
+            let vendorConfDir = (xdgDir as NSString)
+                .appendingPathComponent("fish/vendor_conf.d")
+            if FileManager.default.fileExists(atPath: vendorConfDir) {
+                let existing = ProcessInfo.processInfo.environment["XDG_DATA_DIRS"] ?? ""
+                let merged = existing.isEmpty ? xdgDir : "\(xdgDir):\(existing)"
+                setenv("XDG_DATA_DIRS", merged, 1)
+                setenv("MUX0_XDG_DATA_DIR", xdgDir, 1)
+            } else {
+                print("[GhosttyBridge] fish xdg-data shim not found at \(xdgDir)")
+            }
+        }
+
         // Set MUX0_HOOK_SOCK early so surfaces spawned before ContentView.onAppear still
         // inherit it. The listener itself is started later in ContentView.onAppear; any
         // hook emits in the gap fail silently (hook-emit.sh swallows connect errors).
