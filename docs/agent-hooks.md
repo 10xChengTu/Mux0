@@ -2,7 +2,11 @@
 
 mux0 通过注入到各 AI CLI 的生命周期钩子，把 `running` / `idle` / `needsInput` / `finished` 状态推送到 app 的 `TerminalStatusStore`，驱动 sidebar / tab 上的状态图标。Agent 侧（Claude Code / Codex / OpenCode）另外在 `.finished` 事件里携带 `exitCode` 哨兵值（0 = turn 干净，1 = turn 里有 tool 报错）和可选的 `summary`（transcript 最后一条 assistant 消息）。
 
-实现位于 `Resources/agent-hooks/`，由 `project.yml` 的 postBuildScript 拷贝到 app bundle，运行时通过 `ZDOTDIR` shim 自动激活。
+实现位于 `Resources/agent-hooks/`，由 `project.yml` 的 postBuildScript 拷贝到 app bundle。各 shell 的自动激活路径（`GhosttyBridge.exportEnvVars()` 注入环境变量）：
+
+- **zsh**：`ZDOTDIR` 劫持 —— 指向 `agent-hooks/zdotdir`，shim `.zshenv` 先跑，恢复用户 ZDOTDIR 后把 `bootstrap.zsh` 延到首个 precmd
+- **fish**：`XDG_DATA_DIRS` 前置 `agent-hooks/xdg-data` —— fish 启动时自动读所有 `XDG_DATA_DIRS` 条目下的 `fish/vendor_conf.d/*.fish`，shim 加载 `bootstrap.fish` 后把自身条目摘除（仿 ghostty 的 `ghostty_restore_xdg_data_dir`）。不能用 build 时往 ghostty integration 文件追加的方式——ghostty 的 fish 脚本末尾是裸 `ghostty_exit`（`exit 0` 中止 sourced 文件），追加在后的行永远执行不到
+- **bash**：build 时把 bootstrap 行追加进 ghostty 的 shell-integration 脚本（见 `project.yml` postBuildScript）
 
 ## IPC
 
