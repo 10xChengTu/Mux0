@@ -45,9 +45,9 @@
 	<key>NSRemovableVolumesUsageDescription</key>
 	<string>Mux0 needs access so terminal sessions can read and write files on removable volumes.</string>
 	<key>SUEnableAutomaticChecks</key>
-	<true/>
+	<false/>
 	<key>SUFeedURL</key>
-	<string>https://github.com/10xChengTu/mux0/releases/latest/download/appcast.xml</string>
+	<string></string>
 	<key>SUPublicEDKey</key>
 	<string>+u/yKnlOyk6VnbdXzn5dVaHMoCzambPTRX0dQNe6PRU=</string>
 	<key>SUScheduledCheckInterval</key>

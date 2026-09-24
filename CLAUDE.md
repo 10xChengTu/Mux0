@@ -71,6 +71,7 @@ mux0/
 │   ├── TerminalPwdStore.swift     — @Observable，terminalId → pwd 映射（ghostty PWD action 喂入，sidebar git 分支读取）
 │   ├── TerminalSessionTitleStore.swift  — @Observable，terminalId → agent session title（hook 喂入，tab 标题读取）
 │   ├── HookDispatcher.swift       — 按 agent toggle 过滤 hook 事件 + 派生 status icon UI 主开关
+│   ├── AgentPreferences.swift     — 新增 agent（pi / grok）的首次运行开关迁移（seen-list）
 │   ├── HookMessage.swift          — agent/shell hook 的 JSON wire format
 │   └── HookSocketListener.swift   — Unix domain socket 监听，解析 HookMessage → statusStore
 ├── Settings/
@@ -120,7 +121,7 @@ mux0/
 | libghostty 集成 | `docs/ghostty-integration.md` |
 | 测试策略 | `docs/testing.md` |
 | 构建与 Vendor | `docs/build.md` |
-| Agent 状态钩子（Claude/OpenCode/Codex wrapper + IPC） | `docs/agent-hooks.md` |
+| Agent 状态钩子（Claude/OpenCode/Codex/pi/Grok wrapper + 扩展 + IPC） | `docs/agent-hooks.md` |
 | 设置面板字段参考 | `docs/settings-reference.md` |
 | 设计决策记录 | `docs/decisions/` |
 | 国际化 (i18n) | `docs/i18n.md` |
@@ -138,6 +139,7 @@ mux0/
 | 接入新的 ghostty C API | `Ghostty/GhosttyBridge.swift`，需同步更新 `docs/ghostty-integration.md` |
 | 改自动更新 UI / 行为 | `mux0/Update/UpdateStore.swift`, `mux0/Update/UpdateUserDriver.swift`, `mux0/Settings/Sections/UpdateSectionView.swift`, `mux0/Sidebar/SidebarView.swift`（footer） |
 | 改发布流水线 / appcast 格式 | `.github/workflows/release.yml`, `.github/scripts/render-appcast.sh`, `docs/build.md` |
+| 本地出发布包（无 CI / 无 Developer ID / 无 GitHub） | `./scripts/package-release.sh` → `dist/`（zip + dmg + `install.sh` + SHA256SUMS），`scripts/install.sh`，`docs/build.md#本地发版fork` |
 | 发新版本 | 改 `project.yml` 的 `MARKETING_VERSION` → `./scripts/sync-landing-version.sh` 同步 landing → commit → push 到 master（CI 自动 bump build + 打 tag + 发版，详见 `docs/build.md#release-流程`） |
 | 同步 landing 版本号 | `./scripts/sync-landing-version.sh`（`--check` 为只读校验，CI drift check 会调用） |
 | 新增设置项 | `Settings/Sections/<对应>.swift`, `Settings/SettingsConfigStore.swift`（默认值/校验）, `docs/settings-reference.md` |
@@ -147,7 +149,8 @@ mux0/
 | 重新生成 Xcode 工程 | `xcodegen generate`（修改 `project.yml` 后执行）|
 | 检查文档漂移 | `./scripts/check-doc-drift.sh`（对比 Directory Structure 与真实 `mux0/` 目录；同时校验 landing 版本号与 `project.yml` 一致） |
 | 新增文案 / 支持新语言 | `mux0/Localization/Localizable.xcstrings`, `mux0/Localization/L10n.swift`, `mux0Tests/L10nSmokeTests.swift`, `docs/i18n.md` |
-| 修改 tab 自动命名行为（auto title 来源 / 锁定语义） | `Models/TerminalSessionTitleStore.swift`, `Models/Workspace.swift`（displayTitle）, `Models/HookDispatcher.swift`（路由）, `Resources/agent-hooks/agent-hook.py`（claude/codex 来源）, `Resources/agent-hooks/opencode-plugin/mux0-status.js`（opencode 来源） |
+| 修改 tab 自动命名行为（auto title 来源 / 锁定语义） | `Models/TerminalSessionTitleStore.swift`, `Models/Workspace.swift`（displayTitle）, `Models/HookDispatcher.swift`（路由）, `Resources/agent-hooks/agent-hook.py`（claude/codex/grok 来源）, `Resources/agent-hooks/opencode-plugin/mux0-status.js`（opencode 来源）, `Resources/agent-hooks/pi-extension/mux0-status.js`（pi 来源） |
+| 接入一个新的 agent CLI（第 6 个状态源） | 新增 `Resources/agent-hooks/<agent>-wrapper.sh`（+ 扩展/hook 文件）→ `agent-functions.{zsh,bash,fish}` 注入 → `agent-hook.py` 的 `resume_command_for` / `describe_tool` → `Models/HookMessage.swift`（`Agent` case + `fromResumeCommand` 前缀）→ `Models/QuickAction.swift`（侧边栏按钮 + `Assets.xcassets` 图标）→ `Settings/Sections/AgentsSectionView.swift`（两行开关）→ `Models/AgentPreferences.swift`（老用户默认开）→ `Localizable.xcstrings` + `Localization/L10n.swift` → `docs/agent-hooks.md` + `docs/settings-reference.md` |
 
 ## Agent Permissions
 

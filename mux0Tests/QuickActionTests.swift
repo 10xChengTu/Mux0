@@ -1,11 +1,12 @@
+import AppKit
 import XCTest
 @testable import mux0
 
 final class QuickActionTests: XCTestCase {
-    func test_builtinAllCases_haveFourEntries() {
-        XCTAssertEqual(BuiltinQuickAction.allCases.count, 4)
+    func test_builtinAllCases_haveSixEntries() {
+        XCTAssertEqual(BuiltinQuickAction.allCases.count, 6)
         XCTAssertEqual(Set(BuiltinQuickAction.allCases.map(\.id)),
-                       Set(["gitui", "claude", "codex", "opencode"]))
+                       Set(["gitui", "claude", "codex", "opencode", "pi", "grok"]))
     }
 
     func test_builtinDefaultCommands_matchId() {
@@ -13,6 +14,17 @@ final class QuickActionTests: XCTestCase {
         XCTAssertEqual(BuiltinQuickAction.claude.defaultCommand, "claude")
         XCTAssertEqual(BuiltinQuickAction.codex.defaultCommand, "codex")
         XCTAssertEqual(BuiltinQuickAction.opencode.defaultCommand, "opencode")
+        XCTAssertEqual(BuiltinQuickAction.pi.defaultCommand, "pi")
+        XCTAssertEqual(BuiltinQuickAction.grok.defaultCommand, "grok")
+    }
+
+    func test_builtinAgentIds_matchHookMessageAgentRawValues() {
+        // StartupCommandResolver maps a Quick Action id straight to
+        // HookMessage.Agent(rawValue:), so the two namespaces must agree.
+        for agent in HookMessage.Agent.allCases {
+            XCTAssertNotNil(BuiltinQuickAction.from(id: agent.rawValue),
+                            "builtin quick action missing for agent \(agent.rawValue)")
+        }
     }
 
     func test_customAction_codableRoundTrip() throws {
@@ -27,6 +39,20 @@ final class QuickActionTests: XCTestCase {
             XCTFail("gitui should be sfSymbol"); return
         }
         XCTAssertEqual(name, "arrow.branch")
+    }
+
+    func test_quickActionIcon_assetForPiAndGrok() {
+        guard case .asset(let piName) = BuiltinQuickAction.pi.iconSource,
+              case .asset(let grokName) = BuiltinQuickAction.grok.iconSource else {
+            XCTFail("pi / grok should be asset icons"); return
+        }
+        XCTAssertEqual(piName, "quick-action-pi")
+        XCTAssertEqual(grokName, "quick-action-grok")
+        // The asset catalog must actually ship both, else the sidebar renders an
+        // empty button and nothing fails at compile time.
+        for name in [piName, grokName] {
+            XCTAssertNotNil(NSImage(named: name), "missing asset \(name) in Assets.xcassets")
+        }
     }
 
     func test_quickActionIcon_assetForClaude() {

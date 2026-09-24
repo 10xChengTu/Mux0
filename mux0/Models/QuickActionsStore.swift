@@ -62,6 +62,11 @@ final class QuickActionsStore {
     private static let kEnabled = "mux0-quickactions-enabled"
     private static let kCustom  = "mux0-quickactions-custom"
     private static let kOrder   = "mux0-quickactions-order"
+    /// Builtins this install has already been shown. Distinguishes "shipped in a
+    /// newer app version" from "always known", which is what lets a newly added
+    /// builtin be switched on for users who already use the feature without
+    /// re-enabling one the user deliberately turned off (see `load()` step 4b).
+    private static let kSeen    = "mux0-quickactions-seen"
     private static func kBuiltinCmd(_ id: QuickActionId) -> String {
         "mux0-quickactions-builtin-command-\(id)"
     }
@@ -92,11 +97,15 @@ final class QuickActionsStore {
         }
 
         // 3. orderedIds — load from new key, or migrate from legacy snapshot.
+        var savedOrder: [QuickActionId] = []
+        var legacySnapshot = false
         if let raw = settings.get(Self.kOrder),
            let data = raw.data(using: .utf8),
            let decoded = try? JSONDecoder().decode([QuickActionId].self, from: data) {
             orderedIds = decoded
+            savedOrder = decoded
         } else {
+            legacySnapshot = true
             // Legacy migration: take the snapshot of the OLD fullList logic
             // (enabled order, then disabled built-ins in allCases order, then
             // disabled customs in customActions array order). After this
@@ -127,6 +136,47 @@ final class QuickActionsStore {
             orderedIds.append(custom.id); seen.insert(custom.id)
         }
 
+        // 4b. Opt-in migration for builtins shipped in a NEWER app version.
+        //
+        // Without this, a user upgrading from e.g. 0.8.4 to 0.8.5 gets pi / grok
+        // appended to `orderedIds` but NOT into `enabledSet`, so the new sidebar
+        // buttons are invisible until they discover Settings → Quick Actions —
+        // which reads as "the feature didn't ship". Policy:
+        //   • Only ids that this install has never seen before qualify, tracked
+        //     in `kSeen`. A builtin the user switched OFF stays OFF forever,
+        //     because the next launch finds it in `kSeen`.
+        //   • Only users who already enable at least one action get the upgrade.
+        //     A brand-new install enables nothing by default (see
+        //     QuickActionsStoreTests.test_defaultState_allEmpty), and auto-
+        //     enabling here would break that promise and put unknown CLIs in the
+        //     sidebar of someone who never asked for Quick Actions.
+        //   • A legacy config (only `kEnabled`, no `kOrder`) predates this
+        //     scheme, so everything known at that point is seeded as seen —
+        //     otherwise migrating it would enable every builtin at once.
+        var knownSeen: Set<QuickActionId> = []
+        if let raw = settings.get(Self.kSeen),
+           let data = raw.data(using: .utf8),
+           let decoded = try? JSONDecoder().decode([QuickActionId].self, from: data) {
+            knownSeen = Set(decoded)
+        } else if legacySnapshot {
+            knownSeen = Set(BuiltinQuickAction.allCases.map(\.id))
+        } else {
+            knownSeen = Set(savedOrder)
+        }
+
+        let freshBuiltins = BuiltinQuickAction.allCases
+            .map(\.id)
+            .filter { !knownSeen.contains($0) }
+        var autoEnabled: [QuickActionId] = []
+        if !enabledSet.isEmpty {
+            for id in freshBuiltins where !enabledSet.contains(id) {
+                enabledSet.insert(id)
+                autoEnabled.append(id)
+            }
+        }
+        saveSeen(unioning: knownSeen)
+        if !autoEnabled.isEmpty { saveEnabled() }
+
         // 5. builtin command overrides.
         for builtin in BuiltinQuickAction.allCases {
             if let raw = settings.get(Self.kBuiltinCmd(builtin.id)),
@@ -139,6 +189,27 @@ final class QuickActionsStore {
         // first load (so the next launch reads `kOrder` directly) and is a
         // no-op (idempotent) when `kOrder` already matches.
         saveOrder()
+    }
+
+    /// Persist the union of previously-seen ids and everything the store knows
+    /// now, so a builtin that ships later is recognised as "new" exactly once.
+    private func saveSeen(unioning previous: Set<QuickActionId>) {
+        var ids = previous
+        ids.formUnion(BuiltinQuickAction.allCases.map(\.id))
+        ids.formUnion(orderedIds)
+        // Stable order: allCases first (the shipped order), then the rest, so
+        // the config file stays readable and diff-friendly.
+        var ordered: [QuickActionId] = []
+        var rest = ids
+        for builtin in BuiltinQuickAction.allCases where rest.remove(builtin.id) != nil {
+            ordered.append(builtin.id)
+        }
+        ordered.append(contentsOf: orderedIds.filter { rest.remove($0) != nil })
+        ordered.append(contentsOf: customActions.map(\.id).filter { rest.remove($0) != nil })
+        ordered.append(contentsOf: rest.sorted())
+        guard let data = try? JSONEncoder().encode(ordered),
+              let raw = String(data: data, encoding: .utf8) else { return }
+        settings.set(Self.kSeen, raw)
     }
 
     /// Reload from settings — used when the underlying mux0 config file

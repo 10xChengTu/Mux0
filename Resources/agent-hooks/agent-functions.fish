@@ -13,3 +13,11 @@ end
 function codex
     command "$MUX0_AGENT_HOOKS_DIR/codex-wrapper.sh" $argv
 end
+
+function pi
+    command "$MUX0_AGENT_HOOKS_DIR/pi-wrapper.sh" $argv
+end
+
+function grok
+    command "$MUX0_AGENT_HOOKS_DIR/grok-wrapper.sh" $argv
+end

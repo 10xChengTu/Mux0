@@ -9,9 +9,24 @@
 # a recognisable hooks.state into $CODEX_HOME and asserting the file ends
 # up in the user's CODEX_HOME after the wrapper returns.
 
+# This test needs bash (see shebang). Under zsh `${BASH_SOURCE[0]}` is empty, so
+# `zsh codex_wrapper_cleanup.sh` used to resolve the wrapper under test relative
+# to the CWD and exit 127 with no message. Re-exec under bash when another shell
+# started us. The eval'd `${(%):-%x}` covers `zsh -c 'source …'`, where $0 is the
+# shell rather than the script (eval keeps that zsh-only expansion out of bash's
+# parser).
+if [ -z "${BASH_VERSION:-}" ]; then
+    _mux0_self="$0"
+    if [ -n "${ZSH_VERSION:-}" ]; then
+        eval '_mux0_zself="${(%):-%x}"' 2>/dev/null || _mux0_zself=""
+        if [ -f "$_mux0_zself" ]; then _mux0_self="$_mux0_zself"; fi
+    fi
+    exec bash "$_mux0_self" "$@"
+fi
+
 set -e
 
-HERE="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
+HERE="$(cd "$(dirname "${BASH_SOURCE[0]:-$0}")" && pwd)"
 SCRIPT_DIR="$HERE/.."
 WRAPPER="$SCRIPT_DIR/codex-wrapper.sh"
 

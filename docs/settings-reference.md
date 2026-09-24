@@ -62,12 +62,14 @@ mux0 的设置面板分成七个 tab：**Appearance（外观）**、**Font（字
 
 ## 5. Quick Actions
 
-控制顶栏 Quick Actions Bar 的内容：哪些快捷操作启用、按什么顺序排、内置 action 的命令是否被用户覆盖、有哪些自定义条目。整组数据通过下面三个 key 持久化在 mux0 config，UI 在 `Settings → Quick Actions` 下统一编辑。
+控制顶栏 Quick Actions Bar 的内容：哪些快捷操作启用、按什么顺序排、内置 action 的命令是否被用户覆盖、有哪些自定义条目。整组数据通过下面几个 key 持久化在 mux0 config，UI 在 `Settings → Quick Actions` 下统一编辑。
 
 | 设置项 | config key | 类型 | 默认值 | 说明 |
 |---|---|---|---|---|
 | Enabled & order | `mux0-quickactions-enabled` | JSON 数组 | `[]` | 启用且按显示顺序排列的 quick action id。同时承载启用集合与启用集合内部顺序。 |
-| Builtin command override | `mux0-quickactions-builtin-command-<id>` | string | （空 = 默认命令） | 内置 action 的命令覆盖。`<id>` ∈ `{gitui, claude, codex, opencode}`。空字符串等同删除该覆盖。 |
+| 显示顺序 | `mux0-quickactions-order` | JSON 数组 | 内置 id 按 `BuiltinQuickAction.allCases` 顺序 | 全部已知 id（内置 + 自定义）的视觉顺序，Settings 列表与顶栏共用；只有拖拽排序 / 增删自定义条目 / 新版本追加新 id 时会变，开关启用状态不会重排它。 |
+| Builtin command override | `mux0-quickactions-builtin-command-<id>` | string | （空 = 默认命令） | 内置 action 的命令覆盖。`<id>` ∈ `{gitui, claude, codex, opencode, pi, grok}`。空字符串等同删除该覆盖。 |
+| 已见过的内置 id | `mux0-quickactions-seen` | JSON 数组 | 首次加载时写入 | 记录本机已经展示过哪些 builtin id，用来区分「新版本新增的 builtin」和「一直在的 builtin」。0.8.5 首次加载时，若用户**已经启用了至少一个** quick action，则自动启用新增的 `pi` / `grok`；用户之后手动关掉就不会再被打开（因为已进 seen）。全新安装（enabled 为空）不会被自动启用任何东西。Reset 会清掉这个 key。 |
 | Custom actions | `mux0-quickactions-custom` | JSON 数组 | `[]` | 自定义 action 列表。`[{"id":"<uuid>","name":"...","command":"..."}]`。 |
 
 命令字段的语义：传给 shell 直接执行的字符串（不含 `\n`，由 ghostty 启动逻辑追加）。可以包含 shell 解释的语法，例如 `gitui`、`claude --resume`、`tig log`。
@@ -89,6 +91,10 @@ mux0 的设置面板分成七个 tab：**Appearance（外观）**、**Font（字
 | Claude Code | `mux0-agent-status-claude` | `false` | 开启后，Claude Code wrapper 发来的 running / idle / needsInput / turn-finished 事件会显示在对应终端的状态图标上。关闭则所有 claude 事件被监听层静默丢弃。 |
 | Codex | `mux0-agent-status-codex` | `false` | 同上，对应 Codex wrapper。Codex 需要用户在 `~/.codex/config.toml` 中显式打开 `[features] codex_hooks = true`，否则只有 turn 完成事件，见 `docs/agent-hooks.md#codex-的特殊规则`。 |
 | OpenCode | `mux0-agent-status-opencode` | `false` | 同上，对应 OpenCode 插件。 |
+| pi | `mux0-agent-status-pi` | `false`（从 ≤0.8.4 升级且已开过任一 agent 时为 `true`） | 同上，对应 pi wrapper + `pi -e` 扩展。pi 没有权限提示，所以只有工具/turn 事件，`needsInput` 仅当某个扩展弹了 `ctx.ui.confirm/select/input` 时才出现，见 `docs/agent-hooks.md#pi-的特殊规则按进程加载扩展`。 |
+| Grok CLI | `mux0-agent-status-grok` | `false`（同上） | 同上，对应 grok wrapper（`GROK_HOME` overlay）。见 `docs/agent-hooks.md#grok-的特殊规则grok_home-overlay-与-folder-trust`。 |
+
+**升级迁移**：`mux0-agent-status-seen` 记录本机已展示过的 agent。首次运行 0.8.5 时，如果配置里已经有**任意一个** agent 的通知开关为 ON，则 `pi` / `grok` 两个开关自动置 ON（否则用户会以为新接入没生效）；全新安装仍然是全关。用户之后手动关掉，不会被再次打开。见 `Models/AgentPreferences.swift`。
 
 ### 6.2 Resume on Launch
 
@@ -99,13 +105,15 @@ mux0 的设置面板分成七个 tab：**Appearance（外观）**、**Font（字
 | Claude Code | `mux0-agent-resume-claude` | `false` | 开启后，每次 `UserPromptSubmit` 都把 `claude --resume <session_id>` 落盘；关闭时 `HookDispatcher` 直接丢弃 `resumeCommand` 字段，且立刻调 `WorkspaceStore.clearResumePrefills(forAgent: .claude)` 把已存的 claude 命令全清空。 |
 | OpenCode | `mux0-agent-resume-opencode` | `false` | 同上，对应 OpenCode（命令形态 `opencode --session <id>`）。session id 由 `mux0-status.js` plugin 在 `tool.execute.before` 的 `input.sessionID` 拿到，每次 tool 调用都附；mux0 端 equality guard 自动 dedup。 |
 | Codex | `mux0-agent-resume-codex` | `false` | 同上，对应 Codex。需要先开 6.1 里的 Codex 通知开关（hook 才会跑）。 |
+| pi | `mux0-agent-resume-pi` | `false` | 同上，对应 pi（命令形态 `pi --session <id>`）。session id 由 `pi-extension/mux0-status.js` 从 `ctx.sessionManager.getSessionId()` 取，`before_agent_start` 时附在 `running` 事件上。 |
+| Grok CLI | `mux0-agent-resume-grok` | `false` | 同上，对应 grok（命令形态 `grok --resume <id>`）。`--resume` 接受 session id 或标题，mux0 落盘的是 id 形态。 |
 
-**扩展性**：将来新增 code agent 时，`HookMessage.Agent` 枚举加一个 case；Notifications 分组自动多出一行 Toggle（managed keys + 行列表均由 `.allCases` 派生）。Resume 分组里所有 `supportsResume` 返回 true 的 agent 都会渲染，所以新 agent 默认 supportsResume = false，等到把 wrapper 端的 `resume_command_for` / plugin 接好且 `Agent.supportsResume` 改成 true = 自动出现在 UI。
+**扩展性**：将来新增 code agent 时，`HookMessage.Agent` 枚举加一个 case → `managedKeys` 与 `clearResumePrefills` 的扫描集合自动跟进（均由 `.allCases` 派生）；但**两个分组里的 Toggle 行要手写**（`Form(.grouped)` 下第三个 `ForEach` 行会被甩出卡片的布局 bug，见 `AgentsSectionView` 注释），并在 `Localizable.xcstrings` + `L10n.swift` 补 `settings.agents.<id>` 文案。`supportsResume` 返回 true 的 agent 才会出现在 Resume 分组。完整清单见 CLAUDE.md 的「接入一个新的 agent CLI」。
 
 **行为细节**：
 - Notifications 全关 → sidebar / tab 的状态图标列整列折叠（等同于该功能被禁用）。
 - Notifications 某 agent 开关 ON → OFF：已落盘到 `TerminalStatusStore` 的状态会残留（不再收到后续事件也无法自动清理）；新事件被丢弃。这是已知边缘场景。
-- Resume ON → OFF 立刻按 prefix（`claude ` / `codex `）扫所有 workspace 的 pendingPrefills，把对应 agent 的旧值清空——保证关 toggle 的下一次启动不会再 auto-resume。
+- Resume ON → OFF 立刻按 prefix（`claude ` / `codex ` / `opencode ` / `pi ` / `grok `）扫所有 workspace 的 pendingPrefills，把对应 agent 的旧值清空——保证关 toggle 的下一次启动不会再 auto-resume。
 - 关闭一个跑过 agent 的 tab / pane 时，`closeTerminal` / `removeTab` 会同步把对应 terminalId 的 pendingPrefill 一起删掉，避免 UserDefaults 里堆积已死 UUID 的命令。
 - 老 key `mux0-status-indicators`：2026-04 之前存在的主开关。从代码中移除；如果仍保留在你的 mux0 config 文件里，mux0 不再读取，手动删除即可。
 

@@ -76,6 +76,7 @@
 		A88A524A7FCB090037E7DB2C /* TerminalPwdStoreTests.swift in Sources */ = {isa = PBXBuildFile; fileRef = 821BF7B943BBA8650E8769A4 /* TerminalPwdStoreTests.swift */; };
 		AAED11F9F7573A5B6BA61309 /* HookMessage.swift in Sources */ = {isa = PBXBuildFile; fileRef = FE45556476624565D24827DD /* HookMessage.swift */; };
 		AD0E26BEE5234D9F2F9146C7 /* QuickActionsSectionView.swift in Sources */ = {isa = PBXBuildFile; fileRef = 6CB172F8B41CDB874661F90C /* QuickActionsSectionView.swift */; };
+		B10D0DBA414A7E224E9F1473 /* AgentPreferencesTests.swift in Sources */ = {isa = PBXBuildFile; fileRef = 4123EFCE44608BEB2719C7CF /* AgentPreferencesTests.swift */; };
 		B10F416FF03BF20B04C7BD74 /* ThemePickerView.swift in Sources */ = {isa = PBXBuildFile; fileRef = CD1034A9A7330C528BE1EFE1 /* ThemePickerView.swift */; };
 		B146356665E4C8B072624939 /* ShellSectionView.swift in Sources */ = {isa = PBXBuildFile; fileRef = 47A19B43AC5D68C431FBB96C /* ShellSectionView.swift */; };
 		B35766C44967278D296440C0 /* HookMessageTests.swift in Sources */ = {isa = PBXBuildFile; fileRef = 399D6E84F70926B48FDB254D /* HookMessageTests.swift */; };
@@ -98,6 +99,7 @@
 		D6D87B2845DEA8EE93371EEB /* PlaceholderTests.swift in Sources */ = {isa = PBXBuildFile; fileRef = 500DC5FBA84EA82E83A79C79 /* PlaceholderTests.swift */; };
 		D78733DF393F151691E97AF0 /* HookSocketListenerTests.swift in Sources */ = {isa = PBXBuildFile; fileRef = 6172CA48D21FC80F732CB23A /* HookSocketListenerTests.swift */; };
 		D795617034323AC803958EEE /* StatusIndicatorGateTests.swift in Sources */ = {isa = PBXBuildFile; fileRef = CC7EFDC8D28B1681B068CE01 /* StatusIndicatorGateTests.swift */; };
+		D9CA81153FC08A96B3AB9DF6 /* AgentPreferences.swift in Sources */ = {isa = PBXBuildFile; fileRef = BA217BD45ECC7D6EC959323A /* AgentPreferences.swift */; };
 		DB016E38F7C00CC8547F99A6 /* ThemeManagerTests.swift in Sources */ = {isa = PBXBuildFile; fileRef = 70BBA11237B9EA46D6D3FFD6 /* ThemeManagerTests.swift */; };
 		DB838A8F31BA5F87C13A1CC3 /* SurfaceScrollView.swift in Sources */ = {isa = PBXBuildFile; fileRef = 5DEC02C6A3912B9FFA44F2E2 /* SurfaceScrollView.swift */; };
 		DFBA414A23A2A1292823B9BD /* QuickActionRowView.swift in Sources */ = {isa = PBXBuildFile; fileRef = 2D473C2B5155F879CB722E99 /* QuickActionRowView.swift */; };
@@ -142,6 +144,7 @@
 		399D6E84F70926B48FDB254D /* HookMessageTests.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = HookMessageTests.swift; sourceTree = "<group>"; };
 		3CB4EED723871B4BD4813083 /* TerminalStatusTests.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = TerminalStatusTests.swift; sourceTree = "<group>"; };
 		3E0D78F10161EDE7FB6C36E5 /* mux0.entitlements */ = {isa = PBXFileReference; lastKnownFileType = text.plist.entitlements; path = mux0.entitlements; sourceTree = "<group>"; };
+		4123EFCE44608BEB2719C7CF /* AgentPreferencesTests.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = AgentPreferencesTests.swift; sourceTree = "<group>"; };
 		47A19B43AC5D68C431FBB96C /* ShellSectionView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = ShellSectionView.swift; sourceTree = "<group>"; };
 		4AB9513EB0F425DDEDAFA246 /* L10nSmokeTests.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = L10nSmokeTests.swift; sourceTree = "<group>"; };
 		4BE3C12A39B918898C929585 /* SettingsView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = SettingsView.swift; sourceTree = "<group>"; };
@@ -168,7 +171,6 @@
 		81CD12FFB88B2BE6DFCE9F2A /* UpdateState.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = UpdateState.swift; sourceTree = "<group>"; };
 		821BF7B943BBA8650E8769A4 /* TerminalPwdStoreTests.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = TerminalPwdStoreTests.swift; sourceTree = "<group>"; };
 		829BFF63567D2305C599651B /* NotificationNamesTests.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = NotificationNamesTests.swift; sourceTree = "<group>"; };
-		830B2ED6AC65D014EA0D7276 /* Config.xcconfig */ = {isa = PBXFileReference; lastKnownFileType = text.xcconfig; path = Config.xcconfig; sourceTree = "<group>"; };
 		84326382AC1806C28810AF31 /* TabContentView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = TabContentView.swift; sourceTree = "<group>"; };
 		880E1BD0DC5DE3BD5E58FDAC /* WorkspaceListView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = WorkspaceListView.swift; sourceTree = "<group>"; };
 		8B5435F2C6AADD54DE910072 /* QuickActionTests.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = QuickActionTests.swift; sourceTree = "<group>"; };
@@ -190,6 +192,7 @@
 		B0F181545CE8CDC275225D8B /* Metal.framework */ = {isa = PBXFileReference; lastKnownFileType = wrapper.framework; name = Metal.framework; path = System/Library/Frameworks/Metal.framework; sourceTree = SDKROOT; };
 		B55F0C6038D23FE4472512A6 /* SidebarListBridge.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = SidebarListBridge.swift; sourceTree = "<group>"; };
 		B7234B6CDBE280C1A2171673 /* Localizable.xcstrings */ = {isa = PBXFileReference; lastKnownFileType = text.json.xcstrings; path = Localizable.xcstrings; sourceTree = "<group>"; };
+		BA217BD45ECC7D6EC959323A /* AgentPreferences.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = AgentPreferences.swift; sourceTree = "<group>"; };
 		BFD4363754637D42A2211087 /* MetadataRefresherOnRefreshTests.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = MetadataRefresherOnRefreshTests.swift; sourceTree = "<group>"; };
 		C00418F118F44EEF00CFBDE8 /* FontPickerView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = FontPickerView.swift; sourceTree = "<group>"; };
 		C3A3CB55DB28818330806B72 /* UpdateStore.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = UpdateStore.swift; sourceTree = "<group>"; };
@@ -212,6 +215,7 @@
 		EA1BC853B2A74058D4E3EDC4 /* LanguageStoreTests.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = LanguageStoreTests.swift; sourceTree = "<group>"; };
 		EC3751AC033CB9420517920E /* TerminalTabDisplayTitleTests.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = TerminalTabDisplayTitleTests.swift; sourceTree = "<group>"; };
 		ED0076717C7D5AA4FF63A948 /* TerminalPwdStore.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = TerminalPwdStore.swift; sourceTree = "<group>"; };
+		ED94B3F76A5B3DAFD2F00CBF /* Config.xcconfig */ = {isa = PBXFileReference; lastKnownFileType = text.xcconfig; path = Config.xcconfig; sourceTree = "<group>"; };
 		EE58F1D0F1F79A6A03712FD9 /* DesignTokens.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = DesignTokens.swift; sourceTree = "<group>"; };
 		EF52B8A70429B8C4F21259E8 /* TabBarView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = TabBarView.swift; sourceTree = "<group>"; };
 		EFFA7A6778F19840BCAE2246 /* AppTheme.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = AppTheme.swift; sourceTree = "<group>"; };
@@ -244,6 +248,15 @@
 /* End PBXFrameworksBuildPhase section */
 
 /* Begin PBXGroup section */
+		0EE626E8C426419B967AADD2 /* Mux0 */ = {
+			isa = PBXGroup;
+			children = (
+				ED94B3F76A5B3DAFD2F00CBF /* Config.xcconfig */,
+			);
+			name = Mux0;
+			path = .;
+			sourceTree = "<group>";
+		};
 		2FB96E5465A56EFDD3EE380E /* Products */ = {
 			isa = PBXGroup;
 			children = (
@@ -251,15 +264,6 @@
 				F4B27139F1EE49A3F3942275 /* mux0Tests.xctest */,
 			);
 			name = Products;
-			sourceTree = "<group>";
-		};
-		398EC5E5F6A5EC3699262CD6 /* MUX0 */ = {
-			isa = PBXGroup;
-			children = (
-				830B2ED6AC65D014EA0D7276 /* Config.xcconfig */,
-			);
-			name = MUX0;
-			path = .;
 			sourceTree = "<group>";
 		};
 		4F8B81D2162BAF843BC15DA4 /* Components */ = {
@@ -295,7 +299,7 @@
 			isa = PBXGroup;
 			children = (
 				8F879EC56F1D67764C5600D3 /* mux0 */,
-				398EC5E5F6A5EC3699262CD6 /* MUX0 */,
+				0EE626E8C426419B967AADD2 /* Mux0 */,
 				AA4BB6C5568DC3C2B9738AAB /* mux0Tests */,
 				E888840EACC9BB25B4089E7E /* Frameworks */,
 				2FB96E5465A56EFDD3EE380E /* Products */,
@@ -386,6 +390,7 @@
 		AA4BB6C5568DC3C2B9738AAB /* mux0Tests */ = {
 			isa = PBXGroup;
 			children = (
+				4123EFCE44608BEB2719C7CF /* AgentPreferencesTests.swift */,
 				E7EFC41E34E76ABACF864F59 /* GhosttyBridgeCommandTests.swift */,
 				6E913A692A8A268E63CF1022 /* GhosttyBridgeOpenURLTests.swift */,
 				F4D2B9EDC6D541F4F4CBB258 /* GhosttyConfigReaderTests.swift */,
@@ -467,6 +472,7 @@
 		F0B4653F0A41B8CAC8F7439B /* Models */ = {
 			isa = PBXGroup;
 			children = (
+				BA217BD45ECC7D6EC959323A /* AgentPreferences.swift */,
 				7B93B019349B80C08FDBBF7D /* HookDispatcher.swift */,
 				FE45556476624565D24827DD /* HookMessage.swift */,
 				E6C6368E8FB6C5EF64A42FE9 /* HookSocketListener.swift */,
@@ -632,6 +638,7 @@
 			isa = PBXSourcesBuildPhase;
 			buildActionMask = 2147483647;
 			files = (
+				B10D0DBA414A7E224E9F1473 /* AgentPreferencesTests.swift in Sources */,
 				D6C6838185488C7EDEA33E97 /* GhosttyBridgeCommandTests.swift in Sources */,
 				1CE921B28990EA64082901F6 /* GhosttyBridgeOpenURLTests.swift in Sources */,
 				680198B89C91F26FB496495B /* GhosttyConfigReaderTests.swift in Sources */,
@@ -671,6 +678,7 @@
 			isa = PBXSourcesBuildPhase;
 			buildActionMask = 2147483647;
 			files = (
+				D9CA81153FC08A96B3AB9DF6 /* AgentPreferences.swift in Sources */,
 				7BB3ED2855848925E919A2EE /* AgentsSectionView.swift in Sources */,
 				998667CB887948D2CE177F45 /* AppTheme.swift in Sources */,
 				368CDF074D86E31677DD944E /* AppearanceSectionView.swift in Sources */,
@@ -806,24 +814,25 @@
 		};
 		BED404A181C0A175EED09CF6 /* Release */ = {
 			isa = XCBuildConfiguration;
-			baseConfigurationReference = 830B2ED6AC65D014EA0D7276 /* Config.xcconfig */;
+			baseConfigurationReference = ED94B3F76A5B3DAFD2F00CBF /* Config.xcconfig */;
 			buildSettings = {
 				ASSETCATALOG_COMPILER_APPICON_NAME = AppIcon;
 				CODE_SIGN_ENTITLEMENTS = mux0/mux0.entitlements;
 				CODE_SIGN_STYLE = Automatic;
 				COMBINE_HIDPI_IMAGES = YES;
-				CURRENT_PROJECT_VERSION = 3;
+				CURRENT_PROJECT_VERSION = 5;
 				ENABLE_HARDENED_RUNTIME = YES;
 				HEADER_SEARCH_PATHS = "$(PROJECT_DIR)/Vendor/ghostty/include";
 				INFOPLIST_FILE = mux0/Info.plist;
 				LD_RUNPATH_SEARCH_PATHS = "@executable_path/../Frameworks";
 				LIBRARY_SEARCH_PATHS = "$(PROJECT_DIR)/Vendor/ghostty/lib";
 				MACOSX_DEPLOYMENT_TARGET = 14.0;
-				MARKETING_VERSION = 0.8.2;
+				MARKETING_VERSION = 0.8.5;
 				MUX0_DISPLAY_NAME = Mux0;
 				OTHER_LDFLAGS = "-lghostty -lc++ -framework Carbon";
 				PRODUCT_BUNDLE_IDENTIFIER = com.mux0.app;
 				SDKROOT = macosx;
+				SWIFT_ACTIVE_COMPILATION_CONDITIONS = "$(inherited) MUX0_UPDATES_DISABLED";
 				SWIFT_OBJC_BRIDGING_HEADER = "mux0/Ghostty/ghostty-bridging-header.h";
 			};
 			name = Release;
@@ -931,20 +940,20 @@
 		};
 		DEF80CCDBF9C05887D16217E /* Debug */ = {
 			isa = XCBuildConfiguration;
-			baseConfigurationReference = 830B2ED6AC65D014EA0D7276 /* Config.xcconfig */;
+			baseConfigurationReference = ED94B3F76A5B3DAFD2F00CBF /* Config.xcconfig */;
 			buildSettings = {
 				ASSETCATALOG_COMPILER_APPICON_NAME = AppIcon;
 				CODE_SIGN_ENTITLEMENTS = mux0/mux0.entitlements;
 				CODE_SIGN_STYLE = Automatic;
 				COMBINE_HIDPI_IMAGES = YES;
-				CURRENT_PROJECT_VERSION = 3;
+				CURRENT_PROJECT_VERSION = 5;
 				ENABLE_HARDENED_RUNTIME = YES;
 				HEADER_SEARCH_PATHS = "$(PROJECT_DIR)/Vendor/ghostty/include";
 				INFOPLIST_FILE = mux0/Info.plist;
 				LD_RUNPATH_SEARCH_PATHS = "@executable_path/../Frameworks";
 				LIBRARY_SEARCH_PATHS = "$(PROJECT_DIR)/Vendor/ghostty/lib";
 				MACOSX_DEPLOYMENT_TARGET = 14.0;
-				MARKETING_VERSION = 0.8.2;
+				MARKETING_VERSION = 0.8.5;
 				MUX0_DISPLAY_NAME = "Mux0 Dev";
 				OTHER_LDFLAGS = "-lghostty -lc++ -framework Carbon";
 				PRODUCT_BUNDLE_IDENTIFIER = com.mux0.app.dev;

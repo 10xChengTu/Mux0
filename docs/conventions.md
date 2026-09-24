@@ -82,6 +82,24 @@ store.renameWorkspace(id: id, to: "new name")
 
 不引入 `order: Int` 字段——顺序完全靠数组索引 + JSON 持久化。
 
+## Shell 脚本规范
+
+`Resources/agent-hooks/` 与 `scripts/` 下的 bash 脚本跑在用户的机器上，环变量不受我们控制：
+
+- **不要把 `ls` 的输出当数据。** 用户环境里有 `CLICOLOR_FORCE=1` 时（CI runner 和不少 dotfile 会这么设），
+  `ls` 会把 ANSI 转义码喷进输出，目录名变成 `\033[34mmux0-0.8.2-backup.app`，于是
+  `[ -e "$p" ]` / `rm -rf "$p"` 全部打在不存在的路径上——不报错，只是什么都不做。
+  枚举用 **glob**（`for f in dir/*`）或 `find … -print0 | while IFS= read -r -d ''`；
+  要按时间排就用 `find … -exec stat -f '%m %N' {} + | sort -n | sed 's/^[0-9][0-9]* //'`。
+  （只靠 `env -u CLICOLOR_FORCE` 把测试跑绿不算修：用户的 shell 不跟着你 `env -u`。）
+- **被别的 shell 直接启动要能活。** macOS 登录 shell 是 zsh，而 zsh 下 `${BASH_SOURCE[0]}` 是空的，
+  路径会塌到 CWD。要么用 `${BASH_SOURCE[0]:-$0}`，要么在脚本开头「非 bash 启动就 `exec bash` 自己」
+  （测试脚本统一用后者）。
+- **测试要打印哨兵**（`SMOKE OK` / `GROK_RESTORE_OK` / …），`tests/run-all.sh` 除了退出码还必需要到它，
+  防「测试悄悄不再断言」也算通过。
+- **失败路径也要收尾。** 后台 server / 临时目录用 `trap … EXIT` 清；`grok-wrapper.sh` 那类需要
+  在退出时回写状态的脚本不能 `exec` 掉自己（会吃掉 EXIT trap）。
+
 ## Git 规范
 
 ```
@@ -116,3 +134,6 @@ scope: sidebar | tabcontent | settings | theme | ghostty | models | metadata | b
 - 测试方法名：`test_<scenario>_<expectedOutcome>()` 或 `test<WhatAndWhy>()`
 - 不 mock WorkspaceStore（直接用 `init(persistenceKey: "test.\(UUID())")` 隔离）
 - libghostty 相关的集成测试标注 `// Integration: requires libghostty`，可在 CI 跳过
+- `Resources/agent-hooks/` 那一层用 `bash Resources/agent-hooks/tests/run-all.sh` 跑：它把 pytest 和每个
+  shell 测试在 **bash 与 zsh 下各跑一遗**，并且**强制 `CLICOLOR_FORCE=1`**（见上面 Shell 脚本规范），
+  不要只跑 `bash x.sh` 就宣布全绿，也不要靠 `env -u CLICOLOR_FORCE` 跑绿

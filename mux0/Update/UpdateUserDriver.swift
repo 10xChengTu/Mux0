@@ -1,4 +1,4 @@
-#if !DEBUG
+#if !DEBUG && !MUX0_UPDATES_DISABLED
 import Foundation
 import Sparkle
 
@@ -15,7 +15,7 @@ import Sparkle
 ///   → showDownloadDidStartExtractingUpdate → showReady(toInstallAndRelaunch)
 ///   → Sparkle quits + relaunches.
 ///
-/// Compiled only in Release (`#if !DEBUG`) — Debug has no Sparkle in scope.
+/// Compiled only in Release (`#if !DEBUG && !MUX0_UPDATES_DISABLED`) — Debug has no Sparkle in scope.
 @MainActor
 final class UpdateUserDriver: NSObject, SPUUserDriver {
 

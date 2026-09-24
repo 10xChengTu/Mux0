@@ -7,14 +7,14 @@
   <h1>Mux0</h1>
 </div>
 
-macOS 终端应用，标签页 + 分割窗格，侧边栏实时展示 AI Agent 的运行状态。按项目组织终端、自由切分窗格，一眼看清 Claude Code / OpenCode / Codex 是在跑、空闲、还是等你输入。
+macOS 终端应用，标签页 + 分割窗格，侧边栏实时展示 AI Agent 的运行状态。按项目组织终端、自由切分窗格，一眼看清 Claude Code / OpenCode / Codex / pi / Grok 是在跑、空闲、还是等你输入。
 
 由 [ghostty](https://ghostty.org) 引擎驱动，Metal GPU 渲染。中英双语 UI。
 
 ## 功能特性
 
 - **Workspace → Tab → Split 三层结构** — 按项目组织终端。每个 workspace 有自己的 tab 集合，每个 tab 是一棵分割树，可横切、竖切、拖动分隔线、用键盘切换焦点窗格。
-- **AI Agent 状态实时显示** — 侧边栏和 tab 图标实时反映 Claude Code / OpenCode / Codex 的 `running` / `idle` / `等待输入` / `结束` 状态。每个 turn 会根据工具级报错自动标记成功或失败。悬停图标可以看到当前正在跑的工具、以及 Claude / Codex 的最后一句回复摘要。
+- **AI Agent 状态实时显示** — 侧边栏和 tab 图标实时反映 Claude Code / OpenCode / Codex / pi / Grok 的 `running` / `idle` / `等待输入` / `结束` 状态。每个 turn 会根据工具级报错自动标记成功或失败。悬停图标可以看到当前正在跑的工具、以及 agent 的最后一句回复摘要（Claude / Codex / pi / Grok）。
 - **Workspace 侧边栏元信息** — 每个 workspace 行展示当前 git 分支、打开的 PR 状态、未读通知。每 5 秒后台刷新，并通过 shell 的 OSC 钩子实时更新。
 - **精致的主题** — 内置 ghostty 全部主题。可调背景透明度、窗口模糊（毛玻璃）、光标形状与闪烁、非聚焦窗格变暗。Mux0 自身的侧边栏和标签栏会随当前终端主题同步染色 —— 不会有突兀的"外壳"颜色。
 - **中英双语 UI** — 完整的英文与简体中文本地化。在 **设置 → 外观 → 语言** 中即时切换，无需重启。
@@ -74,7 +74,7 @@ macOS 终端应用，标签页 + 分割窗格，侧边栏实时展示 AI Agent �
 
 ## 在 Mux0 中使用 AI Agent
 
-Mux0 会自动钩接 Claude Code / OpenCode / Codex，让它们的运行状态实时显示在侧边栏与 tab 图标上。你不需要做任何额外配置 —— 照常运行 agent 即可。
+Mux0 会自动钩接 Claude Code / OpenCode / Codex / pi / Grok，让它们的运行状态实时显示在侧边栏与 tab 图标上。你不需要做任何额外配置 —— 照常运行 agent 即可。注入都是按进程生效的（wrapper 加一个参数，或把 CLI 指向一个私有配置目录），你自己的全局 agent 配置不会被改。
 
 ### 状态图标
 
@@ -86,7 +86,7 @@ Mux0 会自动钩接 Claude Code / OpenCode / Codex，让它们的运行状态�
 | ✕（红色叉） | 上一个 turn 里有至少一个工具报错 |
 | 灰色 | 空闲 / 没有 agent 在跑 |
 
-悬停状态图标可以看到当前正在跑的工具（例如 *"Edit Models/Foo.swift"*、*"Bash: ls"*），以及 Claude / Codex 最后一句回复摘要。
+悬停状态图标可以看到当前正在跑的工具（例如 *"Edit Models/Foo.swift"*、*"Bash: ls"*），以及 agent 最后一句回复摘要（Claude / Codex / pi / Grok）。
 
 ### 支持的 Agent
 
@@ -95,6 +95,8 @@ Mux0 会自动钩接 Claude Code / OpenCode / Codex，让它们的运行状态�
 | **Claude Code** | `claude` | 状态 + turn 摘要 + 工具详情，功能最全 |
 | **OpenCode** | `opencode` | 状态 + 工具详情。摘要暂未实现 |
 | **Codex** | `codex` | 状态是实验性的，响应可能略慢 |
+| **pi** | `pi` | 状态 + turn 摘要 + 工具详情。以 `pi -e` 扩展的形式按进程加载，不写 `~/.pi`。pi 自身没有权限确认弹窗，所以只有当某个扩展向你提问时才会出现「等待输入」 |
+| **Grok** | `grok` | 状态 + turn 摘要 + 工具详情 + 会话恢复。通过私有 `GROK_HOME` 目录注入，不动 `~/.grok`；会话照样能被 mux0 外面的 `grok --resume` 列出 |
 
 如果状态图标不更新，见下面的 [常见问题](#常见问题)。
 

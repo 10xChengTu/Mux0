@@ -36,9 +36,20 @@ targets:
         CFBundlePackageType: APPL
         NSPrincipalClass: NSApplication
         LSMinimumSystemVersion: $(MACOSX_DEPLOYMENT_TARGET)
-        SUFeedURL: https://github.com/10xChengTu/mux0/releases/latest/download/appcast.xml
+        # Fork build: the upstream appcast above belongs to the original author's
+        # repo — leaving it live would let an upstream release silently replace
+        # this fork on the user's machine. Automatic checks are off AND the feed
+        # is empty, and Release is additionally compiled with
+        # MUX0_UPDATES_DISABLED, which removes every Sparkle *call site* (no file
+        # imports it, so the binary keeps zero undefined Sparkle symbols — see
+        # mux0/Update/SparkleBridge.swift). The framework is still linked and
+        # embedded, because a package product cannot be attached to a single
+        # configuration; these two plist keys are the runtime backstop for that.
+        # SUPublicEDKey stays for a future fork-owned feed; nothing reads it while
+        # the bridge is a stub.
+        SUFeedURL: ""
         SUPublicEDKey: +u/yKnlOyk6VnbdXzn5dVaHMoCzambPTRX0dQNe6PRU=
-        SUEnableAutomaticChecks: YES
+        SUEnableAutomaticChecks: NO
         SUScheduledCheckInterval: 86400
         ITSAppUsesNonExemptEncryption: NO
         # TCC-protected folders — Mux0 hosts shells that may read/write anywhere
@@ -127,8 +138,14 @@ targets:
         CODE_SIGN_STYLE: Automatic
         CODE_SIGN_ENTITLEMENTS: mux0/mux0.entitlements
         ENABLE_HARDENED_RUNTIME: YES
-        MARKETING_VERSION: "0.8.4"
-        CURRENT_PROJECT_VERSION: "3"
+        MARKETING_VERSION: "0.8.5"
+        # 0.8.4 shipped build 3. Upstream lets CI bump this; this fork is released
+        # locally (no GitHub push), so the build number is bumped by hand.
+        # 0.8.5 was first shipped as build 4; build 5 is the same app with the
+        # install.sh that really notices a running mux0 (see docs/build.md), so a
+        # fresh download is tellable apart from the 16:49 package by its SHA256 and
+        # by CFBundleVersion. Marketing version stays 0.8.5.
+        CURRENT_PROJECT_VERSION: "5"
       configs:
         # Debug 构建用独立 bundle id + display name，让 TCC / LaunchServices /
         # UserDefaults / Sparkle 都按 bundle id 分家，开发实例跟 /Applications
@@ -139,6 +156,10 @@ targets:
         Release:
           PRODUCT_BUNDLE_IDENTIFIER: com.mux0.app
           MUX0_DISPLAY_NAME: Mux0
+          # Fork release: compiles out every Sparkle call site so the app can
+          # never reach the upstream appcast (the framework itself stays linked;
+          # see the Info.plist note above and mux0/Update/SparkleBridge.swift).
+          SWIFT_ACTIVE_COMPILATION_CONDITIONS: $(inherited) MUX0_UPDATES_DISABLED
     dependencies:
       - sdk: Metal.framework
       - sdk: QuartzCore.framework

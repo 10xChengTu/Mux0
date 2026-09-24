@@ -22,3 +22,11 @@
 \codex() {
     command "$MUX0_AGENT_HOOKS_DIR/codex-wrapper.sh" "$@"
 }
+
+\pi() {
+    command "$MUX0_AGENT_HOOKS_DIR/pi-wrapper.sh" "$@"
+}
+
+\grok() {
+    command "$MUX0_AGENT_HOOKS_DIR/grok-wrapper.sh" "$@"
+}

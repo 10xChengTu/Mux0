@@ -32,6 +32,8 @@ struct AgentsSectionView: View {
                 AgentToggleRow(theme: theme, settings: settings, agent: .claude)
                 AgentToggleRow(theme: theme, settings: settings, agent: .opencode)
                 AgentToggleRow(theme: theme, settings: settings, agent: .codex)
+                AgentToggleRow(theme: theme, settings: settings, agent: .pi)
+                AgentToggleRow(theme: theme, settings: settings, agent: .grok)
             } header: {
                 Text(L10n.Settings.Agents.notificationsTitle)
             } footer: {
@@ -47,6 +49,10 @@ struct AgentsSectionView: View {
                                      workspaceStore: workspaceStore, agent: .opencode)
                 AgentResumeToggleRow(theme: theme, settings: settings,
                                      workspaceStore: workspaceStore, agent: .codex)
+                AgentResumeToggleRow(theme: theme, settings: settings,
+                                     workspaceStore: workspaceStore, agent: .pi)
+                AgentResumeToggleRow(theme: theme, settings: settings,
+                                     workspaceStore: workspaceStore, agent: .grok)
             } header: {
                 Text(L10n.Settings.Agents.resumeTitle)
             } footer: {

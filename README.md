@@ -7,14 +7,14 @@
   <h1>Mux0</h1>
 </div>
 
-A macOS tabbed-and-split terminal with live AI agent status in the sidebar. Organize terminals by project, split panes freely, and always know at a glance whether Claude Code, OpenCode, or Codex is running, idle, or waiting for you.
+A macOS tabbed-and-split terminal with live AI agent status in the sidebar. Organize terminals by project, split panes freely, and always know at a glance whether Claude Code, OpenCode, Codex, pi, or Grok is running, idle, or waiting for you.
 
 Powered by the [ghostty](https://ghostty.org) engine with Metal GPU rendering. Bilingual UI — English / 简体中文.
 
 ## Features
 
 - **Workspaces → Tabs → Splits** — Organize terminals by project. Each workspace owns its own set of tabs; each tab is a split tree you can cut horizontally or vertically, drag dividers, and navigate with the keyboard.
-- **Live AI Agent Status** — Sidebar and tab icons reflect `running` / `idle` / `waiting-for-input` / `finished` state for Claude Code, OpenCode, and Codex. Each turn is tagged success or failed. Hover an icon to see the currently running tool and (for Claude / Codex) a short summary of the agent's last reply.
+- **Live AI Agent Status** — Sidebar and tab icons reflect `running` / `idle` / `waiting-for-input` / `finished` state for Claude Code, OpenCode, Codex, pi, and Grok. Each turn is tagged success or failed. Hover an icon to see the currently running tool and a short summary of the agent's last reply (Claude / Codex / pi / Grok).
 - **Workspace Sidebar Metadata** — Every workspace row shows its current git branch, open PR status, and unread notifications — refreshed every 5 seconds in the background and updated live via OSC hooks from your shell.
 - **Beautiful Theming** — Every ghostty theme bundled in. Adjust background opacity, window blur (vibrancy), cursor shape and blink, and unfocused-pane dimming. Mux0's own sidebar and tab bar re-tint to match the active terminal theme — no jarring chrome.
 - **Bilingual UI** — Full English and Simplified Chinese. Switch in **Settings → Appearance → Language** without restarting.
@@ -74,7 +74,7 @@ See [`docs/settings-reference.md`](docs/settings-reference.md) for every setting
 
 ## Using AI Agents in Mux0
 
-Mux0 automatically hooks into Claude Code, OpenCode, and Codex so their status shows live on the sidebar and tab icons. You don't need to configure anything — just run the agent as usual.
+Mux0 automatically hooks into Claude Code, OpenCode, Codex, pi, and Grok so their status shows live on the sidebar and tab icons. You don't need to configure anything — just run the agent as usual. Injection is per-process (a wrapper adds a flag or points the CLI at a private config overlay), so your own global agent config stays untouched.
 
 ### Status Icons
 
@@ -86,7 +86,7 @@ Mux0 automatically hooks into Claude Code, OpenCode, and Codex so their status s
 | ✕ (red cross) | Last turn had at least one tool error. |
 | Gray | Idle / no agent running. |
 
-Hover a status icon to see which tool is currently running (e.g. *"Edit Models/Foo.swift"*, *"Bash: ls"*) and, for Claude / Codex, a one-line summary of the agent's last reply.
+Hover a status icon to see which tool is currently running (e.g. *"Edit Models/Foo.swift"*, *"Bash: ls"*) and a one-line summary of the agent's last reply (Claude / Codex / pi / Grok).
 
 ### Supported Agents
 
@@ -95,6 +95,8 @@ Hover a status icon to see which tool is currently running (e.g. *"Edit Models/F
 | **Claude Code** | `claude` | Full status + turn summary + tool detail. |
 | **OpenCode** | `opencode` | Full status + tool detail. Summary not available yet. |
 | **Codex** | `codex` | Status is experimental — may lag slightly behind. |
+| **pi** | `pi` | Full status + turn summary + tool detail. Loaded as a per-process pi extension (`pi -e`), so `~/.pi` is untouched. pi has no permission prompt, so "waiting for input" only appears when an extension asks you something. |
+| **Grok** | `grok` | Full status + turn summary + tool detail + resume. Runs through a private `GROK_HOME` overlay, so `~/.grok` is untouched and sessions stay listable by `grok --resume` outside Mux0. |
 
 If an icon doesn't update, see [Troubleshooting](#troubleshooting) below.
 

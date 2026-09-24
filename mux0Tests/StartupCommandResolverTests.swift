@@ -230,4 +230,74 @@ final class StartupCommandResolverTests: XCTestCase {
         )
         XCTAssertEqual(result, "opencode --session sess-42")
     }
+
+    // MARK: - pi / grok quick actions (0.8.5)
+
+    func testQuickActionPi_toggleOnWithMatchingPrefill_returnsResumeCommand() {
+        let term = UUID()
+        let tab = TerminalTab(title: "T", terminalId: term, quickActionId: "pi")
+        let result = StartupCommandResolver.resolve(
+            terminalId: term,
+            tab: tab,
+            workspaceDefaultCommand: nil,
+            quickActionCommand: { _ in "pi" },
+            isResumeEnabled: { $0 == .pi },
+            pendingPrefill: "pi --session 01a0d1d9-56a9"
+        )
+        XCTAssertEqual(result, "pi --session 01a0d1d9-56a9")
+    }
+
+    func testQuickActionGrok_toggleOff_returnsNakedGrok() {
+        let term = UUID()
+        let tab = TerminalTab(title: "T", terminalId: term, quickActionId: "grok")
+        let result = StartupCommandResolver.resolve(
+            terminalId: term,
+            tab: tab,
+            workspaceDefaultCommand: nil,
+            quickActionCommand: { _ in "grok" },
+            isResumeEnabled: { _ in false },
+            pendingPrefill: "grok --resume 01a0d1d8-4252"
+        )
+        XCTAssertEqual(result, "grok\n")
+    }
+
+    func testQuickActionGrok_prefillFromAnotherAgent_isIgnored() {
+        let term = UUID()
+        let tab = TerminalTab(title: "T", terminalId: term, quickActionId: "grok")
+        let result = StartupCommandResolver.resolve(
+            terminalId: term,
+            tab: tab,
+            workspaceDefaultCommand: nil,
+            quickActionCommand: { _ in "grok" },
+            isResumeEnabled: { _ in true },
+            pendingPrefill: "pi --session 01a0d1d9-56a9"
+        )
+        XCTAssertEqual(result, "grok\n")
+    }
+
+    func testNakedTerminal_piResume_toggleOn_replaysPrefill() {
+        let term = UUID()
+        let result = StartupCommandResolver.resolve(
+            terminalId: term,
+            tab: nil,
+            workspaceDefaultCommand: "vim",
+            quickActionCommand: { _ in nil },
+            isResumeEnabled: { $0 == .pi },
+            pendingPrefill: "pi --session 01a0d1d9-56a9"
+        )
+        XCTAssertEqual(result, "pi --session 01a0d1d9-56a9")
+    }
+
+    func testNakedTerminal_grokResume_toggleOff_fallsBackToWorkspaceDefault() {
+        let term = UUID()
+        let result = StartupCommandResolver.resolve(
+            terminalId: term,
+            tab: nil,
+            workspaceDefaultCommand: "vim",
+            quickActionCommand: { _ in nil },
+            isResumeEnabled: { _ in false },
+            pendingPrefill: "grok --resume 01a0d1d8-4252"
+        )
+        XCTAssertEqual(result, "vim")
+    }
 }

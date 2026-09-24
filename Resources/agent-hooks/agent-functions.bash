@@ -5,5 +5,7 @@
 claude()   { command "$MUX0_AGENT_HOOKS_DIR/claude-wrapper.sh"   "$@"; }
 opencode() { command "$MUX0_AGENT_HOOKS_DIR/opencode-wrapper.sh" "$@"; }
 codex()    { command "$MUX0_AGENT_HOOKS_DIR/codex-wrapper.sh"    "$@"; }
+pi()       { command "$MUX0_AGENT_HOOKS_DIR/pi-wrapper.sh"       "$@"; }
+grok()     { command "$MUX0_AGENT_HOOKS_DIR/grok-wrapper.sh"     "$@"; }
 
-export -f claude opencode codex 2>/dev/null || true
+export -f claude opencode codex pi grok 2>/dev/null || true

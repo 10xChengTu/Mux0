@@ -93,6 +93,8 @@ enum L10n {
             static let claude   = LocalizedStringResource("quickActions.builtin.claude")
             static let codex    = LocalizedStringResource("quickActions.builtin.codex")
             static let opencode = LocalizedStringResource("quickActions.builtin.opencode")
+            static let pi       = LocalizedStringResource("quickActions.builtin.pi")
+            static let grok     = LocalizedStringResource("quickActions.builtin.grok")
         }
     }
 
@@ -178,6 +180,8 @@ enum L10n {
             static let claude              = LocalizedStringResource("settings.agents.claude")
             static let codex               = LocalizedStringResource("settings.agents.codex")
             static let opencode            = LocalizedStringResource("settings.agents.opencode")
+            static let pi                  = LocalizedStringResource("settings.agents.pi")
+            static let grok                = LocalizedStringResource("settings.agents.grok")
             static let betaBadge           = LocalizedStringResource("settings.agents.betaBadge")
             static let codexAlertTitle     = LocalizedStringResource("settings.agents.codexAlertTitle")
             static let codexAlertMessage   = LocalizedStringResource("settings.agents.codexAlertMessage")
@@ -208,6 +212,8 @@ enum L10n {
             static let dismiss             = LocalizedStringResource("settings.update.dismiss")
             static let retry               = LocalizedStringResource("settings.update.retry")
             static let debugDisabled       = LocalizedStringResource("settings.update.debugDisabled")
+            static let updatesRow          = LocalizedStringResource("settings.update.updatesRow")
+            static let updatesDisabledFork = LocalizedStringResource("settings.update.updatesDisabledFork")
 
             /// "Version X.Y.Z" formatted at the call site.
             static func versionNumber(_ version: String) -> LocalizedStringResource {

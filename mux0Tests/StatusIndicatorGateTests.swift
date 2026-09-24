@@ -44,6 +44,16 @@ final class StatusIndicatorGateTests: XCTestCase {
         XCTAssertTrue(StatusIndicatorGate.anyAgentEnabled(settings))
     }
 
+    func testGateTrueWhenPiOn() {
+        settings.set(HookMessage.Agent.pi.settingsKey, "true"); settings.save()
+        XCTAssertTrue(StatusIndicatorGate.anyAgentEnabled(settings))
+    }
+
+    func testGateTrueWhenGrokOn() {
+        settings.set(HookMessage.Agent.grok.settingsKey, "true"); settings.save()
+        XCTAssertTrue(StatusIndicatorGate.anyAgentEnabled(settings))
+    }
+
     func testGateTrueWhenAllAgentsOn() {
         for agent in HookMessage.Agent.allCases {
             settings.set(agent.settingsKey, "true")

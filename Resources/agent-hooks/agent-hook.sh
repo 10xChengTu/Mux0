@@ -15,7 +15,11 @@ set -e
 
 subcmd="${1:-stop}"
 agent="${2:-claude}"
-script_dir="$(dirname "${BASH_SOURCE[0]}")"
+# Locate agent-hook.py next to this script. `${BASH_SOURCE[0]}` is empty when a
+# non-bash shell starts us (`zsh agent-hook.sh …`), which used to resolve to "."
+# and make python3 fail on ./agent-hook.py — a hook that silently stops
+# reporting. Fall back to $0 and absolutize so relative invocations work too.
+script_dir="$(cd "$(dirname "${BASH_SOURCE[0]:-$0}")" && pwd)"
 
 export _MUX0_SUBCMD="$subcmd"
 export _MUX0_AGENT="$agent"

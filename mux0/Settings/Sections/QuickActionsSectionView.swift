@@ -12,6 +12,10 @@ struct QuickActionsSectionView: View {
             "mux0-quickactions-enabled",
             "mux0-quickactions-custom",
             "mux0-quickactions-order",
+            // Forgetting which builtins this install has shown re-runs the
+            // new-builtin opt-in migration, which on a freshly-reset config
+            // (nothing enabled) is a no-op — i.e. true default state.
+            "mux0-quickactions-seen",
         ]
         keys.append(contentsOf: BuiltinQuickAction.allCases.map {
             "mux0-quickactions-builtin-command-\($0.id)"

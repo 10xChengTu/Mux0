@@ -39,7 +39,9 @@ final class L10nSmokeTests: XCTestCase {
         "quickActions.builtin.claude",
         "quickActions.builtin.codex",
         "quickActions.builtin.gitui",
+        "quickActions.builtin.grok",
         "quickActions.builtin.opencode",
+        "quickActions.builtin.pi",
         // Settings — appearance
         "settings.appearance.backgroundBlur",
         "settings.appearance.backgroundOpacity",
@@ -54,7 +56,9 @@ final class L10nSmokeTests: XCTestCase {
         // Settings — agents
         "settings.agents.claude",
         "settings.agents.codex",
+        "settings.agents.grok",
         "settings.agents.opencode",
+        "settings.agents.pi",
         // Settings — chrome
         "settings.close",
         "settings.footer.edit",
@@ -118,6 +122,8 @@ final class L10nSmokeTests: XCTestCase {
         "settings.update.skipThisVersion",
         "settings.update.status",
         "settings.update.upToDate",
+        "settings.update.updatesDisabledFork",
+        "settings.update.updatesRow",
         "settings.update.version %@",
         // Settings — theme
         "settings.theme.dark",

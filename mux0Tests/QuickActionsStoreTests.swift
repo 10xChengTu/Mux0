@@ -251,11 +251,11 @@ final class QuickActionsStoreTests: XCTestCase {
         // place across BOTH the Settings list (`fullList`) and the top bar
         // (`displayList` follows `orderedIds` too).
         let (store, _) = makeIsolatedStore()
-        store.setEnabled("gitui", true)
-        store.setEnabled("claude", true)
-        store.setEnabled("codex", true)
-        store.setEnabled("opencode", true)
+        // Enable everything that exists so displayList == fullList for the
+        // invariant below (a fresh install enables nothing by default).
+        for id in store.fullList { store.setEnabled(id, true) }
         let baseline = store.fullList
+        XCTAssertEqual(baseline.count, BuiltinQuickAction.allCases.count)
 
         store.setEnabled("claude", false)
         XCTAssertEqual(store.fullList, baseline)
@@ -290,11 +290,107 @@ final class QuickActionsStoreTests: XCTestCase {
 
         let migrated = QuickActionsStore(settings: settings)
         // Migrated order: enabled first (codex, gitui), then the remaining
-        // built-ins in BuiltinQuickAction.allCases order (claude, opencode).
-        XCTAssertEqual(migrated.fullList, ["codex", "gitui", "claude", "opencode"])
+        // built-ins in BuiltinQuickAction.allCases order (claude, opencode, and
+        // the 0.8.5 additions pi / grok — appended, but NOT auto-enabled: a
+        // legacy config counts every shipped builtin as already seen).
+        XCTAssertEqual(migrated.fullList, ["codex", "gitui", "claude", "opencode", "pi", "grok"])
+        XCTAssertEqual(migrated.enabledIds, ["codex", "gitui"])
 
         // Subsequent toggles do NOT shuffle the now-frozen order.
         migrated.setEnabled("codex", false)
-        XCTAssertEqual(migrated.fullList, ["codex", "gitui", "claude", "opencode"])
+        XCTAssertEqual(migrated.fullList, ["codex", "gitui", "claude", "opencode", "pi", "grok"])
+    }
+
+    // MARK: - New-builtin opt-in migration (0.8.5: pi / grok)
+
+    /// Simulates a 0.8.4 config: order + enabled contain the four old builtins,
+    /// and the `seen` key does not exist yet.
+    private func seedLegacyConfig(_ settings: SettingsConfigStore,
+                                  enabled: [String],
+                                  order: [String] = ["gitui", "claude", "codex", "opencode"]) {
+        func json(_ arr: [String]) -> String? {
+            String(data: (try? JSONEncoder().encode(arr)) ?? Data(), encoding: .utf8)
+        }
+        settings.set("mux0-quickactions-enabled", json(enabled))
+        settings.set("mux0-quickactions-order", json(order))
+        settings.save()
+    }
+
+    func test_upgradeWithEnabledActions_autoEnablesNewBuiltins() {
+        let settings = makeIsolatedSettings()
+        seedLegacyConfig(settings, enabled: ["claude"])
+        let store = QuickActionsStore(settings: settings)
+
+        XCTAssertTrue(store.isEnabled("pi"),
+                      "pi should switch on for a user who already uses Quick Actions")
+        XCTAssertTrue(store.isEnabled("grok"))
+        XCTAssertTrue(store.isEnabled("claude"))
+        XCTAssertFalse(store.isEnabled("gitui"), "pre-existing disabled actions stay disabled")
+        // New ids are appended, existing order untouched.
+        XCTAssertEqual(store.orderedIds.prefix(4), ["gitui", "claude", "codex", "opencode"])
+        XCTAssertTrue(store.orderedIds.suffix(2).contains("pi"))
+        XCTAssertTrue(store.orderedIds.suffix(2).contains("grok"))
+    }
+
+    func test_upgradeWithNoEnabledActions_changesNothing() {
+        // A user who disabled every action (or a fresh install) must not suddenly
+        // see sidebar buttons they never asked for.
+        let settings = makeIsolatedSettings()
+        seedLegacyConfig(settings, enabled: [])
+        let store = QuickActionsStore(settings: settings)
+        XCTAssertFalse(store.isEnabled("pi"))
+        XCTAssertFalse(store.isEnabled("grok"))
+        XCTAssertTrue(store.enabledIds.isEmpty)
+    }
+
+    func test_autoEnabledBuiltinIsNotReEnabledAfterUserTurnsItOff() {
+        let settings = makeIsolatedSettings()
+        seedLegacyConfig(settings, enabled: ["claude"])
+        let first = QuickActionsStore(settings: settings)
+        XCTAssertTrue(first.isEnabled("pi"))
+        first.setEnabled("pi", false)
+        first.setEnabled("grok", false)
+
+        // Second launch: pi / grok are recorded in the seen-list, so the OFF
+        // choice survives instead of being re-enabled by the migration again.
+        let reloaded = QuickActionsStore(settings: settings)
+        XCTAssertFalse(reloaded.isEnabled("pi"))
+        XCTAssertFalse(reloaded.isEnabled("grok"))
+        XCTAssertTrue(reloaded.orderedIds.contains("pi"))
+    }
+
+    func test_seenKeyIsPersistedAfterLoad() {
+        let settings = makeIsolatedSettings()
+        seedLegacyConfig(settings, enabled: ["claude"])
+        _ = QuickActionsStore(settings: settings)
+        let raw = settings.get("mux0-quickactions-seen")
+        XCTAssertNotNil(raw, "seen-list must be written so the migration runs once")
+        let data = raw!.data(using: .utf8)!
+        let seen = try! JSONDecoder().decode([String].self, from: data)
+        XCTAssertEqual(Set(seen), Set(BuiltinQuickAction.allCases.map(\.id)))
+    }
+
+    func test_legacySnapshotWithoutOrder_doesNotEnableEverything() {
+        // Pre-`order` configs persisted only `mux0-quickactions-enabled`. Every
+        // builtin was known at that point, so none of them counts as "new".
+        let settings = makeIsolatedSettings()
+        settings.set("mux0-quickactions-enabled",
+                     String(data: (try! JSONEncoder().encode(["claude"])), encoding: .utf8))
+        settings.save()
+        let store = QuickActionsStore(settings: settings)
+        XCTAssertEqual(store.enabledIds, ["claude"])
+        XCTAssertFalse(store.isEnabled("grok"))
+    }
+
+    func test_reloadFromSettings_keepsMigrationIdempotent() {
+        let settings = makeIsolatedSettings()
+        seedLegacyConfig(settings, enabled: ["codex"])
+        let store = QuickActionsStore(settings: settings)
+        XCTAssertTrue(store.isEnabled("pi"))
+        store.reloadFromSettings()
+        XCTAssertTrue(store.isEnabled("pi"), "reload must not undo the migration")
+        store.setEnabled("pi", false)
+        store.reloadFromSettings()
+        XCTAssertFalse(store.isEnabled("pi"), "reload must not resurrect a disabled action")
     }
 }

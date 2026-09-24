@@ -30,6 +30,9 @@ struct ContentView: View {
 
     init() {
         let settings = SettingsConfigStore()
+        // Agents added in this release inherit the user's existing opt-in before
+        // any row reads their toggle (no-op on a fresh install).
+        AgentPreferences.migrate(settings: settings)
         self._settingsStore = State(initialValue: settings)
         self._quickActionsStore = State(initialValue: QuickActionsStore(settings: settings))
     }

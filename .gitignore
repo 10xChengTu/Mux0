@@ -26,3 +26,6 @@ Vendor/ghostty/share/
 # Python (pytest cache for agent-hook tests)
 __pycache__/
 .pytest_cache/
+
+# Local release artifacts (./scripts/package-release.sh)
+dist/

@@ -63,10 +63,57 @@ final class HookMessageTests: XCTestCase {
     }
 
     func testAgentAllCasesExcludesShell() {
-        XCTAssertEqual(HookMessage.Agent.allCases.count, 3)
+        XCTAssertEqual(HookMessage.Agent.allCases.count, 5)
         let raws = Set(HookMessage.Agent.allCases.map(\.rawValue))
-        XCTAssertEqual(raws, ["claude", "opencode", "codex"])
+        XCTAssertEqual(raws, ["claude", "opencode", "codex", "pi", "grok"])
         XCTAssertFalse(raws.contains("shell"))
+    }
+
+    // MARK: - pi / grok (0.8.5)
+
+    func testDecodePiFinishedWithSentinel() throws {
+        let json = #"{"terminalId":"550E8400-E29B-41D4-A716-446655440000","event":"finished","agent":"pi","at":1,"exitCode":1,"summary":"Two files. DONE"}"#.data(using: .utf8)!
+        let msg = try JSONDecoder().decode(HookMessage.self, from: json)
+        XCTAssertEqual(msg.agent, .pi)
+        XCTAssertEqual(msg.exitCode, 1)
+        XCTAssertEqual(msg.summary, "Two files. DONE")
+    }
+
+    func testDecodeGrokRunningWithResumeAndTitle() throws {
+        let json = #"{"terminalId":"550E8400-E29B-41D4-A716-446655440000","event":"running","agent":"grok","at":1,"resumeCommand":"grok --resume 01a0d1d8-4252","sessionTitle":"List Files"}"#.data(using: .utf8)!
+        let msg = try JSONDecoder().decode(HookMessage.self, from: json)
+        XCTAssertEqual(msg.agent, .grok)
+        XCTAssertEqual(msg.resumeCommand, "grok --resume 01a0d1d8-4252")
+        XCTAssertEqual(msg.sessionTitle, "List Files")
+    }
+
+    func testAgentSettingsAndResumeKeysForPiGrok() {
+        XCTAssertEqual(HookMessage.Agent.pi.settingsKey, "mux0-agent-status-pi")
+        XCTAssertEqual(HookMessage.Agent.pi.resumeSettingsKey, "mux0-agent-resume-pi")
+        XCTAssertEqual(HookMessage.Agent.grok.settingsKey, "mux0-agent-status-grok")
+        XCTAssertEqual(HookMessage.Agent.grok.resumeSettingsKey, "mux0-agent-resume-grok")
+        XCTAssertTrue(HookMessage.Agent.pi.supportsResume)
+        XCTAssertTrue(HookMessage.Agent.grok.supportsResume)
+    }
+
+    func testFromResumeCommandPiAndGrok() {
+        XCTAssertEqual(HookMessage.Agent.fromResumeCommand("pi --session abc"), .pi)
+        XCTAssertEqual(HookMessage.Agent.fromResumeCommand("grok --resume abc"), .grok)
+        // Prefix must be a whole CLI token — a longer command beginning with the
+        // same letters belongs to a different program.
+        XCTAssertNil(HookMessage.Agent.fromResumeCommand("pico --session abc"))
+        XCTAssertNil(HookMessage.Agent.fromResumeCommand("grokify --resume abc"))
+        // Existing agents keep resolving (regression guard for the new prefixes).
+        XCTAssertEqual(HookMessage.Agent.fromResumeCommand("claude --resume abc"), .claude)
+        XCTAssertEqual(HookMessage.Agent.fromResumeCommand("codex resume abc"), .codex)
+        XCTAssertEqual(HookMessage.Agent.fromResumeCommand("opencode --session abc"), .opencode)
+        XCTAssertNil(HookMessage.Agent.fromResumeCommand("gitui"))
+        XCTAssertNil(HookMessage.Agent.fromResumeCommand(""))
+    }
+
+    func testDisplayNameForPiAndGrok() {
+        XCTAssertEqual(HookMessage.Agent.pi.displayName, "pi")
+        XCTAssertEqual(HookMessage.Agent.grok.displayName, "Grok")
     }
 
     func testDecodeRunningWithResumeCommand() throws {

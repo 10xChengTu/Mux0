@@ -17,6 +17,8 @@ enum BuiltinQuickAction: String, CaseIterable, Identifiable {
     case claude
     case codex
     case opencode
+    case pi
+    case grok
 
     var id: QuickActionId { rawValue }
 
@@ -28,6 +30,8 @@ enum BuiltinQuickAction: String, CaseIterable, Identifiable {
         case .claude:   return "claude"
         case .codex:    return "codex"
         case .opencode: return "opencode"
+        case .pi:       return "pi"
+        case .grok:     return "grok"
         }
     }
 
@@ -39,6 +43,8 @@ enum BuiltinQuickAction: String, CaseIterable, Identifiable {
         case .claude:   return L10n.QuickActions.Builtin.claude
         case .codex:    return L10n.QuickActions.Builtin.codex
         case .opencode: return L10n.QuickActions.Builtin.opencode
+        case .pi:       return L10n.QuickActions.Builtin.pi
+        case .grok:     return L10n.QuickActions.Builtin.grok
         }
     }
 
@@ -52,6 +58,8 @@ enum BuiltinQuickAction: String, CaseIterable, Identifiable {
         case .claude:   return .asset("quick-action-claudecode")
         case .codex:    return .asset("quick-action-codex")
         case .opencode: return .asset("quick-action-opencode")
+        case .pi:       return .asset("quick-action-pi")
+        case .grok:     return .asset("quick-action-grok")
         }
     }
 

@@ -9,6 +9,15 @@ struct UpdateSectionView: View {
     private var isDebug: Bool {
         !SparkleBridge.shared.isActive
     }
+    /// This fork's Release builds are compiled with `MUX0_UPDATES_DISABLED`:
+    /// the upstream appcast belongs to the original author's repo, and a new
+    /// upstream release would silently replace the fork on the user's machine.
+    /// No Sparkle call site is compiled in (see SparkleBridge — the framework is
+    /// still linked and embedded, just never used), so explain it instead of
+    /// leaving a "Check for Updates" button that can only fail.
+    private var isUpdatesDisabledAtBuild: Bool {
+        SparkleBridge.updatesDisabledAtBuildTime
+    }
 
     var body: some View {
         Form {
@@ -60,8 +69,16 @@ struct UpdateSectionView: View {
                 }
             }
 
-            // Debug 构建下显式说明自动更新被禁用，行风格与其它 LabeledContent 对齐。
-            if isDebug {
+            // Debug 构建 / 关闭了上游更新源的构建：显式说明自动更新被禁用，
+            // 行风格与其它 LabeledContent 对齐。两者互斥——fork 构建的 Release
+            // 也走 isActive == false，但那不是 "Debug build"，说清楚原因。
+            if isUpdatesDisabledAtBuild {
+                LabeledContent(String(localized: L10n.Settings.Update.updatesRow.withLocale(locale))) {
+                    Text(L10n.Settings.Update.updatesDisabledFork)
+                        .font(Font(DT.Font.small))
+                        .foregroundColor(Color(theme.textTertiary))
+                }
+            } else if isDebug {
                 LabeledContent(String(localized: L10n.Settings.Update.debugBuild.withLocale(locale))) {
                     Text(L10n.Settings.Update.debugDisabled)
                         .font(Font(DT.Font.small))

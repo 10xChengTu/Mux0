@@ -571,3 +571,428 @@ def test_dispatch_no_session_title_when_empty(tmp_path):
                                 {"session_id": "s1"},
                                 "term1", sf, 1.0)
     assert "sessionTitle" not in emit
+
+
+# ---------- pi / grok resume command shapes ----------
+
+def test_resume_command_pi():
+    assert agent_hook.resume_command_for("pi", "01a0d1d9-56a9-75eb") == \
+        "pi --session 01a0d1d9-56a9-75eb"
+
+def test_resume_command_grok():
+    assert agent_hook.resume_command_for("grok", "01a0d1d8-4252-7992") == \
+        "grok --resume 01a0d1d8-4252-7992"
+
+def test_resume_command_rejects_malformed_ids_pi_grok():
+    for agent in ("pi", "grok"):
+        assert agent_hook.resume_command_for(agent, "") == ""
+        assert agent_hook.resume_command_for(agent, "id;rm -rf /") == ""
+        assert agent_hook.resume_command_for(agent, "id with space") == ""
+        assert agent_hook.resume_command_for(agent, "`whoami`") == ""
+
+
+# ---------- describe_tool: grok / pi native tool names ----------
+
+def test_describe_tool_grok_run_terminal_command():
+    assert agent_hook.describe_tool(
+        "run_terminal_command", {"command": "cargo test\n# tail"}) == "Bash: cargo test"
+
+def test_describe_tool_grok_read_and_edit():
+    assert agent_hook.describe_tool("read_file", {"path": "/a/b/c/d.rs"}) == "Read b/c/d.rs"
+    assert agent_hook.describe_tool("search_replace", {"path": "/x/y.ts"}) == "Edit x/y.ts"
+
+def test_describe_tool_grok_list_dir_and_grep():
+    assert agent_hook.describe_tool("list_dir", {"target_directory": "/tmp/proj"}) == "List tmp/proj"
+    assert agent_hook.describe_tool("grep", {"pattern": "TODO"}) == "Grep 'TODO'"
+
+def test_describe_tool_grok_subagent_and_plan():
+    assert agent_hook.describe_tool("spawn_subagent", {"agent_type": "explore"}) == \
+        "Subagent: explore"
+    assert agent_hook.describe_tool("update_plan", {}) == "Update plan"
+
+def test_describe_tool_pi_native_names():
+    assert agent_hook.describe_tool("bash", {"command": "ls -la"}) == "Bash: ls -la"
+    assert agent_hook.describe_tool("read", {"path": "/a/b/c.py"}) == "Read a/b/c.py"
+    assert agent_hook.describe_tool("edit", {"path": "/a/b/c.py"}) == "Edit a/b/c.py"
+    assert agent_hook.describe_tool("ls", {"path": "/tmp/x"}) == "List tmp/x"
+
+
+# ---------- tool_response_had_error (claude + grok shapes) ----------
+
+def test_tool_response_had_error_claude_is_error():
+    assert agent_hook.tool_response_had_error({"is_error": True}) is True
+    assert agent_hook.tool_response_had_error({"is_error": False}) is False
+
+def test_tool_response_had_error_grok_tagged_content():
+    # Healthy grok result: tagged output, no error markers anywhere.
+    ok = {"type": "ListDir", "Content": {"content": "- a.txt", "absolute_root_path": "/tmp"}}
+    assert agent_hook.tool_response_had_error(ok) is False
+
+def test_tool_response_had_error_grok_bash_nonzero_exit():
+    # Verified shape from grok 1.0.41: a failing `ls` fires PostToolUse (NOT
+    # PostToolUseFailure) with no is_error field anywhere — the failure is only
+    # visible in the structured fields of toolResult.
+    bad = {
+        "type": "Bash",
+        "output_for_prompt": "exit: 1\nls: /nope: No such file or directory\n",
+        "exit_code": 1,
+        "command": "ls /nope",
+        "signal": None,
+        "timed_out": False,
+    }
+    assert agent_hook.tool_response_had_error(bad) is True
+
+def test_tool_response_had_error_grok_bash_zero_exit_is_clean():
+    ok = {
+        "type": "Bash",
+        "output_for_prompt": "exit: 0\nalpha.txt\n",
+        "exit_code": 0,
+        "command": "ls",
+        "signal": None,
+        "timed_out": False,
+    }
+    assert agent_hook.tool_response_had_error(ok) is False
+
+def test_tool_response_had_error_grok_bash_timeout_or_signal():
+    assert agent_hook.tool_response_had_error(
+        {"type": "Bash", "exit_code": 0, "timed_out": True}) is True
+    assert agent_hook.tool_response_had_error(
+        {"type": "Bash", "exit_code": None, "signal": "SIGTERM"}) is True
+
+def test_grok_dispatch_posttool_exit_code_marks_turn_failed(tmp_path):
+    # The realistic grok failure path: PostToolUse carries exit_code 1 and the
+    # turn then ends cleanly (Stop reason=end_turn) — the turn must still be
+    # reported as failed, otherwise the sidebar shows a green dot for a red run.
+    sf = tmp_path / "sessions.json"
+    now = 5_000_000.0
+    agent_hook.dispatch("userpromptsubmit", "grok",
+                        {"session_id": "g1"}, "term-g", sf, now)
+    # grok's hook config maps PostToolUse -> `posttool` (same subcommand as
+    # claude) and carries the result under the top-level `toolResult` key.
+    agent_hook.dispatch("posttool", "grok",
+                        {"session_id": "g1", "tool_name": "Bash",
+                         "tool_input": {"command": "ls /nope"},
+                         "toolResult": {"type": "Bash", "exit_code": 1,
+                                        "command": "ls /nope"}},
+                        "term-g", sf, now + 1)
+    emit = agent_hook.dispatch("stop", "grok",
+                               {"session_id": "g1", "reason": "end_turn"},
+                               "term-g", sf, now + 2)
+    assert emit["event"] == "finished"
+    assert emit["exitCode"] == 1
+
+def test_grok_dispatch_posttoolfailure_marks_turn_failed(tmp_path):
+    sf = tmp_path / "sessions.json"
+    now = 5_100_000.0
+    agent_hook.dispatch("userpromptsubmit", "grok",
+                        {"session_id": "g2"}, "term-g", sf, now)
+    agent_hook.dispatch("posttoolfailure", "grok",
+                        {"session_id": "g2", "tool_name": "ReadFile",
+                         "error": "no such file"},
+                        "term-g", sf, now + 1)
+    emit = agent_hook.dispatch("stop", "grok",
+                               {"session_id": "g2", "reason": "end_turn"},
+                               "term-g", sf, now + 2)
+    assert emit["exitCode"] == 1
+
+def test_tool_response_had_error_grok_nested_flag():
+    bad = {"type": "Bash", "Content": {"is_error": True, "content": "exit 1"}}
+    assert agent_hook.tool_response_had_error(bad) is True
+
+def test_tool_response_had_error_string_error_field():
+    assert agent_hook.tool_response_had_error({"error": "ENOENT"}) is True
+    assert agent_hook.tool_response_had_error({"error": ""}) is False
+
+def test_tool_response_had_error_non_dict():
+    assert agent_hook.tool_response_had_error("nope") is False
+    assert agent_hook.tool_response_had_error(None) is False
+
+
+# ---------- read_grok_title / read_grok_summary ----------
+
+def _make_grok_session(tmp_path, session_id, *, summary=None, history=None):
+    """Lay out $GROK_HOME/sessions/<encoded-cwd>/<session_id>/ like grok does."""
+    session_dir = tmp_path / "sessions" / "%2Fprivate%2Ftmp%2Fproj" / session_id
+    session_dir.mkdir(parents=True)
+    if summary is not None:
+        (session_dir / "summary.json").write_text(json.dumps(summary))
+    if history is not None:
+        (session_dir / "chat_history.jsonl").write_text(
+            "\n".join(json.dumps(row) for row in history) + "\n")
+    return session_dir
+
+
+def _grok_user(text):
+    return {"type": "user", "content": [{"type": "text", "text": text}]}
+
+
+def _grok_assistant(text):
+    return {"type": "assistant", "content": text}
+
+
+def test_read_grok_title_generated_title_wins(tmp_path, monkeypatch):
+    sid = "01a0d1d8-4252-7992-a65b-4ee8d890878f"
+    _make_grok_session(tmp_path, sid,
+                       summary={"generated_title": "List Files Then Say Done",
+                                "session_summary": "stale"},
+                       history=[_grok_user("<user_query>\nls please\n</user_query>")])
+    monkeypatch.setattr(agent_hook, "GROK_HOME", tmp_path)
+    assert agent_hook.read_grok_title(sid) == "List Files Then Say Done"
+
+
+def test_read_grok_title_falls_back_to_user_query(tmp_path, monkeypatch):
+    sid = "01a0d1d8-4252-7992-a65b-4ee8d890879f"
+    _make_grok_session(tmp_path, sid, summary={"num_messages": 2},
+                       history=[
+                           _grok_user("<user_info>\nOS: macos\n</user_info>"),
+                           _grok_user("<system-reminder>\nworkflows\n</system-reminder>"),
+                           _grok_user("<user_query>\n\u53ea\u56de\u590d OK\n</user_query>"),
+                       ])
+    monkeypatch.setattr(agent_hook, "GROK_HOME", tmp_path)
+    assert agent_hook.read_grok_title(sid) == "只回复 OK"
+
+
+def test_read_grok_title_skips_boilerplate_without_query(tmp_path, monkeypatch):
+    sid = "01a0d1d8-4252-7992-a65b-4ee8d89087a0"
+    _make_grok_session(tmp_path, sid, summary={},
+                       history=[_grok_user("<rules>\nbe good\n</rules>"),
+                                _grok_user("real typed prompt")])
+    monkeypatch.setattr(agent_hook, "GROK_HOME", tmp_path)
+    assert agent_hook.read_grok_title(sid) == "real typed prompt"
+
+
+def test_read_grok_title_missing_session(tmp_path, monkeypatch):
+    monkeypatch.setattr(agent_hook, "GROK_HOME", tmp_path)
+    assert agent_hook.read_grok_title("01a0d1d8-4252-7992-a65b-4ee8d89087a1") == ""
+    assert agent_hook.read_grok_title("bad id;rm") == ""
+
+
+def test_read_grok_title_truncates_to_200(tmp_path, monkeypatch):
+    sid = "01a0d1d8-4252-7992-a65b-4ee8d89087a2"
+    _make_grok_session(tmp_path, sid, summary={"generated_title": "x" * 400})
+    monkeypatch.setattr(agent_hook, "GROK_HOME", tmp_path)
+    assert len(agent_hook.read_grok_title(sid)) == agent_hook.SUMMARY_MAXLEN
+
+
+def test_read_grok_summary_last_assistant(tmp_path, monkeypatch):
+    sid = "01a0d1d8-4252-7992-a65b-4ee8d89087a3"
+    _make_grok_session(tmp_path, sid, summary={},
+                       history=[_grok_assistant("first"),
+                                _grok_user("next prompt"),
+                                _grok_assistant("final answer")])
+    monkeypatch.setattr(agent_hook, "GROK_HOME", tmp_path)
+    assert agent_hook.read_grok_summary(sid) == "final answer"
+
+
+def test_grok_home_resolution_honors_env():
+    old = os.environ.get("GROK_HOME")
+    os.environ["GROK_HOME"] = "/tmp/custom-grok-home"
+    try:
+        src = (HERE.parent / "agent-hook.py").read_text()
+        # Re-evaluating the module-level constant is what the wrapper relies on.
+        assert 'GROK_HOME = pathlib.Path(os.environ.get("GROK_HOME")' in src
+    finally:
+        if old is None:
+            os.environ.pop("GROK_HOME", None)
+        else:
+            os.environ["GROK_HOME"] = old
+
+
+# ---------- dispatch: grok envelope (camelCase + snake_case aliases) ----------
+
+GROK_SID = "01a0d1d8-4252-7992-a65b-4ee8d890878f"
+
+
+def _grok_prompt_payload():
+    return {"session_id": GROK_SID, "sessionId": GROK_SID,
+            "promptId": "ad9ea0c9", "hook_event_name": "UserPromptSubmit"}
+
+
+def test_dispatch_grok_prompt_emits_running_with_resume(tmp_path, monkeypatch):
+    sid = GROK_SID
+    _make_grok_session(tmp_path, sid, summary={"generated_title": "Grokked Title"})
+    monkeypatch.setattr(agent_hook, "GROK_HOME", tmp_path)
+    sf = tmp_path / "sessions.json"
+    emit = agent_hook.dispatch("prompt", "grok", _grok_prompt_payload(),
+                               "term-g", sf, 1.0)
+    assert emit["event"] == "running"
+    assert emit["resumeCommand"] == f"grok --resume {sid}"
+    assert emit["sessionTitle"] == "Grokked Title"
+
+
+def test_dispatch_grok_prompt_session_id_from_camel_alias(tmp_path, monkeypatch):
+    # A payload that only carries grok's camelCase sessionId must still key the
+    # session entry (fallback chain session_id → sessionId → terminal_id).
+    monkeypatch.setattr(agent_hook, "GROK_HOME", tmp_path)
+    sf = tmp_path / "sessions.json"
+    emit = agent_hook.dispatch("prompt", "grok", {"sessionId": "only-camel-1"},
+                               "term-g", sf, 1.0)
+    assert emit["resumeCommand"] == "grok --resume only-camel-1"
+
+
+def test_dispatch_grok_pretool_tool_detail_from_snake_alias(tmp_path):
+    sf = tmp_path / "sessions.json"
+    emit = agent_hook.dispatch("pretool", "grok",
+                               {"session_id": GROK_SID,
+                                "tool_name": "list_dir",
+                                "tool_input": {"target_directory": "/tmp/proj"}},
+                               "term-g", sf, 2.0)
+    assert emit == {"event": "running", "at": 2.0, "toolDetail": "List tmp/proj"}
+
+
+def test_dispatch_grok_posttool_failure_sets_error(tmp_path):
+    sf = tmp_path / "sessions.json"
+    agent_hook.dispatch("prompt", "grok", _grok_prompt_payload(), "term-g", sf, 1.0)
+    agent_hook.dispatch("posttool", "grok",
+                        {"session_id": GROK_SID, "tool_name": "run_terminal_command",
+                         "tool_response": {"type": "Bash",
+                                           "Content": {"is_error": True,
+                                                       "content": "boom"}}},
+                        "term-g", sf, 2.0)
+    emit = agent_hook.dispatch("stop", "grok",
+                               {"session_id": GROK_SID, "reason": "end_turn",
+                                "lastAssistantMessage": "It failed."},
+                               "term-g", sf, 3.0)
+    assert emit["event"] == "finished"
+    assert emit["exitCode"] == 1
+    assert emit["summary"] == "It failed."
+
+
+def test_dispatch_grok_stop_uses_last_assistant_message(tmp_path):
+    sf = tmp_path / "sessions.json"
+    agent_hook.dispatch("prompt", "grok", _grok_prompt_payload(), "term-g", sf, 1.0)
+    emit = agent_hook.dispatch("stop", "grok",
+                               {"session_id": GROK_SID, "reason": "end_turn",
+                                "lastAssistantMessage": "Files:\n- a.txt\n\nDONE"},
+                               "term-g", sf, 3.0)
+    assert emit["event"] == "finished"
+    assert emit["exitCode"] == 0
+    assert emit["summary"] == "Files: - a.txt DONE"
+
+
+def test_dispatch_grok_session_end_stop_does_not_double_finish(tmp_path):
+    sf = tmp_path / "sessions.json"
+    agent_hook.dispatch("prompt", "grok", _grok_prompt_payload(), "term-g", sf, 1.0)
+    first = agent_hook.dispatch("stop", "grok",
+                                {"session_id": GROK_SID, "reason": "end_turn",
+                                 "lastAssistantMessage": "done"},
+                                "term-g", sf, 2.0)
+    # grok fires a second, observe-only Stop with reason=shutdown at teardown.
+    second = agent_hook.dispatch("stop", "grok",
+                                 {"session_id": GROK_SID, "reason": "shutdown"},
+                                 "term-g", sf, 3.0)
+    assert first["event"] == "finished"
+    assert second == {}
+
+
+def test_dispatch_grok_stopfailure_and_stopcancelled_are_failed(tmp_path):
+    sf = tmp_path / "sessions.json"
+    agent_hook.dispatch("prompt", "grok", _grok_prompt_payload(), "term-g", sf, 1.0)
+    emit = agent_hook.dispatch("stopfailure", "grok",
+                               {"session_id": GROK_SID, "error": "rate_limit",
+                                "lastAssistantMessage": "429 too many requests"},
+                               "term-g", sf, 2.0)
+    assert (emit["event"], emit["exitCode"], emit["summary"]) == \
+        ("finished", 1, "429 too many requests")
+
+    agent_hook.dispatch("prompt", "grok", _grok_prompt_payload(), "term-g", sf, 3.0)
+    emit = agent_hook.dispatch("stopcancelled", "grok",
+                               {"session_id": GROK_SID, "reason": "user_interrupt",
+                                "cancelledBy": "user"},
+                               "term-g", sf, 4.0)
+    assert emit["event"] == "finished"
+    assert emit["exitCode"] == 1
+
+
+def test_dispatch_grok_permission_denied_marks_error(tmp_path):
+    sf = tmp_path / "sessions.json"
+    agent_hook.dispatch("prompt", "grok", _grok_prompt_payload(), "term-g", sf, 1.0)
+    emit = agent_hook.dispatch("permissiondenied", "grok",
+                               {"session_id": GROK_SID, "tool_name": "run_terminal_command"},
+                               "term-g", sf, 2.0)
+    assert emit == {"event": "running", "at": 2.0}
+    emit = agent_hook.dispatch("stop", "grok",
+                               {"session_id": GROK_SID, "reason": "end_turn"},
+                               "term-g", sf, 3.0)
+    assert emit["exitCode"] == 1
+
+
+def test_dispatch_grok_notification_permission_prompt_needs_input(tmp_path):
+    sf = tmp_path / "sessions.json"
+    agent_hook.dispatch("prompt", "grok", _grok_prompt_payload(), "term-g", sf, 1.0)
+    emit = agent_hook.dispatch("notification", "grok",
+                               {"session_id": GROK_SID,
+                                "notificationType": "permission_prompt",
+                                "message": "Allow `rm`?"},
+                               "term-g", sf, 2.0)
+    assert emit == {"event": "needsInput", "at": 2.0}
+
+
+def test_dispatch_grok_notification_idle_prompt_backstop(tmp_path):
+    """idle_prompt settles a turn that never reported Stop."""
+    sf = tmp_path / "sessions.json"
+    agent_hook.dispatch("prompt", "grok", _grok_prompt_payload(), "term-g", sf, 1.0)
+    emit = agent_hook.dispatch("notification", "grok",
+                               {"session_id": GROK_SID, "notificationType": "idle_prompt"},
+                               "term-g", sf, 2.0)
+    assert emit["event"] == "finished"
+    assert emit["exitCode"] == 0
+
+
+def test_dispatch_grok_idle_prompt_is_silent_after_stop(tmp_path):
+    """grok fires idle_prompt after EVERY turn end — including the turns that
+    already reported Stop. A duplicate `finished` would clobber the newer state,
+    so the second report must be dropped."""
+    sf = tmp_path / "sessions.json"
+    agent_hook.dispatch("prompt", "grok", _grok_prompt_payload(), "term-g", sf, 1.0)
+    stop = agent_hook.dispatch("stop", "grok",
+                               {"session_id": GROK_SID, "reason": "end_turn",
+                                "lastAssistantMessage": "all good"},
+                               "term-g", sf, 2.0)
+    later = agent_hook.dispatch("notification", "grok",
+                                {"session_id": GROK_SID, "notificationType": "idle_prompt"},
+                                "term-g", sf, 3.0)
+    assert stop["event"] == "finished"
+    assert later == {}
+
+
+def test_dispatch_grok_idle_prompt_reads_summary_from_chat_history(tmp_path, monkeypatch):
+    sid = GROK_SID
+    _make_grok_session(tmp_path, sid, summary={},
+                       history=[agent_hook and _grok_assistant("answer from disk")])
+    monkeypatch.setattr(agent_hook, "GROK_HOME", tmp_path)
+    sf = tmp_path / "sessions.json"
+    agent_hook.dispatch("prompt", "grok", _grok_prompt_payload(), "term-g", sf, 1.0)
+    emit = agent_hook.dispatch("notification", "grok",
+                               {"session_id": GROK_SID, "notificationType": "idle_prompt"},
+                               "term-g", sf, 2.0)
+    assert emit["summary"] == "answer from disk"
+
+
+def test_dispatch_grok_notification_unknown_kind_is_quiet(tmp_path):
+    sf = tmp_path / "sessions.json"
+    agent_hook.dispatch("prompt", "grok", _grok_prompt_payload(), "term-g", sf, 1.0)
+    emit = agent_hook.dispatch("notification", "grok",
+                               {"session_id": GROK_SID, "notificationType": "something_new"},
+                               "term-g", sf, 2.0)
+    assert emit == {}
+
+
+def test_dispatch_grok_sessionend_emits_idle_and_clears(tmp_path):
+    sf = tmp_path / "sessions.json"
+    agent_hook.dispatch("prompt", "grok", _grok_prompt_payload(), "term-g", sf, 1.0)
+    emit = agent_hook.dispatch("sessionend", "grok",
+                               {"session_id": GROK_SID, "reason": "shutdown"},
+                               "term-g", sf, 2.0)
+    assert emit == {"event": "idle", "at": 2.0}
+    doc = json.loads(sf.read_text())
+    assert GROK_SID not in doc["sessions"]
+
+
+def test_dispatch_pi_prompt_resume_command_via_python_path(tmp_path):
+    """pi reports through its JS extension, but resume_command_for stays the
+    single source of truth for the CLI shape — guard the pi branch too."""
+    sf = tmp_path / "sessions.json"
+    emit = agent_hook.dispatch("prompt", "pi", {"session_id": "pi-sess-1"},
+                               "term-p", sf, 1.0)
+    assert emit["resumeCommand"] == "pi --session pi-sess-1"
